@@ -1,0 +1,251 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/translations.dart';
+import '../../../../domain/entities/address.dart';
+import '../../../../domain/entities/pharmacy.dart';
+import '../../../home/presentation/address_bloc/address_bloc.dart';
+import '../../../home/presentation/address_bloc/address_state.dart';
+import '../../../language/bloc/language_bloc.dart';
+import '../../../language/bloc/language_event.dart';
+import '../../../language/bloc/language_state.dart';
+import '../bloc/pharmacy_bloc.dart';
+import '../bloc/pharmacy_event.dart';
+import '../bloc/pharmacy_state.dart';
+
+class PharmacyTab extends StatefulWidget {
+  final ValueNotifier<String> searchNotifier;
+  const PharmacyTab({super.key, required this.searchNotifier});
+
+  @override
+  State<PharmacyTab> createState() => _PharmacyTabState();
+}
+
+class _PharmacyTabState extends State<PharmacyTab> {
+  late PharmacyBloc _pharmacyBloc;
+  final ScrollController _scrollController = ScrollController();
+  bool _dataLoaded = false;
+  String _searchQuery = '';
+  List<Pharmacy> _originalPharmacies = [];
+  List<Pharmacy> _filteredPharmacies = [];
+
+  late StreamSubscription<AddressState> _addressSubscription;
+  late StreamSubscription<LanguageState> _languageSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _pharmacyBloc = sl<PharmacyBloc>();
+    _scrollController.addListener(_onScroll);
+    widget.searchNotifier.addListener(_onSearchChanged);
+
+    _addressSubscription = context.read<AddressBloc>().stream.listen((addressState) {
+      if (addressState is AddressLoaded && !_dataLoaded && _isLanguageReady()) {
+        _loadData();
+      }
+    });
+    _languageSubscription = context.read<LanguageBloc>().stream.listen((languageState) {
+      if (languageState is LanguageChanged && !_dataLoaded && _isAddressLoaded()) {
+        _loadData();
+      }
+    });
+  }
+
+  bool _isAddressLoaded() {
+    final addressState = context.read<AddressBloc>().state;
+    return addressState is AddressLoaded && addressState.addresses.isNotEmpty;
+  }
+
+  bool _isLanguageReady() {
+    final langState = context.read<LanguageBloc>().state;
+    return langState is LanguageChanged;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_dataLoaded) {
+      _loadData();
+    }
+  }
+
+  Future<void> _loadData() async {
+    await Future.delayed(Duration.zero);
+    final addressState = context.read<AddressBloc>().state;
+    var languageState = context.read<LanguageBloc>().state;
+
+    // If language is not yet selected, try to load from storage (fallback)
+    if (languageState is LanguageInitial) {
+      const storage = FlutterSecureStorage();
+      final savedLang = await storage.read(key: 'app_language');
+      if (savedLang != null) {
+        final lang = Language.values.firstWhere(
+              (e) => e.toString() == savedLang,
+          orElse: () => Language.english,
+        );
+        // Update translations and bloc
+        AppTranslations.setLanguage(lang);
+        context.read<LanguageBloc>().add(ChangeLanguage(lang));
+        languageState = LanguageChanged(lang);
+      } else {
+        // No language selected at all – show language selection? For now default to English
+        const defaultLang = Language.english;
+        AppTranslations.setLanguage(defaultLang);
+        context.read<LanguageBloc>().add(ChangeLanguage(defaultLang));
+        languageState = LanguageChanged(defaultLang);
+      }
+    }
+
+    if (addressState is AddressLoaded && languageState is LanguageChanged) {
+      Address? selectedAddress;
+      if (addressState.addresses.isNotEmpty) {
+        for (var addr in addressState.addresses) {
+          if (addr.isDefault) {
+            selectedAddress = addr;
+            break;
+          }
+        }
+        selectedAddress ??= addressState.addresses.first;
+      }
+      if (selectedAddress != null) {
+        final lat = double.tryParse(selectedAddress.lat) ?? 0.0;
+        final lon = double.tryParse(selectedAddress.lon) ?? 0.0;
+        final lang = languageState.language.apiCode;
+        _pharmacyBloc.add(LoadPharmacies(page: 1, lat: lat, lon: lon, lang: lang));
+        setState(() => _dataLoaded = true);
+      }
+    }
+  }
+
+  void _onSearchChanged() {
+    if (mounted) {
+      setState(() {
+        _searchQuery = widget.searchNotifier.value;
+        _applyFilter();
+      });
+    }
+  }
+
+  void _applyFilter() {
+    if (_searchQuery.isEmpty) {
+      _filteredPharmacies = List.from(_originalPharmacies);
+    } else {
+      _filteredPharmacies = _originalPharmacies.where((pharmacy) =>
+      pharmacy.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          pharmacy.location.toLowerCase().contains(_searchQuery.toLowerCase())
+      ).toList();
+    }
+  }
+
+  void _onScroll() {
+    if (_searchQuery.isEmpty) {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+        _pharmacyBloc.add(LoadMorePharmacies());
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.searchNotifier.removeListener(_onSearchChanged);
+    _scrollController.dispose();
+    _addressSubscription.cancel();
+    _languageSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: _pharmacyBloc,
+      child: BlocBuilder<PharmacyBloc, PharmacyState>(
+        builder: (context, state) {
+          if (state is PharmacyInitial || state is PharmacyLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is PharmacyLoaded) {
+            if (_originalPharmacies.length != state.pharmacies.length) {
+              _originalPharmacies = List.from(state.pharmacies);
+              _applyFilter();
+            }
+            final displayList = _searchQuery.isEmpty ? state.pharmacies : _filteredPharmacies;
+            if (displayList.isEmpty) {
+              return const Center(child: Text('No pharmacies found'));
+            }
+            return ListView.builder(
+              controller: _scrollController,
+              itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == displayList.length) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                final pharmacy = displayList[index];
+                return _buildPharmacyCard(pharmacy);
+              },
+            );
+          } else if (state is PharmacyError) {
+            return Center(child: Text(state.message));
+          }
+          return const SizedBox();
+        },
+      ),
+    );
+  }
+
+  Widget _buildPharmacyCard(Pharmacy pharmacy) {
+    return Card(
+      color: AppColors.whiteColor,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                pharmacy.logo,
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(Icons.store, size: 40),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(pharmacy.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 4),
+                  if (pharmacy.openTime != null && pharmacy.closeTime != null)
+                    Text('⏰ ${pharmacy.openTime} - ${pharmacy.closeTime}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  const SizedBox(height: 4),
+                  Text('📍 ${pharmacy.location}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.delivery_dining, size: 14, color: pharmacy.homeDelivery == 'yes' ? Colors.green : Colors.red),
+                      const SizedBox(width: 4),
+                      Text(
+                        pharmacy.homeDelivery == 'yes' ? 'Home Delivery Available' : 'No Home Delivery',
+                        style: TextStyle(fontSize: 12, color: pharmacy.homeDelivery == 'yes' ? Colors.green : Colors.red),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
