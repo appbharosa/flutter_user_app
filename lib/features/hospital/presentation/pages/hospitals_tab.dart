@@ -12,9 +12,16 @@ import '../bloc/hospital_bloc.dart';
 import '../bloc/hospital_event.dart';
 import '../bloc/hospital_state.dart';
 
+
+
 class HospitalsTab extends StatefulWidget {
   final ValueNotifier<String> searchNotifier;
-  const HospitalsTab({super.key, required this.searchNotifier});
+  final ValueNotifier<Address?> addressNotifier;
+  const HospitalsTab({
+    super.key,
+    required this.searchNotifier,
+    required this.addressNotifier,
+  });
 
   @override
   State<HospitalsTab> createState() => _HospitalsTabState();
@@ -34,6 +41,14 @@ class _HospitalsTabState extends State<HospitalsTab> {
     _hospitalBloc = sl<HospitalBloc>();
     _scrollController.addListener(_onScroll);
     widget.searchNotifier.addListener(_onSearchChanged);
+    widget.addressNotifier.addListener(_onAddressChanged);
+  }
+
+  void _onAddressChanged() {
+    if (mounted) {
+      _dataLoaded = false;
+      _loadData();
+    }
   }
 
   @override
@@ -46,27 +61,18 @@ class _HospitalsTabState extends State<HospitalsTab> {
 
   Future<void> _loadData() async {
     await Future.delayed(Duration.zero);
-    final addressState = context.read<AddressBloc>().state;
+    final address = widget.addressNotifier.value;
     final languageState = context.read<LanguageBloc>().state;
 
-    if (addressState is AddressLoaded && languageState is LanguageChanged) {
-      Address? selectedAddress;
-      if (addressState.addresses.isNotEmpty) {
-        for (var addr in addressState.addresses) {
-          if (addr.isDefault) {
-            selectedAddress = addr;
-            break;
-          }
-        }
-        selectedAddress ??= addressState.addresses.first;
-      }
-      if (selectedAddress != null) {
-        final lat = double.tryParse(selectedAddress.lat) ?? 0.0;
-        final lon = double.tryParse(selectedAddress.lon) ?? 0.0;
-        final lang = languageState.language.apiCode;
-        _hospitalBloc.add(LoadHospitals(page: 1, lat: lat, lon: lon, lang: lang));
-        setState(() => _dataLoaded = true);
-      }
+    if (address != null && languageState is LanguageChanged) {
+      final lat = double.tryParse(address.lat) ?? 0.0;
+      final lon = double.tryParse(address.lon) ?? 0.0;
+      final lang = languageState.language.apiCode;
+      print("🏥 Loading hospitals with lat=$lat, lon=$lon, lang=$lang");
+      _hospitalBloc.add(LoadHospitals(page: 1, lat: lat, lon: lon, lang: lang));
+      setState(() => _dataLoaded = true);
+    } else {
+      print("⏳ HospitalsTab: address=${address?.address ?? 'null'}, language=${languageState is LanguageChanged ? languageState.language.name : 'not ready'}");
     }
   }
 
@@ -85,8 +91,7 @@ class _HospitalsTabState extends State<HospitalsTab> {
     } else {
       _filteredHospitals = _originalHospitals.where((hospital) =>
       hospital.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          hospital.location.toLowerCase().contains(_searchQuery.toLowerCase())
-      ).toList();
+          hospital.location.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
     }
   }
 
@@ -101,6 +106,7 @@ class _HospitalsTabState extends State<HospitalsTab> {
   @override
   void dispose() {
     widget.searchNotifier.removeListener(_onSearchChanged);
+    widget.addressNotifier.removeListener(_onAddressChanged);
     _scrollController.dispose();
     super.dispose();
   }
@@ -171,8 +177,7 @@ class _HospitalsTabState extends State<HospitalsTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(hospital.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  if (hospital.tagline.isNotEmpty)
-                    const SizedBox(height: 4),
+                  if (hospital.tagline.isNotEmpty) const SizedBox(height: 4),
                   if (hospital.tagline.isNotEmpty)
                     Text(hospital.tagline, style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey)),
                   const SizedBox(height: 4),

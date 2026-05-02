@@ -44,12 +44,13 @@ class LabTestRemoteDataSourceImpl implements LabTestRemoteDataSource {
         queryParameters: queryParams,
       );
       if (response.data['status'] == 200) {
-        final resultList = response.data['result'] as List;
-        if (resultList.isEmpty) {
+        final resultData = response.data['result'];
+        // ✅ Handle empty result (Map) or empty list
+        if (resultData is! List || resultData.isEmpty) {
           _totalPages = 1;
           return [];
         }
-        final resultMap = resultList[0] as Map<String, dynamic>;
+        final resultMap = resultData[0] as Map<String, dynamic>;
         final dataList = resultMap['data'] as List;
         _totalPages = resultMap['last_page'];
         print("✅ Received ${dataList.length} lab tests, total pages: $_totalPages");

@@ -4,17 +4,22 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/lab_test.dart';
-import '../../../home/presentation/address_bloc/address_bloc.dart';
-import '../../../home/presentation/address_bloc/address_state.dart';
 import '../../../language/bloc/language_bloc.dart';
 import '../../../language/bloc/language_state.dart';
 import '../bloc/lab_test_bloc.dart';
 import '../bloc/lab_test_event.dart';
 import '../bloc/lab_test_state.dart';
 
+
+
 class LabTestsTab extends StatefulWidget {
   final ValueNotifier<String> searchNotifier;
-  const LabTestsTab({super.key, required this.searchNotifier});
+  final ValueNotifier<Address?> addressNotifier; // ✅ added
+  const LabTestsTab({
+    super.key,
+    required this.searchNotifier,
+    required this.addressNotifier,
+  });
 
   @override
   State<LabTestsTab> createState() => _LabTestsTabState();
@@ -34,6 +39,14 @@ class _LabTestsTabState extends State<LabTestsTab> {
     _labTestBloc = sl<LabTestBloc>();
     _scrollController.addListener(_onScroll);
     widget.searchNotifier.addListener(_onSearchChanged);
+    widget.addressNotifier.addListener(_onAddressChanged); // ✅ listen to address changes
+  }
+
+  void _onAddressChanged() {
+    if (mounted) {
+      _dataLoaded = false;
+      _loadData();
+    }
   }
 
   @override
@@ -46,28 +59,20 @@ class _LabTestsTabState extends State<LabTestsTab> {
 
   Future<void> _loadData() async {
     await Future.delayed(Duration.zero);
-    final addressState = context.read<AddressBloc>().state;
+    final address = widget.addressNotifier.value;
     final languageState = context.read<LanguageBloc>().state;
 
-    if (addressState is AddressLoaded && languageState is LanguageChanged) {
-      Address? selectedAddress;
-      if (addressState.addresses.isNotEmpty) {
-        for (var addr in addressState.addresses) {
-          if (addr.isDefault) {
-            selectedAddress = addr;
-            break;
-          }
-        }
-        selectedAddress ??= addressState.addresses.first;
-      }
-      if (selectedAddress != null) {
-        final lat = double.tryParse(selectedAddress.lat) ?? 0.0;
-        final lon = double.tryParse(selectedAddress.lon) ?? 0.0;
-        final lang = languageState.language.apiCode;
-        print("🔬 Loading lab tests with lat=$lat, lon=$lon, lang=$lang");
-        _labTestBloc.add(LoadLabTests(page: 1, lat: lat, lon: lon, lang: lang));
-        setState(() => _dataLoaded = true);
-      }
+    if (address != null && languageState is LanguageChanged) {
+      final lat = double.tryParse(address.lat) ?? 0.0;
+      final lon = double.tryParse(address.lon) ?? 0.0;
+      final lang = languageState.language.apiCode;
+      print("🔬 Loading lab tests with lat=$lat, lon=$lon, lang=$lang");
+      _labTestBloc.add(LoadLabTests(page: 1, lat: lat, lon: lon, lang: lang));
+      setState(() => _dataLoaded = true);
+    } else if (address == null) {
+      print("⚠️ LabTestsTab: No address selected yet");
+    } else if (languageState is! LanguageChanged) {
+      print("⚠️ LabTestsTab: Language not settled yet");
     }
   }
 
@@ -102,6 +107,7 @@ class _LabTestsTabState extends State<LabTestsTab> {
   @override
   void dispose() {
     widget.searchNotifier.removeListener(_onSearchChanged);
+    widget.addressNotifier.removeListener(_onAddressChanged); // ✅ remove listener
     _scrollController.dispose();
     super.dispose();
   }

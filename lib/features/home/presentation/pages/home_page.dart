@@ -56,13 +56,15 @@ class _HomePageState extends State<HomePage> {
   Address? _selectedAddress;
   String _displayAddress = "Select Address";
 
+  final ValueNotifier<Address?> _selectedAddressNotifier = ValueNotifier(null);
+
   // Tabs list – not const because PharmacyTab is not constant
   late final List<Widget> _tabs = [
     const HomeTab(),
-    HospitalsTab(searchNotifier: _searchNotifier), // new
-    LabTestsTab(searchNotifier: _searchNotifier),
-    DiagnosticsTab(searchNotifier: _searchNotifier),
-    PharmacyTab(searchNotifier: _searchNotifier), // index 4
+    HospitalsTab(searchNotifier: _searchNotifier, addressNotifier: _selectedAddressNotifier),
+    LabTestsTab(searchNotifier: _searchNotifier, addressNotifier: _selectedAddressNotifier),
+    DiagnosticsTab(searchNotifier: _searchNotifier, addressNotifier: _selectedAddressNotifier),
+    PharmacyTab(searchNotifier: _searchNotifier, addressNotifier: _selectedAddressNotifier),
   ];
 
   @override
@@ -80,6 +82,7 @@ class _HomePageState extends State<HomePage> {
           }
         }
         if (defaultAddr != null) {
+          _selectedAddressNotifier.value = defaultAddr;
           setState(() {
             _selectedAddress = defaultAddr;
             _displayAddress = defaultAddr!.address;
@@ -89,20 +92,23 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  @override
-  void dispose() {
-    _addressBloc.close();
-    _searchController.dispose();
-    _searchNotifier.dispose();
-    super.dispose();
-  }
-
   void _onAddressSelected(Address address) {
+    _selectedAddressNotifier.value = address;
     setState(() {
       _selectedAddress = address;
       _displayAddress = address.address;
     });
   }
+
+  @override
+  void dispose() {
+    _addressBloc.close();
+    _searchController.dispose();
+    _searchNotifier.dispose();
+    _selectedAddressNotifier.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {

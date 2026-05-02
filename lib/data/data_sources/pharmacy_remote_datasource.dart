@@ -4,6 +4,8 @@ import '../../core/errors/exceptions.dart';
 import '../../core/network/dio_client.dart';
 import '../models/pharmacy_model.dart';
 
+
+
 abstract class PharmacyRemoteDataSource {
   Future<List<PharmacyModel>> getPharmacies({
     required int page,
@@ -23,7 +25,6 @@ class PharmacyRemoteDataSourceImpl implements PharmacyRemoteDataSource {
   PharmacyRemoteDataSourceImpl(this.dioClient);
 
   @override
-
   Future<List<PharmacyModel>> getPharmacies({
     required int page,
     required int perPage,
@@ -44,13 +45,13 @@ class PharmacyRemoteDataSourceImpl implements PharmacyRemoteDataSource {
         queryParameters: queryParams,
       );
       if (response.data['status'] == 200) {
-        // The "result" is a List that contains one element with pagination and data
-        final resultList = response.data['result'] as List;
-        if (resultList.isEmpty) {
+        final resultData = response.data['result'];
+        // Check if resultData is a List and not empty
+        if (resultData is! List || resultData.isEmpty) {
           _totalPages = 1;
           return [];
         }
-        final resultMap = resultList[0] as Map<String, dynamic>;
+        final resultMap = resultData[0] as Map<String, dynamic>;
         final dataList = resultMap['data'] as List;
         _totalPages = resultMap['last_page'];
         return dataList.map((json) => PharmacyModel.fromJson(json)).toList();

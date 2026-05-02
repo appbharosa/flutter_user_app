@@ -19,12 +19,16 @@ import '../bloc/pharmacy_state.dart';
 
 class PharmacyTab extends StatefulWidget {
   final ValueNotifier<String> searchNotifier;
-  const PharmacyTab({super.key, required this.searchNotifier});
+  final ValueNotifier<Address?> addressNotifier;
+  const PharmacyTab({
+    super.key,
+    required this.searchNotifier,
+    required this.addressNotifier,
+  });
 
   @override
   State<PharmacyTab> createState() => _PharmacyTabState();
 }
-
 class _PharmacyTabState extends State<PharmacyTab> {
   late PharmacyBloc _pharmacyBloc;
   final ScrollController _scrollController = ScrollController();
@@ -36,30 +40,22 @@ class _PharmacyTabState extends State<PharmacyTab> {
   late StreamSubscription<AddressState> _addressSubscription;
   late StreamSubscription<LanguageState> _languageSubscription;
 
+
   @override
   void initState() {
     super.initState();
     _pharmacyBloc = sl<PharmacyBloc>();
     _scrollController.addListener(_onScroll);
     widget.searchNotifier.addListener(_onSearchChanged);
-
-    _addressSubscription = context.read<AddressBloc>().stream.listen((addressState) {
-      if (addressState is AddressLoaded && !_dataLoaded && _isLanguageReady()) {
-        _loadData();
-      }
-    });
-    _languageSubscription = context.read<LanguageBloc>().stream.listen((languageState) {
-      if (languageState is LanguageChanged && !_dataLoaded && _isAddressLoaded()) {
-        _loadData();
-      }
-    });
+    widget.addressNotifier.addListener(_onAddressChanged);
   }
 
-  bool _isAddressLoaded() {
-    final addressState = context.read<AddressBloc>().state;
-    return addressState is AddressLoaded && addressState.addresses.isNotEmpty;
+  void _onAddressChanged() {
+    if (mounted) {
+      _dataLoaded = false;
+      _loadData();
+    }
   }
-
   bool _isLanguageReady() {
     final langState = context.read<LanguageBloc>().state;
     return langState is LanguageChanged;
@@ -75,51 +71,22 @@ class _PharmacyTabState extends State<PharmacyTab> {
 
   Future<void> _loadData() async {
     await Future.delayed(Duration.zero);
-    final addressState = context.read<AddressBloc>().state;
-    var languageState = context.read<LanguageBloc>().state;
+    final address = widget.addressNotifier.value;
+    final languageState = context.read<LanguageBloc>().state;
 
-    // If language is not yet selected, try to load from storage (fallback)
-    if (languageState is LanguageInitial) {
-      const storage = FlutterSecureStorage();
-      final savedLang = await storage.read(key: 'app_language');
-      if (savedLang != null) {
-        final lang = Language.values.firstWhere(
-              (e) => e.toString() == savedLang,
-          orElse: () => Language.english,
-        );
-        // Update translations and bloc
-        AppTranslations.setLanguage(lang);
-        context.read<LanguageBloc>().add(ChangeLanguage(lang));
-        languageState = LanguageChanged(lang);
-      } else {
-        // No language selected at all – show language selection? For now default to English
-        const defaultLang = Language.english;
-        AppTranslations.setLanguage(defaultLang);
-        context.read<LanguageBloc>().add(ChangeLanguage(defaultLang));
-        languageState = LanguageChanged(defaultLang);
-      }
-    }
-
-    if (addressState is AddressLoaded && languageState is LanguageChanged) {
-      Address? selectedAddress;
-      if (addressState.addresses.isNotEmpty) {
-        for (var addr in addressState.addresses) {
-          if (addr.isDefault) {
-            selectedAddress = addr;
-            break;
-          }
-        }
-        selectedAddress ??= addressState.addresses.first;
-      }
-      if (selectedAddress != null) {
-        final lat = double.tryParse(selectedAddress.lat) ?? 0.0;
-        final lon = double.tryParse(selectedAddress.lon) ?? 0.0;
-        final lang = languageState.language.apiCode;
-        _pharmacyBloc.add(LoadPharmacies(page: 1, lat: lat, lon: lon, lang: lang));
-        setState(() => _dataLoaded = true);
-      }
+    if (address != null && languageState is LanguageChanged) {
+      final lat = double.tryParse(address.lat) ?? 0.0;
+      final lon = double.tryParse(address.lon) ?? 0.0;
+      final lang = languageState.language.apiCode;
+      _pharmacyBloc.add(LoadPharmacies(page: 1, lat: lat, lon: lon, lang: lang));
+      setState(() => _dataLoaded = true);
+    } else if (address == null) {
+      print("⚠️ PharmacyTab: No address selected yet");
+    } else if (languageState is! LanguageChanged) {
+      print("⚠️ PharmacyTab: Language not settled yet");
     }
   }
+
 
   void _onSearchChanged() {
     if (mounted) {
@@ -152,12 +119,10 @@ class _PharmacyTabState extends State<PharmacyTab> {
   @override
   void dispose() {
     widget.searchNotifier.removeListener(_onSearchChanged);
+    widget.addressNotifier.removeListener(_onAddressChanged);
     _scrollController.dispose();
-    _addressSubscription.cancel();
-    _languageSubscription.cancel();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
