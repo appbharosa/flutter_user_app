@@ -176,17 +176,36 @@ class _HospitalsTabState extends State<HospitalsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(hospital.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(hospital.name,  style: TextStyle(
+                    color: AppColors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
+                  ),),
                   if (hospital.tagline.isNotEmpty) const SizedBox(height: 4),
                   if (hospital.tagline.isNotEmpty)
-                    Text(hospital.tagline, style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey)),
+                    Text(hospital.tagline, style: TextStyle(
+                      color: AppColors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,  // SemiBold
+                      fontFamily: 'Poppins',
+                    ),),
                   const SizedBox(height: 4),
                   if (hospital.openTime.isNotEmpty && hospital.closeTime.isNotEmpty)
-                    Text('⏰ ${hospital.openTime} - ${hospital.closeTime}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text('⏰ ${hospital.openTime} - ${hospital.closeTime}', style: TextStyle(
+                      color: AppColors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontFamily: 'Poppins',
+                    ),),
                   const SizedBox(height: 4),
-                  Text('📍 ${hospital.location}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                  const SizedBox(height: 4),
-                  Text('📏 ${hospital.distance}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text('📍 ${hospital.location}',  style: TextStyle(
+                    color: AppColors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,  // SemiBold
+                    fontFamily: 'Poppins',
+                  ),),
+
                 ],
               ),
             ),

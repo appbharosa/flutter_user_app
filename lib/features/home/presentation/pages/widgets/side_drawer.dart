@@ -140,8 +140,8 @@ class SideMenuDialog extends StatelessWidget {
                       onTap: () => onMenuItemSelected(0),
                     ),
                     _buildMenuItem(
-                      icon: Icons.shopping_bag_outlined,
-                      title: 'My Orders',
+                      icon: Icons.lock,
+                      title: 'Med Locker',
                       onTap: () => onMenuItemSelected(1),
                     ),
                     _buildMenuItem(

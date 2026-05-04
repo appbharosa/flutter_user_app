@@ -9,6 +9,8 @@ import '../../data/data_sources/contact_us_remote_datasource.dart';
 import '../../data/data_sources/diagnostic_remote_datasource.dart';
 import '../../data/data_sources/hospital_remote_datasource.dart';
 import '../../data/data_sources/lab_test_remote_datasource.dart';
+import '../../data/data_sources/med_locker_remote_datasource.dart';
+import '../../data/data_sources/order_remote_datasource.dart';
 import '../../data/data_sources/pharmacy_remote_datasource.dart';
 import '../../data/data_sources/profile_remote_datasource.dart';
 import '../../data/data_sources/user_local_datasource.dart';
@@ -18,6 +20,8 @@ import '../../data/repositories/contact_us_repository_impl.dart';
 import '../../data/repositories/diagnostic_repository_impl.dart';
 import '../../data/repositories/hospital_repository_impl.dart';
 import '../../data/repositories/lab_test_repository_impl.dart';
+import '../../data/repositories/med_locker_repository_impl.dart';
+import '../../data/repositories/order_repository_impl.dart';
 import '../../data/repositories/pharmacy_repository_impl.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../domain/repositories/about_repository.dart';
@@ -26,15 +30,21 @@ import '../../domain/repositories/contact_us_repository.dart';
 import '../../domain/repositories/diagnostic_repository.dart';
 import '../../domain/repositories/hospital_repository.dart';
 import '../../domain/repositories/lab_test_repository.dart';
+import '../../domain/repositories/med_locker_repository.dart';
+import '../../domain/repositories/order_repository.dart';
 import '../../domain/repositories/pharmacy_repository.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../../domain/use_cases/add_address_usecase.dart';
+import '../../domain/use_cases/add_med_locker_usecase.dart';
+import '../../domain/use_cases/create_order_usecase.dart';
 import '../../domain/use_cases/get_about_usecase.dart';
 import '../../domain/use_cases/get_addresses_usecase.dart';
 import '../../domain/use_cases/get_banners_usecase.dart';
 import '../../domain/use_cases/get_diagnostics_usecase.dart';
 import '../../domain/use_cases/get_hospitals_usecase.dart';
 import '../../domain/use_cases/get_lab_tests_usecase.dart';
+import '../../domain/use_cases/get_med_locker_detail_usecase.dart';
+import '../../domain/use_cases/get_med_lockers_usecase.dart';
 import '../../domain/use_cases/get_pharmacies_usecase.dart';
 import '../../domain/use_cases/get_profile_usecase.dart';
 import '../../domain/use_cases/login_usecase.dart';
@@ -49,8 +59,12 @@ import '../../features/home/presentation/address_bloc/address_bloc.dart';
 import '../../features/hospital/presentation/bloc/hospital_bloc.dart';
 import '../../features/labtest/presentation/bloc/lab_test_bloc.dart';
 import '../../features/language/bloc/language_bloc.dart';
+import '../../features/medlocker/presentation/add_bloc/add_med_locker_bloc.dart';
+import '../../features/medlocker/presentation/bloc/med_locker_bloc.dart';
+import '../../features/medlocker/presentation/detail_bloc/med_locker_detail_bloc.dart';
 import '../../features/otp/presentation/bloc/otp_verification_bloc.dart';
 import '../../features/pharmacy/presentation/bloc/pharmacy_bloc.dart';
+import '../../features/pharmacy/presentation/confirm_bloc/order_bloc.dart';
 import '../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../../features/registration/presentation/bloc/registration_bloc.dart';
 import '../network/dio_client.dart';
@@ -82,6 +96,8 @@ Future<void> init() async {
   sl.registerLazySingleton<HospitalRemoteDataSource>(() => HospitalRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<LabTestRemoteDataSource>(() => LabTestRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<DiagnosticRemoteDataSource>(() => DiagnosticRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<MedLockerRemoteDataSource>(() => MedLockerRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<OrderRemoteDataSource>(() => OrderRemoteDataSourceImpl(sl()));
 
 
   // ========== Repositories ==========
@@ -134,6 +150,14 @@ Future<void> init() async {
     getAddresses: sl(),
     addAddress: sl(),
   ));
+  sl.registerLazySingleton<MedLockerRepository>(() => MedLockerRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+  sl.registerLazySingleton<OrderRepository>(() => OrderRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
 
 
   // ========== Use Cases ==========
@@ -151,6 +175,10 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetHospitalsUseCase(sl()));
   sl.registerLazySingleton(() => GetLabTestsUseCase(sl()));
   sl.registerLazySingleton(() => GetDiagnosticsUseCase(sl()));
+  sl.registerLazySingleton(() => GetMedLockersUseCase(sl()));
+  sl.registerLazySingleton(() => GetMedLockerDetailUseCase(sl()));
+  sl.registerLazySingleton(() => AddMedLockerUseCase(sl()));
+  sl.registerLazySingleton(() => CreateOrderUseCase(sl()));
 
   // ========== BLoCs ==========
   sl.registerFactory(() => AuthBloc(sendOtpUseCase: sl()));
@@ -165,4 +193,8 @@ Future<void> init() async {
   sl.registerFactory(() => PharmacyBloc(getPharmaciesUseCase: sl()));
   sl.registerFactory(() => RegistrationBloc(registerUserUseCase: sl()));
   sl.registerFactory(() => LanguageBloc());
+  sl.registerFactory(() => MedLockerBloc(getMedLockersUseCase: sl()));
+  sl.registerFactory(() => MedLockerDetailBloc(getMedLockerDetailUseCase: sl()));
+  sl.registerFactory(() => AddMedLockerBloc(addMedLockerUseCase: sl()));
+  sl.registerFactory(() => OrderBloc(createOrderUseCase: sl()));
 }

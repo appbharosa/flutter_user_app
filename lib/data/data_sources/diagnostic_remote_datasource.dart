@@ -53,7 +53,7 @@ class DiagnosticRemoteDataSourceImpl implements DiagnosticRemoteDataSource {
         final resultMap = resultData[0] as Map<String, dynamic>;
         final dataList = resultMap['data'] as List;
         _totalPages = resultMap['last_page'];
-        print("✅ Received ${dataList.length} diagnostics, total pages: $_totalPages");
+        print(" Received ${dataList.length} diagnostics, total pages: $_totalPages");
         return dataList.map((json) => DiagnosticModel.fromJson(json)).toList();
       } else {
         throw ServerException(response.data['message'] ?? 'Failed to load diagnostics');

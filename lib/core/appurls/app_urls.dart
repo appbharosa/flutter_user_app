@@ -14,9 +14,10 @@ class AppUrls{
   static const String hospitalsList ="hospitals-list";
   static const String labsList ="labtest-list";
   static const String diagnosticList ="diagnostic-list";
-
-
-
+  static const String medLockerList = "medlocker-list";
+  static const String medLockerAdd = "medlocker-add";
+  static const String medLockerShow = "medlocker-show/";
+  static const String createPharmacyOrder = "booking-pharmacy";
 
 
 

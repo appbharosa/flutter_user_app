@@ -5,6 +5,7 @@ import 'package:user/features/diagnostic/presentation/pages/diagnostics_tab.dart
 import 'package:user/features/home/presentation/pages/widgets/address_bottom_sheet.dart';
 import 'package:user/features/home/presentation/pages/widgets/bottom_nav_bar.dart';
 import 'package:user/features/home/presentation/pages/widgets/side_drawer.dart';
+import 'package:user/features/medlocker/presentation/pages/med_locker_list_page.dart';
 import 'package:user/features/pharmacy/presentation/pages/pharmacy_tab.dart';
 import 'package:user/features/profile/presentation/pages/profile_page.dart';
 import '../../../../core/di/injection.dart';
@@ -284,7 +285,10 @@ class _HomePageState extends State<HomePage> {
                       );
                       break;
                     case 1:
-                      setState(() => _selectedIndex = 1);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MedLockerListPage()),
+                      );
                       break;
                     case 2:
                       ScaffoldMessenger.of(context).showSnackBar(

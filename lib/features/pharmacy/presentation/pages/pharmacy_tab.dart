@@ -1,17 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:user/features/pharmacy/presentation/pages/pharmacy_detail_page.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/translations.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/pharmacy.dart';
-import '../../../home/presentation/address_bloc/address_bloc.dart';
-import '../../../home/presentation/address_bloc/address_state.dart';
 import '../../../language/bloc/language_bloc.dart';
-import '../../../language/bloc/language_event.dart';
 import '../../../language/bloc/language_state.dart';
 import '../bloc/pharmacy_bloc.dart';
 import '../bloc/pharmacy_event.dart';
@@ -37,9 +32,6 @@ class _PharmacyTabState extends State<PharmacyTab> {
   List<Pharmacy> _originalPharmacies = [];
   List<Pharmacy> _filteredPharmacies = [];
 
-  late StreamSubscription<AddressState> _addressSubscription;
-  late StreamSubscription<LanguageState> _languageSubscription;
-
 
   @override
   void initState() {
@@ -56,10 +48,7 @@ class _PharmacyTabState extends State<PharmacyTab> {
       _loadData();
     }
   }
-  bool _isLanguageReady() {
-    final langState = context.read<LanguageBloc>().state;
-    return langState is LanguageChanged;
-  }
+
 
   @override
   void didChangeDependencies() {
@@ -151,7 +140,19 @@ class _PharmacyTabState extends State<PharmacyTab> {
                   );
                 }
                 final pharmacy = displayList[index];
-                return _buildPharmacyCard(pharmacy);
+                return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PharmacyDetailPage(
+                            pharmacy: pharmacy,
+                            addressNotifier: widget.addressNotifier,
+                          ),
+                        ),
+                      );
+                    } ,
+                    child: _buildPharmacyCard(pharmacy));
               },
             );
           } else if (state is PharmacyError) {
@@ -188,12 +189,39 @@ class _PharmacyTabState extends State<PharmacyTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(pharmacy.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(pharmacy.name,  style: TextStyle(
+                    color: AppColors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,  // SemiBold
+                    fontFamily: 'Poppins',
+                  ),),
                   const SizedBox(height: 4),
                   if (pharmacy.openTime != null && pharmacy.closeTime != null)
-                    Text('⏰ ${pharmacy.openTime} - ${pharmacy.closeTime}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text('⏰ ${pharmacy.openTime} - ${pharmacy.closeTime}', style: TextStyle(
+                      color: AppColors.black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontFamily: 'Poppins',
+                    ),),
                   const SizedBox(height: 4),
-                  Text('📍 ${pharmacy.location}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, color: Colors.red, size: 20),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child:  Text(
+                          pharmacy.location,
+                          style: const TextStyle(
+                            color: AppColors.black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'Poppins',
+                          ),
+                          softWrap: true,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
