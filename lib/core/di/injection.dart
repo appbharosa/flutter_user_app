@@ -11,6 +11,7 @@ import '../../data/data_sources/hospital_remote_datasource.dart';
 import '../../data/data_sources/lab_test_remote_datasource.dart';
 import '../../data/data_sources/med_locker_remote_datasource.dart';
 import '../../data/data_sources/order_remote_datasource.dart';
+import '../../data/data_sources/payment_remote_datasource.dart';
 import '../../data/data_sources/pharmacy_remote_datasource.dart';
 import '../../data/data_sources/profile_remote_datasource.dart';
 import '../../data/data_sources/user_local_datasource.dart';
@@ -22,6 +23,7 @@ import '../../data/repositories/hospital_repository_impl.dart';
 import '../../data/repositories/lab_test_repository_impl.dart';
 import '../../data/repositories/med_locker_repository_impl.dart';
 import '../../data/repositories/order_repository_impl.dart';
+import '../../data/repositories/payment_repository_impl.dart';
 import '../../data/repositories/pharmacy_repository_impl.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../domain/repositories/about_repository.dart';
@@ -32,10 +34,13 @@ import '../../domain/repositories/hospital_repository.dart';
 import '../../domain/repositories/lab_test_repository.dart';
 import '../../domain/repositories/med_locker_repository.dart';
 import '../../domain/repositories/order_repository.dart';
+import '../../domain/repositories/payment_repository.dart';
 import '../../domain/repositories/pharmacy_repository.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../../domain/use_cases/add_address_usecase.dart';
 import '../../domain/use_cases/add_med_locker_usecase.dart';
+import '../../domain/use_cases/check_payment_status_usecase.dart';
+import '../../domain/use_cases/create_cashfree_order_usecase.dart';
 import '../../domain/use_cases/create_order_usecase.dart';
 import '../../domain/use_cases/get_about_usecase.dart';
 import '../../domain/use_cases/get_addresses_usecase.dart';
@@ -63,10 +68,12 @@ import '../../features/medlocker/presentation/add_bloc/add_med_locker_bloc.dart'
 import '../../features/medlocker/presentation/bloc/med_locker_bloc.dart';
 import '../../features/medlocker/presentation/detail_bloc/med_locker_detail_bloc.dart';
 import '../../features/otp/presentation/bloc/otp_verification_bloc.dart';
+import '../../features/pedometer/gps/new_gps/gps_bloc.dart';
 import '../../features/pharmacy/presentation/bloc/pharmacy_bloc.dart';
 import '../../features/pharmacy/presentation/confirm_bloc/order_bloc.dart';
 import '../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../../features/registration/presentation/bloc/registration_bloc.dart';
+import '../../features/wallet/presentation/bloc/payment_bloc.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
 import '../../data/repositories/auth_repository_impl.dart';
@@ -98,6 +105,7 @@ Future<void> init() async {
   sl.registerLazySingleton<DiagnosticRemoteDataSource>(() => DiagnosticRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<MedLockerRemoteDataSource>(() => MedLockerRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<OrderRemoteDataSource>(() => OrderRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<PaymentRemoteDataSource>(() => PaymentRemoteDataSourceImpl(sl()));
 
 
   // ========== Repositories ==========
@@ -142,19 +150,16 @@ Future<void> init() async {
     remoteDataSource: sl(),
     networkInfo: sl(),
   ));
-  sl.registerFactory(() => ProfileBloc(
-    getProfileUseCase: sl(),
-    updateProfileUseCase: sl(),
-  ));
-  sl.registerFactory(() => AddressBloc(
-    getAddresses: sl(),
-    addAddress: sl(),
-  ));
+
   sl.registerLazySingleton<MedLockerRepository>(() => MedLockerRepositoryImpl(
     remoteDataSource: sl(),
     networkInfo: sl(),
   ));
   sl.registerLazySingleton<OrderRepository>(() => OrderRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+  sl.registerLazySingleton<PaymentRepository>(() => PaymentRepositoryImpl(
     remoteDataSource: sl(),
     networkInfo: sl(),
   ));
@@ -179,6 +184,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetMedLockerDetailUseCase(sl()));
   sl.registerLazySingleton(() => AddMedLockerUseCase(sl()));
   sl.registerLazySingleton(() => CreateOrderUseCase(sl()));
+  sl.registerLazySingleton(() => CreateCashfreeOrderUseCase(sl()));
+  sl.registerLazySingleton(() => CheckPaymentStatusUseCase(sl()));
 
   // ========== BLoCs ==========
   sl.registerFactory(() => AuthBloc(sendOtpUseCase: sl()));
@@ -189,7 +196,8 @@ Future<void> init() async {
   sl.registerFactory(() => HospitalBloc(getHospitalsUseCase: sl()));
   sl.registerFactory(() => LabTestBloc(getLabTestsUseCase: sl()));
   sl.registerFactory(() => DiagnosticBloc(getDiagnosticsUseCase: sl()));
-
+  sl.registerFactory(() => ProfileBloc(getProfileUseCase: sl(), updateProfileUseCase: sl(),));
+  sl.registerFactory(() => AddressBloc(getAddresses: sl(), addAddress: sl(),));
   sl.registerFactory(() => PharmacyBloc(getPharmaciesUseCase: sl()));
   sl.registerFactory(() => RegistrationBloc(registerUserUseCase: sl()));
   sl.registerFactory(() => LanguageBloc());
@@ -197,4 +205,8 @@ Future<void> init() async {
   sl.registerFactory(() => MedLockerDetailBloc(getMedLockerDetailUseCase: sl()));
   sl.registerFactory(() => AddMedLockerBloc(addMedLockerUseCase: sl()));
   sl.registerFactory(() => OrderBloc(createOrderUseCase: sl()));
+  sl.registerFactory(() => PaymentBloc(createOrderUseCase: sl(), checkStatusUseCase: sl(),));
+
+  sl.registerFactory(() => GpsBloc());
+
 }

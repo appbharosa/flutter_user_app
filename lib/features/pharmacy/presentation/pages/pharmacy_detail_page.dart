@@ -127,6 +127,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.whiteColor,
       appBar: AppBar(
         title: Text(widget.pharmacy.name,style: TextStyle(
           color: AppColors.whiteColor,

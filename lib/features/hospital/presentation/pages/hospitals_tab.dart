@@ -4,8 +4,6 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/hospital.dart';
-import '../../../home/presentation/address_bloc/address_bloc.dart';
-import '../../../home/presentation/address_bloc/address_state.dart';
 import '../../../language/bloc/language_bloc.dart';
 import '../../../language/bloc/language_state.dart';
 import '../bloc/hospital_bloc.dart';
@@ -186,7 +184,7 @@ class _HospitalsTabState extends State<HospitalsTab> {
                   if (hospital.tagline.isNotEmpty)
                     Text(hospital.tagline, style: TextStyle(
                       color: AppColors.black,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,  // SemiBold
                       fontFamily: 'Poppins',
                     ),),
@@ -194,18 +192,35 @@ class _HospitalsTabState extends State<HospitalsTab> {
                   if (hospital.openTime.isNotEmpty && hospital.closeTime.isNotEmpty)
                     Text('⏰ ${hospital.openTime} - ${hospital.closeTime}', style: TextStyle(
                       color: AppColors.black,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w400,  // SemiBold
                       fontFamily: 'Poppins',
                     ),),
                   const SizedBox(height: 4),
-                  Text('📍 ${hospital.location}',  style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,  // SemiBold
-                    fontFamily: 'Poppins',
-                  ),),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.red,
+                      ),
+                      SizedBox(width: 4), // spacing between icon and text
+                      Expanded(
+                        child: Text(
+                          hospital.location.isNotEmpty
+                              ? hospital.location
+                              : 'Unknown location',
+                          style: TextStyle(
+                            color: AppColors.black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'Poppins',
+                          ),
 
+                        ),
+                      ),
+                    ],
+                  )
                 ],
               ),
             ),

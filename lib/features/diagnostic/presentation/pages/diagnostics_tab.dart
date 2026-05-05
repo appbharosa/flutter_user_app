@@ -178,14 +178,47 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(diagnostic.name.isNotEmpty ? diagnostic.name : 'Diagnostic Center', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(diagnostic.name.isNotEmpty ? diagnostic.name : 'Diagnostic Center', style: TextStyle(
+                    color: AppColors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,  // SemiBold
+                    fontFamily: 'Poppins',
+                  ),),
                   const SizedBox(height: 4),
                   if (diagnostic.openTime.isNotEmpty && diagnostic.closeTime.isNotEmpty)
-                    Text('⏰ ${diagnostic.openTime} - ${diagnostic.closeTime}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text('⏰ ${diagnostic.openTime} - ${diagnostic.closeTime}', style: TextStyle(
+                      color: AppColors.black,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontFamily: 'Poppins',
+                    ),),
                   const SizedBox(height: 4),
-                  Text('📍 ${diagnostic.location.isNotEmpty ? diagnostic.location : 'Unknown location'}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.red,
+                      ),
+                      SizedBox(width: 4), // spacing between icon and text
+                      Expanded(
+                        child: Text(
+                          diagnostic.location.isNotEmpty
+                              ? diagnostic.location
+                              : 'Unknown location',
+                          style: TextStyle(
+                            color: AppColors.black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'Poppins',
+                          ),
+
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
-                  Text('📏 ${diagnostic.distance}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+              //    Text('📏 ${diagnostic.distance}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),

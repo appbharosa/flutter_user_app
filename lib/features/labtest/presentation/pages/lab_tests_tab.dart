@@ -177,14 +177,47 @@ class _LabTestsTabState extends State<LabTestsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(lab.name.isNotEmpty ? lab.name : 'Lab Test', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(lab.name.isNotEmpty ? lab.name : 'Lab Test',style: TextStyle(
+                    color: AppColors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,  // SemiBold
+                    fontFamily: 'Poppins',
+                  ),),
                   const SizedBox(height: 4),
                   if (lab.openTime.isNotEmpty && lab.closeTime.isNotEmpty)
-                    Text('⏰ ${lab.openTime} - ${lab.closeTime}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text('⏰ ${lab.openTime} - ${lab.closeTime}', style: TextStyle(
+                      color: AppColors.black,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontFamily: 'Poppins',
+                    ),),
                   const SizedBox(height: 4),
-                  Text('📍 ${lab.location.isNotEmpty ? lab.location : 'Unknown location'}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.red,
+                      ),
+                      SizedBox(width: 4), // spacing between icon and text
+                      Expanded(
+                        child: Text(
+                          lab.location.isNotEmpty
+                              ? lab.location
+                              : 'Unknown location',
+                          style: TextStyle(
+                            color: AppColors.black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            fontFamily: 'Poppins',
+                          ),
+
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
-                  Text('📏 ${lab.distance}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+               //   Text('📏 ${lab.distance}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),

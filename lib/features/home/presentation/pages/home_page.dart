@@ -6,32 +6,18 @@ import 'package:user/features/home/presentation/pages/widgets/address_bottom_she
 import 'package:user/features/home/presentation/pages/widgets/bottom_nav_bar.dart';
 import 'package:user/features/home/presentation/pages/widgets/side_drawer.dart';
 import 'package:user/features/medlocker/presentation/pages/med_locker_list_page.dart';
+import 'package:user/features/pedometer/gps/new_gps/gps_tracker_dialog.dart';
 import 'package:user/features/pharmacy/presentation/pages/pharmacy_tab.dart';
 import 'package:user/features/profile/presentation/pages/profile_page.dart';
+import 'package:user/features/wallet/presentation/pages/payment_screen.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../contact_us/presentation/pages/contact_us_page.dart';
 import '../../../hospital/presentation/pages/hospitals_tab.dart';
 import '../../../labtest/presentation/pages/lab_tests_tab.dart';
-import '../address_bloc/address_bloc.dart';
-import '../address_bloc/address_event.dart';
-import '../address_bloc/address_state.dart';
-import 'bottom_pages/cart_tab.dart';
-import 'bottom_pages/home_tab.dart';
-import 'bottom_pages/orders_tab.dart';
-import 'bottom_pages/profile_tab.dart';
-import '../../../about/presentation/pages/about_page.dart';
 
-import 'package:flutter/material.dart';
-import 'package:user/core/theme/app_colors.dart';
-import 'package:user/features/home/presentation/pages/widgets/address_bottom_sheet.dart';
-import 'package:user/features/home/presentation/pages/widgets/bottom_nav_bar.dart';
-import 'package:user/features/home/presentation/pages/widgets/side_drawer.dart';
-import 'package:user/features/pharmacy/presentation/pages/pharmacy_tab.dart';
-import 'package:user/features/profile/presentation/pages/profile_page.dart';
-import '../../../../core/di/injection.dart';
-import '../../../../domain/entities/address.dart';
-import '../../../contact_us/presentation/pages/contact_us_page.dart';
+import '../../../pedometer/gps/new_gps/gps_bloc.dart';
+
 import '../address_bloc/address_bloc.dart';
 import '../address_bloc/address_event.dart';
 import '../address_bloc/address_state.dart';
@@ -57,6 +43,8 @@ class _HomePageState extends State<HomePage> {
   Address? _selectedAddress;
   String _displayAddress = "Select Address";
 
+  late GpsBloc _gpsBloc;
+
   final ValueNotifier<Address?> _selectedAddressNotifier = ValueNotifier(null);
 
   // Tabs list – not const because PharmacyTab is not constant
@@ -71,6 +59,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _gpsBloc = GpsBloc();
     _addressBloc = sl<AddressBloc>()..add(LoadAddresses());
     _addressBloc.stream.listen((state) {
       if (state is AddressLoaded) {
@@ -104,16 +93,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _addressBloc.close();
+    _gpsBloc = GpsBloc();
     _searchController.dispose();
     _searchNotifier.dispose();
     _selectedAddressNotifier.dispose();
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
-    // Provide the AddressBloc to the whole screen so PharmacyTab can access it
     return BlocProvider.value(
       value: _addressBloc,
       child: SafeArea(
@@ -124,6 +112,21 @@ class _HomePageState extends State<HomePage> {
           appBar: PreferredSize(
             preferredSize: const Size.fromHeight(60),
             child: _buildAppBar(),
+          ),
+          floatingActionButton: FloatingActionButton(
+            backgroundColor: AppColors.blue,
+            onPressed: () {
+              _gpsBloc.add(StartTracking()); //  start tracking
+
+              showDialog(
+                context: context,
+                builder: (_) => BlocProvider.value(
+                  value: _gpsBloc, //  provide bloc to dialog
+                  child: const GpsTrackerDialog(),
+                ),
+              );
+            },
+            child: const Icon(Icons.directions_walk,color: AppColors.whiteColor,),
           ),
           body: Column(
             children: [
@@ -291,8 +294,9 @@ class _HomePageState extends State<HomePage> {
                       );
                       break;
                     case 2:
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Wishlist coming soon')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PaymentScreen()),
                       );
                       break;
                     case 3:
@@ -340,4 +344,8 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+
+
+
 }

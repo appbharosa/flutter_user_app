@@ -168,75 +168,165 @@ class _PharmacyTabState extends State<PharmacyTab> {
     return Card(
       color: AppColors.whiteColor,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Pharmacy Image
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
               child: Image.network(
                 pharmacy.logo,
-                width: 60,
-                height: 60,
+                width: 65,
+                height: 65,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.store, size: 40),
+                errorBuilder: (_, __, ___) =>
+                const Icon(Icons.store, size: 40),
               ),
             ),
+
             const SizedBox(width: 12),
+
+            // Details Section
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(pharmacy.name,  style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,  // SemiBold
-                    fontFamily: 'Poppins',
-                  ),),
-                  const SizedBox(height: 4),
-                  if (pharmacy.openTime != null && pharmacy.closeTime != null)
-                    Text('⏰ ${pharmacy.openTime} - ${pharmacy.closeTime}', style: TextStyle(
+                  /// Pharmacy Name
+                  Text(
+                    pharmacy.name,
+                    style: const TextStyle(
                       color: AppColors.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       fontFamily: 'Poppins',
-                    ),),
-                  const SizedBox(height: 4),
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  /// Time Row
+                  if (pharmacy.openTime != null &&
+                      pharmacy.closeTime != null)
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time,
+                            size: 14, color: Colors.black),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${pharmacy.openTime} - ${pharmacy.closeTime}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.black,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ],
+                    ),
+
+                  const SizedBox(height: 6),
+
+                  /// Location Row
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.location_on, color: Colors.red, size: 20),
+                      const Icon(Icons.location_on,
+                          color: Colors.red, size: 16),
                       const SizedBox(width: 4),
                       Expanded(
-                        child:  Text(
+                        child: Text(
                           pharmacy.location,
                           style: const TextStyle(
                             color: AppColors.black,
                             fontSize: 13,
-                            fontWeight: FontWeight.w400,
                             fontFamily: 'Poppins',
                           ),
-                          softWrap: true,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Row(
+
+                  const SizedBox(height: 8),
+
+                  /// Tags Row (Delivery / Pickup + View Details)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
                     children: [
-                      Icon(Icons.delivery_dining, size: 14, color: pharmacy.homeDelivery == 'yes' ? Colors.green : Colors.red),
-                      const SizedBox(width: 4),
-                      Text(
-                        pharmacy.homeDelivery == 'yes' ? 'Home Delivery Available' : 'No Home Delivery',
-                        style: TextStyle(fontSize: 12, color: pharmacy.homeDelivery == 'yes' ? Colors.green : Colors.red),
+                      _buildTag(
+                        icon: pharmacy.homeDelivery == 'yes'
+                            ? Icons.delivery_dining
+                            : Icons.storefront,
+                        label: pharmacy.homeDelivery == 'yes'
+                            ? 'Home Delivery'
+                            : 'Pickup',
+                        color: pharmacy.homeDelivery == 'yes'
+                            ? Colors.green
+                            : Colors.orange,
                       ),
+                      _buildViewDetailsButton(),
                     ],
                   ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+  Widget _buildTag({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(20),
+        color: color.withOpacity(0.08),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildViewDetailsButton() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.blue),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        'View Details',
+        style: TextStyle(
+          fontSize: 12,
+          color: AppColors.blue,
+          fontWeight: FontWeight.w500,
+          fontFamily: 'Poppins',
         ),
       ),
     );

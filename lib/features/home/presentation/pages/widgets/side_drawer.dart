@@ -145,8 +145,8 @@ class SideMenuDialog extends StatelessWidget {
                       onTap: () => onMenuItemSelected(1),
                     ),
                     _buildMenuItem(
-                      icon: Icons.favorite_border,
-                      title: 'Wishlist',
+                      icon: Icons.wallet,
+                      title: 'Wallet',
                       onTap: () => onMenuItemSelected(2),
                     ),
                     _buildMenuItem(
