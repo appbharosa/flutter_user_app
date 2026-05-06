@@ -9,6 +9,7 @@ import 'package:user/features/medlocker/presentation/pages/med_locker_list_page.
 import 'package:user/features/pedometer/gps/new_gps/gps_tracker_dialog.dart';
 import 'package:user/features/pharmacy/presentation/pages/pharmacy_tab.dart';
 import 'package:user/features/profile/presentation/pages/profile_page.dart';
+import 'package:user/features/subscription/presentation/pages/subscriptions_page.dart';
 import 'package:user/features/wallet/presentation/pages/payment_screen.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../domain/entities/address.dart';
@@ -160,10 +161,13 @@ class _HomePageState extends State<HomePage> {
         IconButton(
           icon: const Icon(Icons.notifications_none, color: Colors.white),
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Notifications coming soon')),
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SubscriptionPage()),
             );
           },
+
+
         ),
         const SizedBox(width: 8),
       ],

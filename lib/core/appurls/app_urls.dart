@@ -20,6 +20,7 @@ class AppUrls{
   static const String createPharmacyOrder = "booking-pharmacy";
   static const String cashFreeWallet = "user-wallet-create";
   static const String cashFreePaymentStatus = "check-status";
+  static const String subscriptionList = "subscription-list";
 
 
 

@@ -1,7 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'gps_bloc.dart';
 
 class GpsTrackerDialog extends StatelessWidget {

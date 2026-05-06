@@ -14,6 +14,7 @@ import '../../data/data_sources/order_remote_datasource.dart';
 import '../../data/data_sources/payment_remote_datasource.dart';
 import '../../data/data_sources/pharmacy_remote_datasource.dart';
 import '../../data/data_sources/profile_remote_datasource.dart';
+import '../../data/data_sources/subscription_remote_datasource.dart';
 import '../../data/data_sources/user_local_datasource.dart';
 import '../../data/repositories/about_repository_impl.dart';
 import '../../data/repositories/address_repository_impl.dart';
@@ -26,6 +27,7 @@ import '../../data/repositories/order_repository_impl.dart';
 import '../../data/repositories/payment_repository_impl.dart';
 import '../../data/repositories/pharmacy_repository_impl.dart';
 import '../../data/repositories/profile_repository_impl.dart';
+import '../../data/repositories/subscription_repository_impl.dart';
 import '../../domain/repositories/about_repository.dart';
 import '../../domain/repositories/address_repository.dart';
 import '../../domain/repositories/contact_us_repository.dart';
@@ -37,6 +39,7 @@ import '../../domain/repositories/order_repository.dart';
 import '../../domain/repositories/payment_repository.dart';
 import '../../domain/repositories/pharmacy_repository.dart';
 import '../../domain/repositories/profile_repository.dart';
+import '../../domain/repositories/subscription_repository.dart';
 import '../../domain/use_cases/add_address_usecase.dart';
 import '../../domain/use_cases/add_med_locker_usecase.dart';
 import '../../domain/use_cases/check_payment_status_usecase.dart';
@@ -52,6 +55,7 @@ import '../../domain/use_cases/get_med_locker_detail_usecase.dart';
 import '../../domain/use_cases/get_med_lockers_usecase.dart';
 import '../../domain/use_cases/get_pharmacies_usecase.dart';
 import '../../domain/use_cases/get_profile_usecase.dart';
+import '../../domain/use_cases/get_subscription_plans_usecase.dart';
 import '../../domain/use_cases/login_usecase.dart';
 import '../../domain/use_cases/register_user_usecase.dart';
 import '../../domain/use_cases/submit_contact_us_usecase.dart';
@@ -73,6 +77,7 @@ import '../../features/pharmacy/presentation/bloc/pharmacy_bloc.dart';
 import '../../features/pharmacy/presentation/confirm_bloc/order_bloc.dart';
 import '../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../../features/registration/presentation/bloc/registration_bloc.dart';
+import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import '../../features/wallet/presentation/bloc/payment_bloc.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
@@ -106,6 +111,7 @@ Future<void> init() async {
   sl.registerLazySingleton<MedLockerRemoteDataSource>(() => MedLockerRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<OrderRemoteDataSource>(() => OrderRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<PaymentRemoteDataSource>(() => PaymentRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<SubscriptionRemoteDataSource>(() => SubscriptionRemoteDataSourceImpl(sl()));
 
 
   // ========== Repositories ==========
@@ -163,6 +169,10 @@ Future<void> init() async {
     remoteDataSource: sl(),
     networkInfo: sl(),
   ));
+  sl.registerLazySingleton<SubscriptionRepository>(() => SubscriptionRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
 
 
   // ========== Use Cases ==========
@@ -186,6 +196,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateOrderUseCase(sl()));
   sl.registerLazySingleton(() => CreateCashfreeOrderUseCase(sl()));
   sl.registerLazySingleton(() => CheckPaymentStatusUseCase(sl()));
+  sl.registerLazySingleton(() => GetSubscriptionPlansUseCase(sl()));
+
 
   // ========== BLoCs ==========
   sl.registerFactory(() => AuthBloc(sendOtpUseCase: sl()));
@@ -206,6 +218,7 @@ Future<void> init() async {
   sl.registerFactory(() => AddMedLockerBloc(addMedLockerUseCase: sl()));
   sl.registerFactory(() => OrderBloc(createOrderUseCase: sl()));
   sl.registerFactory(() => PaymentBloc(createOrderUseCase: sl(), checkStatusUseCase: sl(),));
+  sl.registerFactory(() => SubscriptionBloc(getSubscriptionPlansUseCase: sl()));
 
   sl.registerFactory(() => GpsBloc());
 

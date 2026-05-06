@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 // lib/features/home/presentation/tabs/home_tab.dart
 import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
+
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key});
 
@@ -13,14 +16,13 @@ class HomeTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // First row: Online Doctors & Offline Doctors
+          /// Row 1
           Row(
             children: [
               _buildServiceCard(
                 title: 'Online Doctors',
-                imagePath: 'assets/online_doctor.jpeg',
+                lottiePath: 'assets/animations/online_doctor.json',
                 onTap: () {
-                  // Add navigation later
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Online Doctors tapped')),
                   );
@@ -29,7 +31,7 @@ class HomeTab extends StatelessWidget {
               const SizedBox(width: 16),
               _buildServiceCard(
                 title: 'Offline Doctors',
-                imagePath: 'assets/offline_doctor.jpg',
+                lottiePath: 'assets/animations/health.json',
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Offline Doctors tapped')),
@@ -38,13 +40,15 @@ class HomeTab extends StatelessWidget {
               ),
             ],
           ),
+
           const SizedBox(height: 20),
-          // Second row: Pharmacy & Diagnostic
+
+          /// Row 2
           Row(
             children: [
               _buildServiceCard(
                 title: 'Pharmacy',
-                imagePath: 'assets/pharmacy.jpeg',
+                lottiePath: 'assets/animations/pharmacy.json',
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Pharmacy tapped')),
@@ -54,7 +58,7 @@ class HomeTab extends StatelessWidget {
               const SizedBox(width: 16),
               _buildServiceCard(
                 title: 'Diagnostic',
-                imagePath: 'assets/pharmacy.jpeg',
+                lottiePath: 'assets/animations/diagnostic.json',
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Diagnostic tapped')),
@@ -63,8 +67,8 @@ class HomeTab extends StatelessWidget {
               ),
             ],
           ),
+
           const SizedBox(height: 20),
-          // You can add more sections below (e.g., banners, offers)
         ],
       ),
     );
@@ -72,13 +76,14 @@ class HomeTab extends StatelessWidget {
 
   Widget _buildServiceCard({
     required String title,
-    required String imagePath,
+    required String lottiePath,
     required VoidCallback onTap,
   }) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
+          height: 170,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -91,23 +96,27 @@ class HomeTab extends StatelessWidget {
             ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.asset(
-                  imagePath,
-                  height: 120,
-                  fit: BoxFit.cover,
+              /// 🔥 LOTTIE ANIMATION
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Lottie.asset(
+                    lottiePath,
+                    fit: BoxFit.contain,
+                    repeat: true,
+                  ),
                 ),
               ),
+
+              /// TITLE
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   title,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
