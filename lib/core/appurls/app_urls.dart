@@ -21,7 +21,13 @@ class AppUrls{
   static const String cashFreeWallet = "user-wallet-create";
   static const String cashFreePaymentStatus = "check-status";
   static const String subscriptionList = "subscription-list";
-
+  static const String createOrder = "create-order";
+  static const String checkSubscriptionStatus = "subscription-submit";
+  static const String chooseFamilyMember ="get-family-member";
+  static const String diagnosticBooking = "booking-diagnostic";
+  static const String ongoingDiagnosticBookings = "diagnostic-ongoing-bookings";
+  static const String completedDiagnosticBookings = "diagnostic-completed-bookings";
+  static const String eachDiagnosticBooking = "diagnostic-booking-details";
 
 
   static const String banners = "banners";

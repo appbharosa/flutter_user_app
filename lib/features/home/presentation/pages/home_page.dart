@@ -1,32 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geocoding/geocoding.dart' hide Location;
+import 'package:geolocator/geolocator.dart';
 import 'package:user/core/theme/app_colors.dart';
 import 'package:user/features/diagnostic/presentation/pages/diagnostics_tab.dart';
 import 'package:user/features/home/presentation/pages/widgets/address_bottom_sheet.dart';
 import 'package:user/features/home/presentation/pages/widgets/bottom_nav_bar.dart';
 import 'package:user/features/home/presentation/pages/widgets/side_drawer.dart';
-import 'package:user/features/medlocker/presentation/pages/med_locker_list_page.dart';
 import 'package:user/features/pedometer/gps/new_gps/gps_tracker_dialog.dart';
 import 'package:user/features/pharmacy/presentation/pages/pharmacy_tab.dart';
-import 'package:user/features/profile/presentation/pages/profile_page.dart';
 import 'package:user/features/subscription/presentation/pages/subscriptions_page.dart';
-import 'package:user/features/wallet/presentation/pages/payment_screen.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../domain/entities/address.dart';
+import '../../../about/presentation/pages/about_page.dart';
 import '../../../contact_us/presentation/pages/contact_us_page.dart';
+import '../../../diagnostic/presentation/pages/diagnostic_booking_fetch_list_page.dart';
 import '../../../hospital/presentation/pages/hospitals_tab.dart';
 import '../../../labtest/presentation/pages/lab_tests_tab.dart';
-
+import '../../../medlocker/presentation/pages/med_locker_list_page.dart';
 import '../../../pedometer/gps/new_gps/gps_bloc.dart';
-
+import '../../../profile/presentation/pages/profile_page.dart';
+import '../../../wallet/presentation/pages/payment_screen.dart';
 import '../address_bloc/address_bloc.dart';
 import '../address_bloc/address_event.dart';
-import '../address_bloc/address_state.dart';
-import 'bottom_pages/cart_tab.dart';
 import 'bottom_pages/home_tab.dart';
-import 'bottom_pages/orders_tab.dart';
-import 'bottom_pages/profile_tab.dart';
-import '../../../about/presentation/pages/about_page.dart';
+import 'package:location/location.dart' as loc;
+import 'package:geocoding/geocoding.dart';
+
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -35,20 +36,19 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   final ValueNotifier<String> _searchNotifier = ValueNotifier('');
-
   late AddressBloc _addressBloc;
-  Address? _selectedAddress;
-  String _displayAddress = "Select Address";
-
   late GpsBloc _gpsBloc;
+  bool _locationDialogHandled = false;
+  bool _userDeniedLocation = false; // NEW: Track if user explicitly denied location
 
   final ValueNotifier<Address?> _selectedAddressNotifier = ValueNotifier(null);
+  Address? _currentLocationAddress;
+  String _displayAddress = "Select Address";
 
-  // Tabs list – not const because PharmacyTab is not constant
   late final List<Widget> _tabs = [
     const HomeTab(),
     HospitalsTab(searchNotifier: _searchNotifier, addressNotifier: _selectedAddressNotifier),
@@ -60,45 +60,184 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _gpsBloc = GpsBloc();
     _addressBloc = sl<AddressBloc>()..add(LoadAddresses());
-    _addressBloc.stream.listen((state) {
-      if (state is AddressLoaded) {
-        Address? defaultAddr;
-        if (state.addresses.isNotEmpty) {
-          try {
-            defaultAddr = state.addresses.firstWhere((a) => a.isDefault);
-          } catch (e) {
-            defaultAddr = state.addresses.first;
-          }
-        }
-        if (defaultAddr != null) {
-          _selectedAddressNotifier.value = defaultAddr;
-          setState(() {
-            _selectedAddress = defaultAddr;
-            _displayAddress = defaultAddr!.address;
-          });
-        }
-      }
-    });
-  }
-
-  void _onAddressSelected(Address address) {
-    _selectedAddressNotifier.value = address;
-    setState(() {
-      _selectedAddress = address;
-      _displayAddress = address.address;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleStartupLocationFlow();
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _addressBloc.close();
-    _gpsBloc = GpsBloc();
+    _gpsBloc.close();
     _searchController.dispose();
     _searchNotifier.dispose();
     _selectedAddressNotifier.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleStartupLocationFlow() async {
+    if (_locationDialogHandled) return;
+    _locationDialogHandled = true;
+
+    bool granted = await checkLocationService();
+    if (!granted && mounted) {
+      _userDeniedLocation = true; // User explicitly denied location
+      Future.delayed(
+        const Duration(milliseconds: 400),
+            () => _showAddressBottomSheet(),
+      );
+      return;
+    }
+
+    await _fetchCurrentLocation();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_userDeniedLocation) {
+      // Only fetch location if user did NOT deny it
+      _fetchCurrentLocation();
+    }
+  }
+
+  Future<void> _fetchCurrentLocation() async {
+    if (_userDeniedLocation) return; // Skip if user denied location
+    final location = await _getCurrentLocationAsAddress();
+    if (location != null && mounted) {
+      _currentLocationAddress = location;
+      _selectedAddressNotifier.value = location;
+      setState(() => _displayAddress = location.address);
+    }
+  }
+
+  Future<bool> checkLocationService() async {
+    final location = loc.Location();
+    bool serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      bool requested = await location.requestService();
+      if (!requested) return false;
+    }
+
+    final permissionGranted = await location.hasPermission();
+    if (permissionGranted == loc.PermissionStatus.denied) {
+      final newPermission = await location.requestPermission();
+      if (newPermission != loc.PermissionStatus.granted) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<void> _onSelectCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) {
+      _showSnackBar('Location permission denied', isError: true);
+      return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      await Geolocator.openAppSettings();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final location = await _getCurrentLocationAsAddress();
+    if (mounted) Navigator.pop(context);
+
+    if (location != null) {
+      _currentLocationAddress = location;
+      _onAddressSelected(location);
+      _userDeniedLocation = false; // Reset if user manually enables location
+    } else {
+      _showSnackBar('Unable to fetch current location', isError: true);
+    }
+  }
+
+  Future<Address?> _getCurrentLocationAsAddress() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        final fullAddress = [
+          place.name,
+          place.street,
+          place.locality,
+          place.administrativeArea,
+          place.postalCode,
+          place.country,
+        ].where((e) => e != null && e.isNotEmpty).join(', ');
+        return Address(
+          id: -1,
+          address: fullAddress,
+          hno: null,
+          buildingNo: null,
+          landmark: null,
+          lat: position.latitude.toString(),
+          lon: position.longitude.toString(),
+          addressType: 'current_location',
+          pincode: place.postalCode ?? '',
+          state: place.administrativeArea ?? '',
+          city: place.locality ?? '',
+          isDefault: false,
+        );
+      }
+    } catch (e) {
+      debugPrint("Location Error: $e");
+    }
+    return null;
+  }
+
+  void _showSnackBar(String message, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  void _onAddressSelected(Address address) {
+    _selectedAddressNotifier.value = address;
+    setState(() => _displayAddress = address.address);
+  }
+
+  void _showAddressBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => AddressBottomSheet(
+        onAddressSelected: _onAddressSelected,
+        currentAddress: _selectedAddressNotifier.value,
+        onSelectCurrentLocation: _onSelectCurrentLocation,
+      ),
+    );
   }
 
   @override
@@ -117,24 +256,20 @@ class _HomePageState extends State<HomePage> {
           floatingActionButton: FloatingActionButton(
             backgroundColor: AppColors.blue,
             onPressed: () {
-              _gpsBloc.add(StartTracking()); //  start tracking
-
+              _gpsBloc.add(StartTracking());
               showDialog(
                 context: context,
                 builder: (_) => BlocProvider.value(
-                  value: _gpsBloc, //  provide bloc to dialog
+                  value: _gpsBloc,
                   child: const GpsTrackerDialog(),
                 ),
               );
             },
-            child: const Icon(Icons.directions_walk,color: AppColors.whiteColor,),
+            child: const Icon(Icons.directions_walk, color: AppColors.whiteColor),
           ),
           body: Column(
             children: [
-              _buildSearchBar(),
-              Expanded(
-                child: _tabs[_selectedIndex],
-              ),
+              Expanded(child: _tabs[_selectedIndex]),
             ],
           ),
           bottomNavigationBar: BottomNavBar(
@@ -160,14 +295,10 @@ class _HomePageState extends State<HomePage> {
       actions: [
         IconButton(
           icon: const Icon(Icons.notifications_none, color: Colors.white),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SubscriptionPage()),
-            );
-          },
-
-
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SubscriptionPage()),
+          ),
         ),
         const SizedBox(width: 8),
       ],
@@ -177,12 +308,12 @@ class _HomePageState extends State<HomePage> {
   Widget _buildScrollableAddressChip() {
     final screenWidth = MediaQuery.of(context).size.width;
     return GestureDetector(
-      onTap: () => _showAddressBottomSheet(),
+      onTap: _showAddressBottomSheet,
       child: Container(
         width: screenWidth * 0.7,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white. withOpacity(0.2),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -208,60 +339,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        bottomLeft: Radius.circular(10),
-        bottomRight: Radius.circular(10),
-      ),
-      child: Container(
-        color: AppColors.blue,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search doctors, medicines, diagnostics...',
-              hintStyle: TextStyle(color: Colors.grey.shade400),
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                icon: const Icon(Icons.clear, color: Colors.grey),
-                onPressed: () {
-                  _searchController.clear();
-                  _searchNotifier.value = '';
-                  setState(() {});
-                },
-              )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            onChanged: (value) {
-              _searchNotifier.value = value;
-              setState(() {});
-            },
-            onSubmitted: (value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Searching for: $value')),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showSideMenuDialog(BuildContext context) {
     showGeneralDialog(
@@ -316,11 +393,17 @@ class _HomePageState extends State<HomePage> {
                       );
                       break;
                     case 5:
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const DiagnosticBookingFetchListPage()),
+                      );
+                      break;
+                    case 6:
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Contact Us coming soon')),
                       );
                       break;
-                    case 6:
+                    case 7:
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Logout coming soon')),
                       );
@@ -334,22 +417,5 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
-
-  void _showAddressBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => AddressBottomSheet(
-        onAddressSelected: _onAddressSelected,
-        currentAddress: _selectedAddress,
-      ),
-    );
-  }
-
-
-
 
 }

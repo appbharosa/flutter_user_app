@@ -159,6 +159,11 @@ class SideMenuDialog extends StatelessWidget {
                       title: 'contact_us'.tr(),
                       onTap: () => onMenuItemSelected(4),
                     ),
+                    _buildMenuItem(
+                      icon: Icons.contact_page,
+                      title: "Diagnostic Bookings",
+                      onTap: () => onMenuItemSelected(5),
+                    ),
                     const Divider(height: 20, thickness: 1),
                     _buildMenuItem(
                       icon: Icons.logout,

@@ -6,25 +6,26 @@ import '../../../../domain/entities/subscription_plan.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
+import '../create_order_bloc/subscription_payment_bloc.dart';
+import '../create_order_bloc/subscription_payment_event.dart';
+import '../../../../core/services/cashfree_service.dart';
+import '../../../../domain/entities/subscription_order.dart'; // make sure this exists
+import '../create_order_bloc/subscription_payment_state.dart';
+import 'package:flutter_cashfree_pg_sdk/utils/cfenums.dart';
 
 class SubscriptionPage extends StatelessWidget {
   const SubscriptionPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => sl<SubscriptionBloc>()..add(LoadSubscriptionPlans()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => sl<SubscriptionBloc>()..add(LoadSubscriptionPlans())),
+        BlocProvider(create: (context) => sl<SubscriptionPaymentBloc>()),
+      ],
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-            'Subscription Plans',
-            style: TextStyle(
-              color: AppColors.whiteColor,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-            ),
-          ),
+          title: const Text('Subscription Plans'),
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
         ),
@@ -54,7 +55,7 @@ class SubscriptionPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
-                    height: 640, // Increased to fit more benefits comfortably
+                    height: 640,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -97,102 +98,54 @@ class SubscriptionPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            /// 🔥 HEADER
+            /// HEADER
             Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF1F52A5),
-                    Color(0xFF4CAF50),
-                    Color(0xFFFFD54F),
-                  ],
+                  colors: [Color(0xFF1F52A5), Color(0xFF4CAF50), Color(0xFFFFD54F)],
                 ),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    plan.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                  Text(plan.name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
-                  Text(
-                    plan.duration,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                  Text(plan.duration, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Text(
-                        '₹${plan.finalPrice.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text('₹${plan.finalPrice.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                       if (plan.price > plan.finalPrice) ...[
                         const SizedBox(width: 8),
-                        Text(
-                          '₹${plan.price.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
+                        Text('₹${plan.price.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white70, fontSize: 14, decoration: TextDecoration.lineThrough)),
                       ],
                     ],
                   ),
                 ],
               ),
             ),
-
-            ///  BENEFITS
+            /// BENEFITS
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                children: plan.benefits.map<Widget>((benefit) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.check_circle,
-                            size: 18, color: Colors.green),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            benefit,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontFamily: 'Poppins',
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                children: plan.benefits.map((benefit) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.check_circle, size: 18, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(benefit, style: const TextStyle(fontSize: 13))),
+                    ],
+                  ),
+                )).toList(),
               ),
             ),
-
-            /// 🔥 BUTTON (INSIDE SAME CARD)
+            /// BUTTON
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
               child: SizedBox(
@@ -201,19 +154,10 @@ class SubscriptionPage extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blue,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => _showPriceBottomSheet(context, plan),
-                  child: const Text(
-                    "View Details",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                  child: const Text("View Details", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                 ),
               ),
             ),
@@ -224,62 +168,91 @@ class SubscriptionPage extends StatelessWidget {
   }
 
   void _showPriceBottomSheet(BuildContext context, SubscriptionPlan plan) {
+    final paymentBloc = context.read<SubscriptionPaymentBloc>();
+    final amount = plan.totalAmount.ceil();
+
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Price Details',
-              style: TextStyle(
-                color: AppColors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Poppins',
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildDetailRow('Plan', plan.name),
-            _buildDetailRow('Subtotal', '₹${plan.finalPrice.toStringAsFixed(2)}'),
-            _buildDetailRow('Persons Covered', plan.personsCovered.toString()),
-            _buildDetailRow('GST (18%)', '₹${plan.gstAmount.toStringAsFixed(2)}'),
-            const Divider(height: 32, thickness: 1),
-            _buildDetailRow('Total Amount', '₹${plan.totalAmount.toStringAsFixed(2)}', isTotal: true),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.blue,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) {
+        return BlocProvider.value(
+          value: paymentBloc,
+          child: BlocConsumer<SubscriptionPaymentBloc, SubscriptionPaymentState>(
+            listener: (context, state) {
+              if (state is SubscriptionPaymentOrderCreated) {
+                Navigator.pop(context); // close bottom sheet
+                _openCashfreeCheckout(context, state.order, state.subscriptionId, paymentBloc);
+              } else if (state is SubscriptionPaymentError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                );
+              } else if (state is SubscriptionPaymentSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Subscription successful!'), backgroundColor: Colors.green),
+                );
+                Navigator.popUntil(context, (route) => route.isFirst); // go back to home
+              }
+            },
+            builder: (context, state) {
+              return Container(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Price Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 16),
+                    _buildDetailRow('Plan', plan.name),
+                    _buildDetailRow('Subtotal', '₹${plan.finalPrice.toStringAsFixed(2)}'),
+                    _buildDetailRow('Persons Covered', plan.personsCovered.toString()),
+                    _buildDetailRow('GST (18%)', '₹${plan.gstAmount.toStringAsFixed(2)}'),
+                    const Divider(height: 32, thickness: 1),
+                    _buildDetailRow('Total Amount', '₹${plan.totalAmount.toStringAsFixed(2)}', isTotal: true),
+                    const SizedBox(height: 24),
+                    state is SubscriptionPaymentLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          paymentBloc.add(CreateSubscriptionPaymentOrder(amount, plan.id));
+                        },
+                        child: const Text(
+                          'Subscribe Now',
+                          style: TextStyle(color: AppColors.whiteColor, fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Proceed to payment'), backgroundColor: Colors.green),
-                  );
-                },
-                child: const Text(
-                  'Subscribe Now',
-                  style: TextStyle(
-                    color: AppColors.whiteColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _openCashfreeCheckout(BuildContext context, SubscriptionOrder order, int subscriptionId, SubscriptionPaymentBloc bloc) {
+    final cashfree = sl<CashfreeService>();
+    cashfree.startPayment(
+      orderId: order.orderId,
+      paymentSessionId: order.paymentSessionId,
+      environment: CFEnvironment.SANDBOX,
+      onSuccess: (orderId) {
+        bloc.add(ConfirmSubscriptionPayment(orderId, subscriptionId));
+      },
+      onFailure: (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
+      },
     );
   }
 
@@ -289,24 +262,8 @@ class SubscriptionPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.black,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.black,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         ],
       ),
     );

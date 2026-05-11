@@ -10,6 +10,7 @@ import '../../../language/bloc/language_state.dart';
 import '../bloc/diagnostic_bloc.dart';
 import '../bloc/diagnostic_event.dart';
 import '../bloc/diagnostic_state.dart';
+import 'attach_prescription_page.dart';
 
 
 
@@ -141,7 +142,11 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
                   );
                 }
                 final diagnostic = displayList[index];
-                return _buildDiagnosticCard(diagnostic);
+                return GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => AttachPrescriptionPage(diagnosticId: diagnostic.id,diagnosticAddress:diagnostic.location)));
+                    },
+                    child: _buildDiagnosticCard(diagnostic));
               },
             );
           } else if (state is DiagnosticError) {

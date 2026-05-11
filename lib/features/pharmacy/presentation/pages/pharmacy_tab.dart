@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user/features/pharmacy/presentation/pages/pharmacy_detail_page.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../data/models/pharmacy_order.dart';
+import '../../../../data/models/pharmacy_order_status.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/pharmacy.dart';
 import '../../../language/bloc/language_bloc.dart';
@@ -332,3 +334,6 @@ class _PharmacyTabState extends State<PharmacyTab> {
     );
   }
 }
+
+
+

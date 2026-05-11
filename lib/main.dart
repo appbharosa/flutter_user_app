@@ -9,6 +9,17 @@ import 'features/language/bloc/language_state.dart';
 import 'domain/repositories/auth_repository.dart';
 
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'core/di/injection.dart' as di;
+import 'core/utils/navigation.dart';      // global navigatorKey
+import 'core/utils/translations.dart';
+import 'features/language/bloc/language_bloc.dart';
+import 'features/language/bloc/language_state.dart';
+import 'features/splash/presentation/splash_page.dart';
+import 'features/home/presentation/pages/home_page.dart';
+import 'features/auth/presentation/pages/login_page.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await di.init();
@@ -16,13 +27,10 @@ Future<void> main() async {
   final authRepo = di.sl<AuthRepository>();
   final result = await authRepo.getSavedUser();
 
-  // ✅ initialize with a default value
   Widget startScreen = const SplashPage();
 
   result.fold(
-        (failure) {
-      startScreen = const SplashPage();
-    },
+        (failure) => startScreen = const SplashPage(),
         (user) {
       if (user.accessToken.isNotEmpty) {
         startScreen = const HomePage();
@@ -52,6 +60,7 @@ class MyApp extends StatelessWidget {
               primarySwatch: Colors.blue,
               fontFamily: 'Poppins',
             ),
+            navigatorKey: navigatorKey,          // ← critical
             home: startScreen,
             debugShowCheckedModeBanner: false,
           );
