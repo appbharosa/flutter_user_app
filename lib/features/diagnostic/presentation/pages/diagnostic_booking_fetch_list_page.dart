@@ -53,6 +53,8 @@ class _DiagnosticBookingFetchListPageState extends State<DiagnosticBookingFetchL
         ..add(LoadCompletedFetchBookings()),
       child: Scaffold(
         appBar: AppBar(
+          toolbarHeight: 70, // 🔥 Increased top AppBar height
+
           title: const Text(
             'Diagnostic Bookings',
             style: TextStyle(
@@ -62,36 +64,58 @@ class _DiagnosticBookingFetchListPageState extends State<DiagnosticBookingFetchL
               color: Colors.white,
             ),
           ),
+
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
-          elevation: 0,
+          elevation: 4,
+
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  color: Colors.white,
+            preferredSize: const Size.fromHeight(60), // 🔥 Increased tab area
+
+            child: Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: 10,
+              ),
+
+              child: Container(
+                height: 45, // 🔥 Proper tab height
+
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                labelColor: AppColors.blue,
-                unselectedLabelColor: Colors.white70,
-                labelStyle: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+
+                child: TabBar(
+                  controller: _tabController,
+                  dividerColor: Colors.transparent,
+                  indicator: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: Colors.white,
+                  ),
+
+                  indicatorSize: TabBarIndicatorSize.tab,
+
+                  labelColor: AppColors.blue,
+                  unselectedLabelColor: Colors.white70,
+
+                  labelStyle: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+
+                  unselectedLabelStyle: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+
+                  tabs: const [
+                    Tab(text: 'Ongoing'),
+                    Tab(text: 'Completed'),
+                  ],
                 ),
-                unselectedLabelStyle: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-                tabs: const [
-                  Tab(text: 'Ongoing'),
-                  Tab(text: 'Completed'),
-                ],
               ),
             ),
           ),
@@ -222,17 +246,17 @@ class _DiagnosticBookingFetchListPageState extends State<DiagnosticBookingFetchL
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.location_on, size: 14, color: Colors.red),
+                            const Icon(Icons.location_on, size: 18, color: Colors.red),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 item.location.isNotEmpty ? item.location : 'Address not provided',
                                 style: const TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontSize: 12,
-                                  color: Colors.grey,
+                                  fontSize: 13,
+
                                 ),
-                                maxLines: 2,
+                                maxLines: 4,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -249,7 +273,7 @@ class _DiagnosticBookingFetchListPageState extends State<DiagnosticBookingFetchL
                             'Booking ID: ${item.bookingId}',
                             style: const TextStyle(
                               fontFamily: 'Poppins',
-                              fontSize: 11,
+                              fontSize: 13,
                               fontWeight: FontWeight.w500,
                               color: AppColors.blue,
                             ),

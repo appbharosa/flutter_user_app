@@ -6,6 +6,7 @@ import 'diagnostic_booking_fetch_detail_event.dart';
 import 'diagnostic_booking_fetch_detail_state.dart';
 
 
+
 class DiagnosticBookingFetchDetailBloc extends Bloc<DiagnosticBookingFetchDetailEvent, DiagnosticBookingFetchDetailState> {
   final GetBookingFetchDetailUseCase getDetailUseCase;
   DiagnosticBookingFetchDetailBloc({required this.getDetailUseCase}) : super(DiagnosticBookingFetchDetailInitial()) {

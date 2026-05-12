@@ -1,9 +1,5 @@
-
-
 import 'package:equatable/equatable.dart';
-
 import '../../../../domain/entities/diagnostic_booking_fetch_detail.dart';
-
 abstract class DiagnosticBookingFetchDetailState extends Equatable {
   const DiagnosticBookingFetchDetailState();
   @override List<Object> get props => [];
@@ -14,8 +10,10 @@ class DiagnosticBookingFetchDetailLoading extends DiagnosticBookingFetchDetailSt
 class DiagnosticBookingFetchDetailLoaded extends DiagnosticBookingFetchDetailState {
   final DiagnosticBookingFetchDetail detail;
   const DiagnosticBookingFetchDetailLoaded(this.detail);
+  @override List<Object> get props => [detail];
 }
 class DiagnosticBookingFetchDetailError extends DiagnosticBookingFetchDetailState {
   final String message;
   const DiagnosticBookingFetchDetailError(this.message);
+  @override List<Object> get props => [message];
 }
