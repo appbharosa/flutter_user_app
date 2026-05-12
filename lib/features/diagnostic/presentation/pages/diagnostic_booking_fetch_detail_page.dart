@@ -119,7 +119,6 @@ class DiagnosticBookingFetchDetailPage extends StatelessWidget {
                                 height: 70,
                                 width: 70,
                                 fit: BoxFit.contain,
-
                                 errorBuilder:
                                     (_, __, ___) =>
                                 const Icon(
