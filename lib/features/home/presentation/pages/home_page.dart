@@ -16,6 +16,7 @@ import '../../../about/presentation/pages/about_page.dart';
 import '../../../contact_us/presentation/pages/contact_us_page.dart';
 import '../../../diagnostic/presentation/pages/diagnostic_booking_fetch_list_page.dart';
 import '../../../hospital/presentation/pages/hospitals_tab.dart';
+import '../../../labtest/presentation/pages/lab_test_booking_fetch_list_page.dart';
 import '../../../labtest/presentation/pages/lab_tests_tab.dart';
 import '../../../medlocker/presentation/pages/med_locker_list_page.dart';
 import '../../../pedometer/gps/new_gps/gps_bloc.dart';
@@ -398,12 +399,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         MaterialPageRoute(builder: (_) => const DiagnosticBookingFetchListPage()),
                       );
                       break;
+
                     case 6:
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LabTestBookingFetchListPage()),
+                      );
+                      break;
+                    case 7:
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Contact Us coming soon')),
                       );
                       break;
-                    case 7:
+                    case 8:
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Logout coming soon')),
                       );

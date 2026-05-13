@@ -1,0 +1,193 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:user/features/labtest/presentation/pages/select_lab_patient_page.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../diagnostic/presentation/family_members_bloc/family_members_bloc.dart';
+
+
+class AttachLabPrescriptionPage extends StatefulWidget {
+  final int labTestId;
+  final String labTestAddress;
+
+  const AttachLabPrescriptionPage({super.key, required this.labTestId, required this.labTestAddress, });
+
+  @override
+  State<AttachLabPrescriptionPage> createState() => _AttachLabPrescriptionPageState();
+}
+
+class _AttachLabPrescriptionPageState extends State<AttachLabPrescriptionPage> {
+  final List<File> _prescriptionFiles = [];
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(source: source);
+    if (picked != null) setState(() => _prescriptionFiles.add(File(picked.path)));
+  }
+
+  Future<void> _pickPDF() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+    );
+    if (result != null) setState(() => _prescriptionFiles.add(File(result.files.single.path!)));
+  }
+
+  void _removeFile(int index) => setState(() => _prescriptionFiles.removeAt(index));
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Attach Prescription',style: TextStyle(
+        color: AppColors.whiteColor,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,  // SemiBold
+        fontFamily: 'Poppins',
+      ),), backgroundColor: AppColors.blue, foregroundColor: Colors.white),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Upload Prescription',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, color: Colors.red, size: 20),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          widget.labTestAddress,
+                          style: const TextStyle(fontSize: 14, fontFamily: 'Poppins'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _pickImage(ImageSource.gallery),
+                          icon: const Icon(Icons.photo_library, size: 20),
+                          label: const Text('Gallery'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            side: const BorderSide(color: Colors.blue),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _pickImage(ImageSource.camera),
+                          icon: const Icon(Icons.camera_alt, size: 20),
+                          label: const Text('Camera'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            side: const BorderSide(color: Colors.blue),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _pickPDF,
+                          icon: const Icon(Icons.picture_as_pdf, size: 20),
+                          label: const Text('PDF'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            side: const BorderSide(color: Colors.blue),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (_prescriptionFiles.isNotEmpty) ...[
+                    const Text('Selected files:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _prescriptionFiles.length,
+                        itemBuilder: (context, index) => Stack(
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.grey.shade200,
+                                image: _prescriptionFiles[index].path.endsWith('.pdf') ? null : DecorationImage(image: FileImage(_prescriptionFiles[index]), fit: BoxFit.cover),
+                              ),
+                              child: _prescriptionFiles[index].path.endsWith('.pdf') ? const Center(child: Icon(Icons.picture_as_pdf, size: 40)) : null,
+                            ),
+                            Positioned(
+                              top: 0,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: () => _removeFile(index),
+                                child: const CircleAvatar(radius: 12, backgroundColor: Colors.red, child: Icon(Icons.close, size: 14, color: Colors.white)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                onPressed: _prescriptionFiles.isEmpty
+                    ? null
+                    : () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider(
+                        create: (context) => sl<FamilyMembersBloc>(),
+                        child: SelectLabPatientPage(
+                          labTestId: widget.labTestId,
+                          labTestAddress: widget.labTestAddress,
+                          prescriptionPaths: _prescriptionFiles.map((f) => f.path).toList(),
+
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Continue', style: TextStyle(color: Colors.white, fontSize: 16)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

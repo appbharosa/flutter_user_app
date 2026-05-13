@@ -7,10 +7,6 @@ import '../diagnostic_booking_fetch_detail_bloc/diagnostic_booking_fetch_detail_
 import '../diagnostic_booking_fetch_detail_bloc/diagnostic_booking_fetch_detail_state.dart';
 
 
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:user/core/theme/app_colors.dart';
-import '../../../../core/di/injection.dart';
 
 class DiagnosticBookingFetchDetailPage extends StatelessWidget {
   final String bookingId;

@@ -28,7 +28,14 @@ class AppUrls{
   static const String ongoingDiagnosticBookings = "diagnostic-ongoing-bookings";
   static const String completedDiagnosticBookings = "diagnostic-completed-bookings";
   static const String eachDiagnosticBooking = "diagnostic-booking-details";
-
+  static const String bookingLabTest ="booking-lab-test";
+  static const String labOngoingBookings = "lab-test-ongoing-bookings";
+  static const String labCompletedBookings = "lab-test-completed-bookings";
+  static const String labBookingDetails = "lab-test-booking-details";
+  static const String labSlotBooking = "lab-test-booking-slots";
+  static const String labTestBooking = "booking-lab-test";
+  static const String labCoupons ="lab-test-coupons-list";
+  static const String applyLabCoupon ="lab-test-apply-coupon";
 
   static const String banners = "banners";
 }

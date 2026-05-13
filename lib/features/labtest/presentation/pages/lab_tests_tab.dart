@@ -9,6 +9,9 @@ import '../../../language/bloc/language_state.dart';
 import '../bloc/lab_test_bloc.dart';
 import '../bloc/lab_test_event.dart';
 import '../bloc/lab_test_state.dart';
+import '../lab_slot_bloc/lab_slot_bloc.dart';
+import 'attach_lab_prescription_page.dart';
+import 'lab_test_booking_page.dart';
 
 
 
@@ -140,7 +143,37 @@ class _LabTestsTabState extends State<LabTestsTab> {
                   );
                 }
                 final lab = displayList[index];
-                return _buildLabTestCard(lab);
+                return GestureDetector(
+                    onTap: () {
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (_) => AttachLabPrescriptionPage(
+                      //       labTestId: lab.id,
+                      //       labTestAddress: lab.location,
+                      //     ),
+                      //   ),
+                      // );
+
+                      if (lab.packages.isNotEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider(
+                              create: (context) => sl<LabSlotBloc>(),
+                              child: LabTestBookingPage(labTest: lab),
+                            ),
+                          ),
+                        );                      } else {
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => AttachLabPrescriptionPage(
+                            labTestId: lab.id,
+                            labTestAddress: lab.location,
+                          ),
+                        ));
+                      }
+                    },
+                    child: _buildLabTestCard(lab));
               },
             );
           } else if (state is LabTestError) {

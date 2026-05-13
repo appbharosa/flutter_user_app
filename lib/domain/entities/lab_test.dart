@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
 
+import 'lab_test_package.dart';
+
+
 class LabTest extends Equatable {
   final int id;
   final String name;
@@ -10,6 +13,7 @@ class LabTest extends Equatable {
   final String lat;
   final String lon;
   final String distance;
+  final List<LabTestPackage> packages;
 
   const LabTest({
     required this.id,
@@ -21,6 +25,7 @@ class LabTest extends Equatable {
     required this.lat,
     required this.lon,
     required this.distance,
+    this.packages = const [],
   });
 
   @override
