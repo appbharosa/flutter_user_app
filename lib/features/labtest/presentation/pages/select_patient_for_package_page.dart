@@ -1,4 +1,3 @@
-// lib/features/labtest/presentation/pages/select_patient_for_package_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user/features/labtest/presentation/pages/lab_test_confirm_booking_page.dart';
@@ -8,9 +7,6 @@ import '../../../../domain/entities/family_member.dart';
 import '../../../diagnostic/presentation/family_members_bloc/family_members_bloc.dart';
 import '../../../diagnostic/presentation/family_members_bloc/family_members_event.dart';
 import '../../../diagnostic/presentation/family_members_bloc/family_members_state.dart';
-import 'confirm_lab_booking_page.dart';
-
-
 
 class SelectPatientForPackagePage extends StatelessWidget {
   final int labTestId;
@@ -124,7 +120,7 @@ class _FamilyListState extends State<_FamilyList> {
               final member = widget.members[index];
               final isSelected = _selectedMember?.id == member.id;
               return Card(
-                color: Colors.grey.shade100,
+                color: Colors.white70 ,
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: ListTile(
                   leading: Radio(value: member.id, groupValue: _selectedMember?.id, onChanged: (_) => setState(() => _selectedMember = member)),

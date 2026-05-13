@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
-
 import '../../../diagnostic/presentation/family_members_bloc/family_members_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../../../core/di/injection.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/lab_test.dart';
 import '../../../../domain/entities/lab_test_package.dart';
 import '../../../../domain/entities/lab_time_slot.dart';
-import '../../../diagnostic/presentation/family_members_bloc/family_members_bloc.dart';
 import '../lab_slot_bloc/lab_slot_bloc.dart';
 import 'select_patient_for_package_page.dart';
 
@@ -28,8 +22,14 @@ class LabTestBookingPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => sl<LabSlotBloc>(),
       child: Scaffold(
+        backgroundColor: AppColors.whiteColor,
         appBar: AppBar(
-          title: const Text('Book Lab Test'),
+          title: const Text('Book Lab Test',style: TextStyle(
+            color: AppColors.whiteColor,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,  // SemiBold
+            fontFamily: 'Poppins',
+          )),
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
           elevation: 0,
@@ -120,11 +120,11 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
 
   double _getTotalAmount(LabTestPackage pkg, int persons) {
     switch (persons) {
-      case 1: return (pkg.onePerson - (pkg.onePersonDiscount ?? 0)).toDouble();
-      case 2: return (pkg.twoPerson - (pkg.twoPersonDiscount ?? 0)).toDouble();
-      case 3: return (pkg.threePerson - (pkg.threePersonDiscount ?? 0)).toDouble();
-      case 4: return (pkg.fourPerson - (pkg.fourPersonDiscount ?? 0)).toDouble();
-      case 5: return (pkg.fivePerson - (pkg.fivePersonDiscount ?? 0)).toDouble();
+      case 1: return (pkg.onePerson - (pkg.onePersonDiscount )).toDouble();
+      case 2: return (pkg.twoPerson - (pkg.twoPersonDiscount )).toDouble();
+      case 3: return (pkg.threePerson - (pkg.threePersonDiscount )).toDouble();
+      case 4: return (pkg.fourPerson - (pkg.fourPersonDiscount )).toDouble();
+      case 5: return (pkg.fivePerson - (pkg.fivePersonDiscount )).toDouble();
       default: return 0.0;
     }
   }
@@ -152,7 +152,7 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
               children: [
                 Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
                 const SizedBox(height: 20),
-                const Text('Select Package', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const Text('Select Package', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 ...widget.labTest.packages.map((pkg) {
                   final isSelected = _selectedPackage?.id == pkg.id;
@@ -252,7 +252,7 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
             labTestAddress: widget.labTest.location,
             prescriptionPaths: _prescriptionFiles.map((f) => f.path).toList(),
             slotId: slot.slotId,
-            slotTime: slot.time,
+            slotTime: slot.startTime,
             selectedDate: selectedDateStr,
             formattedDate: formattedDateStr,
             packageId: package.id,
@@ -297,7 +297,12 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Lab Address', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                        const Text('Lab Address',style:  TextStyle(
+                          color: AppColors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'Poppins',
+                        )),
                         const SizedBox(height: 4),
                         Text(widget.labTest.location, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                       ],
@@ -310,9 +315,7 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
           const SizedBox(height: 24),
 
           // Prescription Upload Section
-          const Text('Upload Prescription', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          const Text('Upload prescription file (mandatory) - JPG, PNG, or PDF', style: TextStyle(fontSize: 13, color: Colors.grey)),
+          const Text('Upload Prescription', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -403,7 +406,7 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
           ],
 
           // Date Selection
-          const Text('Select Date', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Select Date', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           InkWell(
             onTap: () async {
@@ -445,7 +448,7 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
           const SizedBox(height: 24),
 
           // Slots Section
-          const Text('Available Time Slots', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Available Time Slots', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           BlocBuilder<LabSlotBloc, LabSlotState>(
             builder: (context, state) {
@@ -463,7 +466,7 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(children: [Text(session.icon, style: const TextStyle(fontSize: 24)), const SizedBox(width: 8), Text(session.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600))]),
+                          Row(children: [Text(session.icon, style: const TextStyle(fontSize: 24)), const SizedBox(width: 8), Text(session.name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600))]),
                           const SizedBox(height: 12),
                           Wrap(
                             spacing: 12,
@@ -471,7 +474,12 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
                             children: availableSlots.map((slot) {
                               final isSelected = _selectedSlot?.slotId == slot.slotId;
                               return FilterChip(
-                                label: Text(slot.time),
+                                label: Text(slot.startTime,style: TextStyle(
+                                  color: AppColors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,  // SemiBold
+                                  fontFamily: 'Poppins',
+                                )),
                                 selected: isSelected,
                                 onSelected: (selected) {
                                   if (selected) _showPackageBottomSheet(slot);

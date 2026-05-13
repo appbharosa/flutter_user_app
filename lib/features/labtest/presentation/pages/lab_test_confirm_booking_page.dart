@@ -1,4 +1,3 @@
-// lib/features/lab_test_booking/presentation/pages/lab_test_confirm_booking_page.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -133,8 +132,14 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
           }
         },
         child: Scaffold(
+          backgroundColor: AppColors.whiteColor,
           appBar: AppBar(
-            title: const Text('Confirm Booking'),
+            title: const Text('Confirm Booking',style: TextStyle(
+              color: AppColors.whiteColor,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,  // SemiBold
+              fontFamily: 'Poppins',
+            )),
             backgroundColor: AppColors.blue,
             foregroundColor: Colors.white,
             elevation: 0,
@@ -180,7 +185,7 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
                           ),
                           const SizedBox(height: 20),
                           // Prescription Section
-                          const Text('Prescription', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const Text('Prescription', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 12),
                           widget.prescriptionPaths.isEmpty
                               ? const Text('No prescription uploaded', style: TextStyle(color: Colors.grey))
@@ -216,14 +221,14 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
                           ),
                           const SizedBox(height: 24),
                           // Appointment Details
-                          const Text('Appointment Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const Text('Appointment Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 12),
                           _buildInfoCard(icon: Icons.calendar_today, title: 'Date', content: widget.formattedDate, iconColor: Colors.green),
                           const SizedBox(height: 12),
                           _buildInfoCard(icon: Icons.access_time, title: 'Time Slot', content: widget.slotTime, iconColor: Colors.orange),
                           const SizedBox(height: 24),
                           // Package Details
-                          const Text('Package Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const Text('Package Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 12),
                           _buildInfoCard(icon: Icons.medical_services, title: 'Package', content: widget.packageName, iconColor: Colors.purple),
                           const SizedBox(height: 8),
@@ -232,7 +237,7 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
                           _buildInfoRow('Number of Persons', widget.personsCount.toString()),
                           const SizedBox(height: 24),
                           // Payment Summary
-                          const Text('Payment Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const Text('Payment Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 12),
                           _buildInfoCard(icon: Icons.currency_rupee, title: 'Total Amount', content: '₹${widget.totalAmount.toStringAsFixed(2)}', iconColor: Colors.green),
                           if (_couponApplied) ...[
@@ -261,7 +266,7 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
                           ),
                           const SizedBox(height: 24),
                           // Patient Details
-                          const Text('Patient Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const Text('Patient Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 12),
                           _buildInfoCard(icon: Icons.person, title: 'Name', content: widget.familyMember.name, iconColor: Colors.teal),
                           const SizedBox(height: 8),
@@ -330,7 +335,12 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                Text(title,style: TextStyle(
+                  color: AppColors.black,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,  // SemiBold
+                  fontFamily: 'Poppins',
+                )),
                 const SizedBox(height: 4),
                 Text(content, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
               ],
@@ -347,8 +357,18 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(label, style: TextStyle(
+            color: AppColors.black,
+            fontSize: 12,
+            fontWeight: FontWeight.w400,  // SemiBold
+            fontFamily: 'Poppins',
+          )),
+          Text(value,style: TextStyle(
+            color: AppColors.black,
+            fontSize: 12,
+            fontWeight: FontWeight.w400,  // SemiBold
+            fontFamily: 'Poppins',
+          )),
         ],
       ),
     );
