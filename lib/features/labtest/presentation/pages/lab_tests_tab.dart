@@ -145,34 +145,84 @@ class _LabTestsTabState extends State<LabTestsTab> {
                 final lab = displayList[index];
                 return GestureDetector(
                     onTap: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (_) => AttachLabPrescriptionPage(
-                      //       labTestId: lab.id,
-                      //       labTestAddress: lab.location,
-                      //     ),
-                      //   ),
-                      // );
-
                       if (lab.packages.isNotEmpty) {
+                        final address = widget.addressNotifier.value;
+                        if (address == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please select an address first'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => BlocProvider(
                               create: (context) => sl<LabSlotBloc>(),
-                              child: LabTestBookingPage(labTest: lab),
+                              child: LabTestBookingPage(
+                                labTest: lab,
+                                addressId: address.id,
+                              ),
                             ),
                           ),
-                        );                      } else {
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (_) => AttachLabPrescriptionPage(
-                            labTestId: lab.id,
-                            labTestAddress: lab.location,
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AttachLabPrescriptionPage(
+                              labTestId: lab.id,
+                              labTestAddress: lab.location,
+                            ),
                           ),
-                        ));
+                        );
                       }
                     },
+                    // onTap: () {
+                    //   // if (lab.packages.isNotEmpty) {
+                    //   //
+                    //   //   Navigator.push(
+                    //   //     context,
+                    //   //     MaterialPageRoute(
+                    //   //       builder: (_) => BlocProvider(
+                    //   //         create: (context) => sl<LabSlotBloc>(),
+                    //   //         child: LabTestBookingPage(
+                    //   //           labTest: lab,
+                    //   //           addressId: address.id,
+                    //   //         ),
+                    //   //       ),
+                    //   //     ),
+                    //   //   );
+                    //   // } else
+                    //   // {
+                    //   //   Navigator.push(context, MaterialPageRoute(
+                    //   //     builder: (_) => AttachLabPrescriptionPage(
+                    //   //       labTestId: lab.id,
+                    //   //       labTestAddress: lab.location,
+                    //   //     ),
+                    //   //   ));
+                    //   // }
+                    //   if (lab.packages.isNotEmpty) {
+                    //     final address = widget.addressNotifier.value;
+                    //     if (address == null) {
+                    //       ScaffoldMessenger.of(context).showSnackBar(
+                    //         const SnackBar(content: Text('Please select an address first'), backgroundColor: Colors.red),
+                    //       );
+                    //       return;
+                    //     }
+                    //     Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //         builder: (_) => BlocProvider(
+                    //           create: (context) => sl<LabSlotBloc>(),
+                    //           child: LabTestBookingPage(
+                    //             labTest: lab,
+                    //             addressId: address.id,
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     );
+                    //   }
+                    // },
                     child: _buildLabTestCard(lab));
               },
             );

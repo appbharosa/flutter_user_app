@@ -14,8 +14,8 @@ import 'select_patient_for_package_page.dart';
 
 class LabTestBookingPage extends StatelessWidget {
   final LabTest labTest;
-
-  const LabTestBookingPage({super.key, required this.labTest});
+  final int addressId;
+  const LabTestBookingPage({super.key, required this.labTest, required this.addressId,});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,10 @@ class LabTestBookingPage extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        body: _LabTestBookingContent(labTest: labTest),
+        body:_LabTestBookingContent(
+          labTest: labTest,
+          addressId: addressId,
+        ),
       ),
     );
   }
@@ -42,7 +45,8 @@ class LabTestBookingPage extends StatelessWidget {
 
 class _LabTestBookingContent extends StatefulWidget {
   final LabTest labTest;
-  const _LabTestBookingContent({required this.labTest});
+  final int addressId;
+  const _LabTestBookingContent({required this.labTest,required this.addressId});
 
   @override
   State<_LabTestBookingContent> createState() => _LabTestBookingContentState();
@@ -261,6 +265,7 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
             packageReportIn: package.reportIn,
             personsCount: persons,
             totalAmount: totalAmount,
+            addressId: widget.addressId, // ✅ pass the addressId
           ),
         ),
       ),

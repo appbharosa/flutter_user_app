@@ -36,6 +36,9 @@ class AppUrls{
   static const String labTestBooking = "booking-lab-test";
   static const String labCoupons ="lab-test-coupons-list";
   static const String applyLabCoupon ="lab-test-apply-coupon";
+  static const String labTestBookingWithPayment = "lab-test-booking-with-payment";
+  static const String labCreateCashfreeOrder = "create-order";
+
 
   static const String banners = "banners";
 }

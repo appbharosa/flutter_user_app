@@ -22,6 +22,7 @@ class SelectPatientForPackagePage extends StatelessWidget {
   final String packageReportIn;
   final int personsCount;
   final double totalAmount;
+  final int addressId;
 
   const SelectPatientForPackagePage({
     super.key,
@@ -38,6 +39,7 @@ class SelectPatientForPackagePage extends StatelessWidget {
     required this.packageReportIn,
     required this.personsCount,
     required this.totalAmount,
+    required this.addressId
   });
 
   @override
@@ -78,6 +80,7 @@ class SelectPatientForPackagePage extends StatelessWidget {
                         packageReportIn: packageReportIn,
                         personsCount: personsCount,
                         totalAmount: totalAmount,
+                        addressId: addressId,
                       ),
                     ),
                   );

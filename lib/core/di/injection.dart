@@ -11,7 +11,9 @@ import '../../data/data_sources/diagnostic_booking_remote_datasource.dart';
 import '../../data/data_sources/diagnostic_remote_datasource.dart';
 import '../../data/data_sources/family_member_remote_datasource.dart';
 import '../../data/data_sources/hospital_remote_datasource.dart';
+import '../../data/data_sources/lab_cashfree_order_remote_datasource.dart';
 import '../../data/data_sources/lab_coupon_remote_datasource.dart';
+import '../../data/data_sources/lab_payment_booking_remote_datasource.dart';
 import '../../data/data_sources/lab_slot_remote_datasource.dart';
 import '../../data/data_sources/lab_test_booking_fetch_remote_datasource.dart';
 import '../../data/data_sources/lab_test_booking_remote_datasource.dart';
@@ -32,7 +34,9 @@ import '../../data/repositories/diagnostic_booking_repository_impl.dart';
 import '../../data/repositories/diagnostic_repository_impl.dart';
 import '../../data/repositories/family_member_repository_impl.dart';
 import '../../data/repositories/hospital_repository_impl.dart';
+import '../../data/repositories/lab_cashfree_order_repository_impl.dart';
 import '../../data/repositories/lab_coupon_repository_impl.dart';
+import '../../data/repositories/lab_payment_booking_repository_impl.dart';
 import '../../data/repositories/lab_slot_repository_impl.dart';
 import '../../data/repositories/lab_test_booking_fetch_repository_impl.dart';
 import '../../data/repositories/lab_test_booking_repository_impl.dart';
@@ -52,7 +56,9 @@ import '../../domain/repositories/diagnostic_booking_repository.dart';
 import '../../domain/repositories/diagnostic_repository.dart';
 import '../../domain/repositories/family_member_repository.dart';
 import '../../domain/repositories/hospital_repository.dart';
+import '../../domain/repositories/lab_cashfree_order_repository.dart';
 import '../../domain/repositories/lab_coupon_repository.dart';
+import '../../domain/repositories/lab_payment_booking_repository.dart';
 import '../../domain/repositories/lab_slot_repository.dart';
 import '../../domain/repositories/lab_test_booking_fetch_repository.dart';
 import '../../domain/repositories/lab_test_booking_repository.dart';
@@ -70,6 +76,8 @@ import '../../domain/use_cases/apply_lab_coupon_usecase.dart';
 import '../../domain/use_cases/book_diagnostic_usecase.dart';
 import '../../domain/use_cases/check_payment_status_usecase.dart';
 import '../../domain/use_cases/create_cashfree_order_usecase.dart';
+import '../../domain/use_cases/create_lab_cashfree_order_usecase.dart';
+import '../../domain/use_cases/create_lab_payment_booking_usecase.dart';
 import '../../domain/use_cases/create_lab_test_order_usecase.dart';
 import '../../domain/use_cases/create_order_usecase.dart';
 import '../../domain/use_cases/create_subscription_order_usecase.dart';
@@ -111,6 +119,7 @@ import '../../features/hospital/presentation/bloc/hospital_bloc.dart';
 import '../../features/labtest/presentation/apply_lab_coupon_bloc/apply_lab_coupon_bloc.dart';
 import '../../features/labtest/presentation/bloc/lab_test_bloc.dart';
 import '../../features/labtest/presentation/lab_coupon_list_bloc/lab_coupon_list_bloc.dart';
+import '../../features/labtest/presentation/lab_payment_booking_bloc/lab_payment_booking_bloc.dart';
 import '../../features/labtest/presentation/lab_slot_bloc/lab_slot_bloc.dart';
 import '../../features/labtest/presentation/lab_test_booking_bloc/lab_test_booking_bloc.dart';
 import '../../features/labtest/presentation/lab_test_booking_fetch_detail_bloc/lab_test_booking_fetch_detail_bloc.dart';
@@ -171,6 +180,7 @@ Future<void> init() async {
   sl.registerLazySingleton<DiagnosticBookingFetchRemoteDataSource>(() => DiagnosticBookingFetchRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<LabTestBookingRemoteDataSource>(() => LabTestBookingRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<LabTestBookingFetchRemoteDataSource>(() => LabTestBookingFetchRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<LabCashfreeOrderRemoteDataSource>(() => LabCashfreeOrderRemoteDataSourceImpl(sl()));
 
 
   // ========== Repositories ==========
@@ -260,7 +270,15 @@ Future<void> init() async {
     remoteDataSource: sl(),
     networkInfo: sl(),
   ));
-
+  sl.registerLazySingleton<LabPaymentBookingRemoteDataSource>(() => LabPaymentBookingRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<LabPaymentBookingRepository>(() => LabPaymentBookingRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+  sl.registerLazySingleton<LabCashfreeOrderRepository>(() => LabCashfreeOrderRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
 
   // ========== Use Cases ==========
   sl.registerLazySingleton(() => SendOtpUseCase(sl()));
@@ -298,6 +316,10 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetLabSlotsUseCase(sl()));
   sl.registerLazySingleton(() => GetLabCouponsUseCase(sl()));
   sl.registerLazySingleton(() => ApplyLabCouponUseCase(sl()));
+  sl.registerLazySingleton(() => CreateLabPaymentBookingUseCase(sl()));
+  sl.registerLazySingleton(() => CreateLabCashfreeOrderUseCase(sl()));
+
+
 
   // ========== BLoCs ==========
   sl.registerFactory(() => AuthBloc(sendOtpUseCase: sl()));
@@ -323,7 +345,6 @@ Future<void> init() async {
   sl.registerFactory(() => FamilyMembersBloc(getFamilyMembersUseCase: sl()));
   sl.registerFactory(() => LabTestBookingBloc(createOrderUseCase: sl()));
   sl.registerFactory(() => DiagnosticBookingFetchListBloc(getOngoingUseCase: sl(), getCompletedUseCase: sl(),));
-
   sl.registerFactory(() => DiagnosticBookingFetchDetailBloc(getDetailUseCase: sl()));
   sl.registerFactory(() => SubscriptionPaymentBloc(createOrderUseCase: sl(), submitSubscriptionUseCase: sl(), cashfreeService: sl(),));
   sl.registerFactory(() => LabTestBookingFetchListBloc(getOngoingUseCase: sl(), getCompletedUseCase: sl(),));
@@ -331,8 +352,7 @@ Future<void> init() async {
   sl.registerFactory(() => LabSlotBloc(getSlotsUseCase: sl()));
   sl.registerFactory(() => LabCouponListBloc(getCouponsUseCase: sl()));
   sl.registerFactory(() => ApplyLabCouponBloc(applyCouponUseCase: sl()));
-
-
+  sl.registerFactory(() => LabPaymentBookingBloc(createBookingUseCase: sl()));
   sl.registerFactory(() => GpsBloc());
 
 

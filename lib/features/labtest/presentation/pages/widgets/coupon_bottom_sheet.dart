@@ -8,7 +8,7 @@ import '../../lab_coupon_list_bloc/lab_coupon_list_state.dart';
 
 
 class CouponBottomSheet extends StatelessWidget {
-  final Function(String) onCouponSelected;
+  final Function(String couponCode, int couponId) onCouponSelected;
   const CouponBottomSheet({super.key, required this.onCouponSelected});
 
   @override
@@ -23,32 +23,16 @@ class CouponBottomSheet extends StatelessWidget {
         builder: (context, scrollController) {
           return BlocBuilder<LabCouponListBloc, LabCouponListState>(
             builder: (context, state) {
-              if (state is LabCouponListLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state is LabCouponListError) {
-                return Center(child: Text(state.message));
-              }
-              if (state is LabCouponListLoaded && state.coupons.isEmpty) {
-                return const Center(child: Text('No coupons available'));
-              }
+              if (state is LabCouponListLoading) return const Center(child: CircularProgressIndicator());
+              if (state is LabCouponListError) return Center(child: Text(state.message));
+              if (state is LabCouponListLoaded && state.coupons.isEmpty) return const Center(child: Text('No coupons available'));
               if (state is LabCouponListLoaded) {
                 return Column(
                   children: [
                     const SizedBox(height: 12),
-                    Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
+                    Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Available Coupons',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Available Coupons', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Expanded(
                       child: ListView.builder(
@@ -65,7 +49,8 @@ class CouponBottomSheet extends StatelessWidget {
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () {
                                 Navigator.pop(context);
-                                onCouponSelected(coupon.name);
+                                // ✅ Pass both coupon code and ID
+                                onCouponSelected(coupon.name, coupon.id);
                               },
                             ),
                           );
