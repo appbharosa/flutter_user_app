@@ -24,7 +24,7 @@ class LabTestConfirmBookingPage extends StatefulWidget {
   final int labTestId;
   final String labTestAddress;
   final List<String> prescriptionPaths;
-  final FamilyMember familyMember;
+  final List<FamilyMember> familyMembers;
   final int slotId;
   final String slotTime;
   final String selectedDate;
@@ -42,7 +42,7 @@ class LabTestConfirmBookingPage extends StatefulWidget {
     required this.labTestId,
     required this.labTestAddress,
     required this.prescriptionPaths,
-    required this.familyMember,
+    required this.familyMembers,
     required this.slotId,
     required this.slotTime,
     required this.selectedDate,
@@ -70,13 +70,13 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
   String? _selectedCouponCode;
   int? _selectedCouponId;
 
-  late LabPaymentBookingBloc _paymentBloc; // ✅ created manually
+  late LabPaymentBookingBloc _paymentBloc;
 
   @override
   void initState() {
     super.initState();
     _displayAmount = widget.totalAmount;
-    _paymentBloc = sl<LabPaymentBookingBloc>(); // ✅ direct GetIt call
+    _paymentBloc = sl<LabPaymentBookingBloc>();
   }
 
   @override
@@ -168,7 +168,7 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
         fee: _displayAmount,
         date: widget.selectedDate,
         time: widget.slotTime,
-        familyMemberId: widget.familyMember.id,
+        familyMemberId: widget.familyMembers.first.id,
         couponId: _appliedCouponId,
         paymentType: paymentType,
         prescriptionPaths: widget.prescriptionPaths,
@@ -408,13 +408,13 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
                           _buildInfoCard(
                               icon: Icons.person,
                               title: 'Name',
-                              content: widget.familyMember.name,
+                              content: widget.familyMembers.first.name,
                               iconColor: Colors.teal),
                           const SizedBox(height: 8),
                           _buildInfoCard(
                               icon: Icons.phone,
                               title: 'Mobile',
-                              content: widget.familyMember.mobile,
+                              content: widget.familyMembers.first.mobile,
                               iconColor: Colors.teal),
                         ],
                       ),

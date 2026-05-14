@@ -39,7 +39,7 @@ class SelectPatientForPackagePage extends StatelessWidget {
     required this.packageReportIn,
     required this.personsCount,
     required this.totalAmount,
-    required this.addressId
+    required this.addressId,
   });
 
   @override
@@ -49,7 +49,7 @@ class SelectPatientForPackagePage extends StatelessWidget {
       child: Scaffold(
         backgroundColor: AppColors.whiteColor,
         appBar: AppBar(
-          title: const Text('Select Patient', style: TextStyle(color: AppColors.whiteColor, fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+          title: const Text('Select Patient(s)', style: TextStyle(color: AppColors.whiteColor, fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
         ),
@@ -61,7 +61,7 @@ class SelectPatientForPackagePage extends StatelessWidget {
             if (state is FamilyMembersLoaded) {
               return _FamilyList(
                 members: state.members,
-                onMemberSelected: (member) {
+                onMembersSelected: (selectedMembers) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -69,7 +69,7 @@ class SelectPatientForPackagePage extends StatelessWidget {
                         labTestId: labTestId,
                         labTestAddress: labTestAddress,
                         prescriptionPaths: prescriptionPaths,
-                        familyMember: member,
+                        familyMembers: selectedMembers, // ✅ list of selected members
                         slotId: slotId,
                         slotTime: slotTime,
                         selectedDate: selectedDate,
@@ -97,16 +97,26 @@ class SelectPatientForPackagePage extends StatelessWidget {
 
 class _FamilyList extends StatefulWidget {
   final List<FamilyMember> members;
-  final Function(FamilyMember) onMemberSelected;
+  final Function(List<FamilyMember>) onMembersSelected;
 
-  const _FamilyList({required this.members, required this.onMemberSelected});
+  const _FamilyList({required this.members, required this.onMembersSelected});
 
   @override
   State<_FamilyList> createState() => _FamilyListState();
 }
 
 class _FamilyListState extends State<_FamilyList> {
-  FamilyMember? _selectedMember;
+  List<FamilyMember> _selectedMembers = [];
+
+  void _toggleSelection(FamilyMember member) {
+    setState(() {
+      if (_selectedMembers.contains(member)) {
+        _selectedMembers.remove(member);
+      } else {
+        _selectedMembers.add(member);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,19 +124,20 @@ class _FamilyListState extends State<_FamilyList> {
       children: [
         const Padding(
           padding: EdgeInsets.all(16),
-          child: Text('Choose family member', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          child: Text('Choose family member(s)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ),
         Expanded(
           child: ListView.builder(
             itemCount: widget.members.length,
             itemBuilder: (context, index) {
               final member = widget.members[index];
-              final isSelected = _selectedMember?.id == member.id;
+              final isSelected = _selectedMembers.contains(member);
               return Card(
-                color: Colors.white70 ,
+                color: Colors.white70,
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: ListTile(
-                  leading: Radio(value: member.id, groupValue: _selectedMember?.id, onChanged: (_) => setState(() => _selectedMember = member)),
+                child: CheckboxListTile(
+                  value: isSelected,
+                  onChanged: (_) => _toggleSelection(member),
                   title: Text(member.name, style: const TextStyle(color: AppColors.black, fontSize: 14, fontWeight: FontWeight.w400, fontFamily: 'Poppins')),
                   subtitle: Text(member.mobile, style: const TextStyle(color: AppColors.black, fontSize: 14, fontWeight: FontWeight.w400, fontFamily: 'Poppins')),
                 ),
@@ -141,7 +152,7 @@ class _FamilyListState extends State<_FamilyList> {
             height: 50,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              onPressed: _selectedMember == null ? null : () => widget.onMemberSelected(_selectedMember!),
+              onPressed: _selectedMembers.isEmpty ? null : () => widget.onMembersSelected(_selectedMembers),
               child: const Text('Confirm', style: TextStyle(color: Colors.white, fontSize: 16)),
             ),
           ),
