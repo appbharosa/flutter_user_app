@@ -10,5 +10,6 @@ abstract class HospitalRepository {
     required String lang,
     required double lat,
     required double lon,
+    String? specialityIds,
   });
 }

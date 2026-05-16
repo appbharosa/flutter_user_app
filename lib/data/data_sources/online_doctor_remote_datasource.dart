@@ -1,65 +1,58 @@
 import 'package:dio/dio.dart';
 import '../../core/appurls/app_urls.dart';
-import '../../core/errors/exceptions.dart';
 import '../../core/network/dio_client.dart';
-import '../models/hospital_model.dart';
+import '../../core/errors/exceptions.dart';
+import '../models/online_doctor_model.dart';
 
-abstract class HospitalRemoteDataSource {
-  Future<List<HospitalModel>> getHospitals({
+abstract class OnlineDoctorRemoteDataSource {
+  Future<List<OnlineDoctorModel>> getDoctors({
     required int page,
     required int perPage,
     required String lang,
-    required double lat,
-    required double lon,
-    required String? specialityIds,
+    int? specialityId,
   });
-
   Future<int> getTotalPages();
 }
 
-class HospitalRemoteDataSourceImpl implements HospitalRemoteDataSource {
+class OnlineDoctorRemoteDataSourceImpl implements OnlineDoctorRemoteDataSource {
   final DioClient dioClient;
   int? _totalPages;
 
-  HospitalRemoteDataSourceImpl(this.dioClient);
+  OnlineDoctorRemoteDataSourceImpl(this.dioClient);
 
   @override
-  Future<List<HospitalModel>> getHospitals({
+  Future<List<OnlineDoctorModel>> getDoctors({
     required int page,
     required int perPage,
     required String lang,
-    required double lat,
-    required double lon,
-    String? specialityIds,
+    int? specialityId,
   }) async {
     try {
       final queryParams = {
         'page': page,
         'per_page': perPage,
         'lang': lang,
-        'lat': lat.toString(),
-        'lon': lon.toString(),
       };
-      if (specialityIds != null && specialityIds.isNotEmpty) {
-        queryParams['speciality_id'] = specialityIds;
+      if (specialityId != null && specialityId > 0) {
+        queryParams['speciality_id'] = specialityId;
       }
       final response = await dioClient.dio.get(
-        AppUrls.hospitalsList,
+        AppUrls.onlineDoctorsList,
         queryParameters: queryParams,
       );
       if (response.data['status'] == 200) {
-        final resultData = response.data['result'];
-        // If result is not a List or empty, return empty list
-        if (resultData is! List || resultData.isEmpty) {
+        // result is a List with one element (the pagination object)
+        final resultList = response.data['result'] as List;
+        if (resultList.isEmpty) {
           _totalPages = 1;
           return [];
         }
-        final resultMap = resultData[0] as Map<String, dynamic>;
-        final dataList = resultMap['data'] as List;
-        _totalPages = resultMap['last_page'];
-        return dataList.map((json) => HospitalModel.fromJson(json)).toList();
+        final paginationMap = resultList[0] as Map<String, dynamic>;
+        final dataList = paginationMap['data'] as List;
+        _totalPages = paginationMap['last_page'];
+        return dataList.map((json) => OnlineDoctorModel.fromJson(json)).toList();
       } else {
-        throw ServerException(response.data['message'] ?? 'Failed to load hospitals');
+        throw ServerException(response.data['message'] ?? 'Failed to load online doctors');
       }
     } on DioException catch (e) {
       throw _handleDioError(e);

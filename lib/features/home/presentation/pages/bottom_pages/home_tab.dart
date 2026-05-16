@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
+import '../../../../online_doctor/presentation/pages/online_doctors_screen.dart';
+
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key});
 
@@ -23,8 +25,9 @@ class HomeTab extends StatelessWidget {
                 title: 'Online Doctors',
                 lottiePath: 'assets/animations/online_doctor.json',
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Online Doctors tapped')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const OnlineDoctorsScreen()),
                   );
                 },
               ),

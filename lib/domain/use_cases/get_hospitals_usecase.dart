@@ -10,6 +10,7 @@ class GetHospitalsParams {
   final String lang;
   final double lat;
   final double lon;
+  final String specialityIds;
 
   GetHospitalsParams({
     required this.page,
@@ -17,6 +18,7 @@ class GetHospitalsParams {
     required this.lang,
     required this.lat,
     required this.lon,
+    required this.specialityIds
   });
 }
 
@@ -32,6 +34,7 @@ class GetHospitalsUseCase {
       lang: params.lang,
       lat: params.lat,
       lon: params.lon,
+        specialityIds:params.specialityIds
     );
   }
 }

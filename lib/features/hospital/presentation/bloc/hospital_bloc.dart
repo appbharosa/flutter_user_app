@@ -1,11 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
-
 import '../../../../domain/entities/hospital.dart';
 import '../../../../domain/use_cases/get_hospitals_usecase.dart';
 import 'hospital_event.dart';
 import 'hospital_state.dart';
-
 
 class HospitalBloc extends Bloc<HospitalEvent, HospitalState> {
   final GetHospitalsUseCase getHospitalsUseCase;
@@ -17,10 +14,13 @@ class HospitalBloc extends Bloc<HospitalEvent, HospitalState> {
   double _lat = 0.0;
   double _lon = 0.0;
   String _lang = 'en';
+  String? _specialityIds;
 
   HospitalBloc({required this.getHospitalsUseCase}) : super(HospitalInitial()) {
     on<LoadHospitals>(_onLoadHospitals);
     on<LoadMoreHospitals>(_onLoadMoreHospitals);
+    on<LoadHospitalsWithFilters>(_onLoadHospitalsWithFilters);
+    on<LoadMoreHospitalsWithFilters>(_onLoadMoreHospitalsWithFilters);
   }
 
   Future<void> _onLoadHospitals(LoadHospitals event, Emitter<HospitalState> emit) async {
@@ -31,12 +31,34 @@ class HospitalBloc extends Bloc<HospitalEvent, HospitalState> {
     _lat = event.lat;
     _lon = event.lon;
     _lang = event.lang;
+    _specialityIds = null;
+    await _fetchHospitals(emit, isFirstLoad: true);
+  }
+
+  Future<void> _onLoadHospitalsWithFilters(LoadHospitalsWithFilters event, Emitter<HospitalState> emit) async {
+    emit(HospitalLoading());
+    _allHospitals = [];
+    _currentPage = 1;
+    _hasMore = true;
+    _lat = event.lat;
+    _lon = event.lon;
+    _lang = event.lang;
+    _specialityIds = event.specialityIds;
+    print("🔍 Filtering with specialityIds: $_specialityIds");
     await _fetchHospitals(emit, isFirstLoad: true);
   }
 
   Future<void> _onLoadMoreHospitals(LoadMoreHospitals event, Emitter<HospitalState> emit) async {
     if (!_hasMore || _isLoadingMore) return;
     _isLoadingMore = true;
+    await _fetchHospitals(emit, isFirstLoad: false);
+    _isLoadingMore = false;
+  }
+
+  Future<void> _onLoadMoreHospitalsWithFilters(LoadMoreHospitalsWithFilters event, Emitter<HospitalState> emit) async {
+    if (!_hasMore || _isLoadingMore) return;
+    _isLoadingMore = true;
+    _specialityIds = event.specialityIds;
     await _fetchHospitals(emit, isFirstLoad: false);
     _isLoadingMore = false;
   }
@@ -48,10 +70,12 @@ class HospitalBloc extends Bloc<HospitalEvent, HospitalState> {
       lang: _lang,
       lat: _lat,
       lon: _lon,
+      specialityIds: _specialityIds.toString(),
     ));
     result.fold(
           (failure) => emit(HospitalError(failure.message)),
           (newHospitals) {
+        print("✅ Received ${newHospitals.length} hospitals");
         if (newHospitals.isEmpty) {
           _hasMore = false;
           if (isFirstLoad) emit(HospitalLoaded([], false));

@@ -19,6 +19,7 @@ class HospitalRepositoryImpl implements HospitalRepository {
     required String lang,
     required double lat,
     required double lon,
+    String? specialityIds,
   }) async {
     if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
     try {
@@ -28,6 +29,7 @@ class HospitalRepositoryImpl implements HospitalRepository {
         lang: lang,
         lat: lat,
         lon: lon,
+        specialityIds: specialityIds,
       );
       return Right(hospitals);
     } on ServerException catch (e) {

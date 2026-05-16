@@ -9,7 +9,8 @@ import '../../../language/bloc/language_state.dart';
 import '../bloc/hospital_bloc.dart';
 import '../bloc/hospital_event.dart';
 import '../bloc/hospital_state.dart';
-
+import '../hospital_filters_bloc/hospital_filters_bloc.dart';
+import 'hospital_filters_page.dart';
 
 
 class HospitalsTab extends StatefulWidget {
@@ -32,6 +33,7 @@ class _HospitalsTabState extends State<HospitalsTab> {
   String _searchQuery = '';
   List<Hospital> _originalHospitals = [];
   List<Hospital> _filteredHospitals = [];
+  String? _appliedSpecialityIds;
 
   @override
   void initState() {
@@ -66,8 +68,18 @@ class _HospitalsTabState extends State<HospitalsTab> {
       final lat = double.tryParse(address.lat) ?? 0.0;
       final lon = double.tryParse(address.lon) ?? 0.0;
       final lang = languageState.language.apiCode;
-      print("🏥 Loading hospitals with lat=$lat, lon=$lon, lang=$lang");
-      _hospitalBloc.add(LoadHospitals(page: 1, lat: lat, lon: lon, lang: lang));
+      print("🏥 Loading hospitals with lat=$lat, lon=$lon, lang=$lang, specialityIds=$_appliedSpecialityIds");
+      if (_appliedSpecialityIds != null && _appliedSpecialityIds!.isNotEmpty) {
+        _hospitalBloc.add(LoadHospitalsWithFilters(
+          page: 1,
+          lat: lat,
+          lon: lon,
+          lang: lang,
+          specialityIds: _appliedSpecialityIds!,
+        ));
+      } else {
+        _hospitalBloc.add(LoadHospitals(page: 1, lat: lat, lon: lon, lang: lang));
+      }
       setState(() => _dataLoaded = true);
     } else {
       print("⏳ HospitalsTab: address=${address?.address ?? 'null'}, language=${languageState is LanguageChanged ? languageState.language.name : 'not ready'}");
@@ -96,7 +108,11 @@ class _HospitalsTabState extends State<HospitalsTab> {
   void _onScroll() {
     if (_searchQuery.isEmpty) {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-        _hospitalBloc.add(LoadMoreHospitals());
+        if (_appliedSpecialityIds != null && _appliedSpecialityIds!.isNotEmpty) {
+          _hospitalBloc.add(LoadMoreHospitalsWithFilters(specialityIds: _appliedSpecialityIds!));
+        } else {
+          _hospitalBloc.add(LoadMoreHospitals());
+        }
       }
     }
   }
@@ -111,41 +127,112 @@ class _HospitalsTabState extends State<HospitalsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _hospitalBloc,
-      child: BlocBuilder<HospitalBloc, HospitalState>(
-        builder: (context, state) {
-          if (state is HospitalInitial || state is HospitalLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is HospitalLoaded) {
-            if (_originalHospitals.length != state.hospitals.length) {
-              _originalHospitals = List.from(state.hospitals);
-              _applyFilter();
-            }
-            final displayList = _searchQuery.isEmpty ? state.hospitals : _filteredHospitals;
-            if (displayList.isEmpty) {
-              return const Center(child: Text('No hospitals found'));
-            }
-            return ListView.builder(
-              controller: _scrollController,
-              itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == displayList.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator()),
+    return Column(
+      children: [
+        // Improved Filter Button
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: () {
+                final address = widget.addressNotifier.value;
+                final languageState = context.read<LanguageBloc>().state;
+                if (address != null && languageState is LanguageChanged) {
+                  final lat = double.tryParse(address.lat) ?? 0.0;
+                  final lon = double.tryParse(address.lon) ?? 0.0;
+                  final lang = languageState.language.apiCode;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider(
+                        create: (context) => sl<HospitalFiltersBloc>(),
+                        child: HospitalFiltersPage(
+                          lat: lat,
+                          lon: lon,
+                          lang: lang,
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select an address first'), backgroundColor: Colors.red),
                   );
                 }
-                final hospital = displayList[index];
-                return _buildHospitalCard(hospital);
               },
-            );
-          } else if (state is HospitalError) {
-            return Center(child: Text(state.message));
-          }
-          return const SizedBox();
-        },
-      ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.red,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.blue.withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.filter_alt, color: Colors.white, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Filter',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: BlocProvider.value(
+            value: _hospitalBloc,
+            child: BlocBuilder<HospitalBloc, HospitalState>(
+              builder: (context, state) {
+                if (state is HospitalInitial || state is HospitalLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state is HospitalLoaded) {
+                  if (_originalHospitals.length != state.hospitals.length) {
+                    _originalHospitals = List.from(state.hospitals);
+                    _applyFilter();
+                  }
+                  final displayList = _searchQuery.isEmpty ? state.hospitals : _filteredHospitals;
+                  if (displayList.isEmpty) {
+                    return const Center(child: Text('No hospitals found'));
+                  }
+                  return ListView.builder(
+                    controller: _scrollController,
+                    itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == displayList.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final hospital = displayList[index];
+                      return _buildHospitalCard(hospital);
+                    },
+                  );
+                } else if (state is HospitalError) {
+                  return Center(child: Text(state.message));
+                }
+                return const SizedBox();
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -174,53 +261,46 @@ class _HospitalsTabState extends State<HospitalsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(hospital.name,  style: TextStyle(
+                  Text(hospital.name, style: TextStyle(
                     color: AppColors.black,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Poppins',
-                  ),),
+                  )),
                   if (hospital.tagline.isNotEmpty) const SizedBox(height: 4),
                   if (hospital.tagline.isNotEmpty)
                     Text(hospital.tagline, style: TextStyle(
                       color: AppColors.black,
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,  // SemiBold
+                      fontWeight: FontWeight.w600,
                       fontFamily: 'Poppins',
-                    ),),
+                    )),
                   const SizedBox(height: 4),
                   if (hospital.openTime.isNotEmpty && hospital.closeTime.isNotEmpty)
                     Text('⏰ ${hospital.openTime} - ${hospital.closeTime}', style: TextStyle(
                       color: AppColors.black,
                       fontSize: 13,
-                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontWeight: FontWeight.w400,
                       fontFamily: 'Poppins',
-                    ),),
+                    )),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: AppColors.red,
-                      ),
-                      SizedBox(width: 4), // spacing between icon and text
+                      Icon(Icons.location_on, size: 16, color: AppColors.red),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          hospital.location.isNotEmpty
-                              ? hospital.location
-                              : 'Unknown location',
+                          hospital.location.isNotEmpty ? hospital.location : 'Unknown location',
                           style: TextStyle(
                             color: AppColors.black,
                             fontSize: 13,
                             fontWeight: FontWeight.w400,
                             fontFamily: 'Poppins',
                           ),
-
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),

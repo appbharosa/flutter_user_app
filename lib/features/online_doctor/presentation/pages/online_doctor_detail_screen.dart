@@ -1,0 +1,138 @@
+import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../domain/entities/online_doctor.dart';
+import 'online_doctor_slot_screen.dart';
+
+class OnlineDoctorDetailScreen extends StatelessWidget {
+  final OnlineDoctor doctor;
+  const OnlineDoctorDetailScreen({super.key, required this.doctor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Doctor Details', style: TextStyle(
+          color: AppColors.whiteColor,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'Poppins',
+        )),
+        backgroundColor: AppColors.blue,
+        foregroundColor: Colors.white,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Profile image
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(80),
+                      child: Image.network(
+                        doctor.image,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 80),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      doctor.name,
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      doctor.specialization,
+                      style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  // Qualification
+                  _buildDetailRow('Qualification', doctor.qualification),
+                  const SizedBox(height: 12),
+                  _buildDetailRow('Experience', '${doctor.specialization} years'),
+                  const SizedBox(height: 12),
+                  _buildDetailRow('Fee', '₹${doctor.fee}'),
+                  const SizedBox(height: 12),
+                  _buildDetailRow('Rating', '${doctor.totalRating} (${doctor.totalReviews} reviews)'),
+                  const SizedBox(height: 12),
+                  if (doctor.availability == 1)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Available Today',
+                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          // Bottom button
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OnlineDoctorSlotScreen(doctor: doctor),
+                      ),
+                    );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.blue,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  'Request Booking',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value.isNotEmpty ? value : 'Not specified',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+      ],
+    );
+  }
+}

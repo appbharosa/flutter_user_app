@@ -12,6 +12,17 @@ class AppUrls{
   static const String postAddress="address-add";
   static const String medicinesList ="medicines-list";
   static const String hospitalsList ="hospitals-list";
+  static const String hospitalFilters = "hospitals-filters";
+  static const String filteredHospitals = "online-doctors-list";
+  static const String filterHospitals ="all-hospitals";
+
+  static const String onlineDoctorsList = "online-doctors-list";
+  static const String onlineDoctorSpecialities = "online-doctor-specialities";
+  static const String onlineDoctorSlots = "online-doctors-slots";
+  static const String onlineDoctorCoupons = "online-doctor-coupons";
+  static const String onlineDoctorApplyCoupon = "online-doctor-coupons-apply";
+// Final booking will be added later
+
   static const String labsList ="labtest-list";
   static const String diagnosticList ="diagnostic-list";
   static const String medLockerList = "medlocker-list";
