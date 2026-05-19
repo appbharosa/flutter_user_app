@@ -18,6 +18,15 @@ class AppUrls{
   static const String hospitalMainData = "total-main-data";
   static const String hospitalMedicineBooking = "hospital-pharmacy-medicine-booking";
   static const String hospitalDiagnosticBooking = "hospital-diagnostic-booking";
+  static const String hospitalDiagnosticOngoing = "hospital-diagnostic-ongoing-bookings";
+  static const String hospitalDiagnosticCompleted = "hospital-diagnostic-completed-bookings";
+  static const String hospitalPharmacyOngoing = "hospitals-pharmacy-ongoing-booking";
+  static const String hospitalPharmacyCompleted = "hospital-pharmacy-completed-booking";
+  static const String hospitalDoctorActive= "doctor-bookings-history-active";
+  static const String hospitalDoctorCompleted = "doctor-bookings-history-completed";
+
+  static const String ambulanceBooking ="hospital-ambulance-booking";
+
 
   static const String onlineDoctorsList = "online-doctors-list";
   static const String onlineDoctorSpecialities = "online-doctor-specialities";

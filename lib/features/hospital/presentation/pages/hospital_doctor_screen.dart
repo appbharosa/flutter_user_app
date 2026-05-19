@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:user/features/hospital/presentation/pages/widgets/hospital_diagnostic_tab.dart';
 import 'package:user/features/hospital/presentation/pages/widgets/hospital_medicine_tab.dart';
 import '../../../../core/di/injection.dart';
@@ -8,6 +9,7 @@ import '../../../../domain/entities/hospital_doctor.dart';
 import '../hospital_main_data_bloc/hospital_main_data_bloc.dart';
 import '../hospital_main_data_bloc/hospital_main_data_event.dart';
 import '../hospital_main_data_bloc/hospital_main_data_state.dart';
+import 'ambulance_pages/ambulance_family_selection_screen.dart';
 
 
 
@@ -146,6 +148,24 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                       ],
                     ),
                   ),
+
+                  // Add this to the bottom of the Column in HospitalDoctorScreen, after TabBarView
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () => _showAmbulanceBottomSheet(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Admit', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                 ],
               );
             }
@@ -216,6 +236,65 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAmbulanceBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Ambulance SVG
+            SvgPicture.asset(
+              'assets/ambulance.svg',
+              height: 80,
+              width: 80,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Book Ambulance',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Emergency ambulance service will be dispatched to your location.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 45,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // close bottom sheet
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AmbulanceFamilySelectionScreen(
+                        hospitalId: widget.mainDataId,
+                        addressId: widget.addressId,
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.blue,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Book', style: TextStyle(color: Colors.white, fontSize: 16)),
+              ),
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),

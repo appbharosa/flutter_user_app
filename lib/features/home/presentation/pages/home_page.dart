@@ -15,6 +15,9 @@ import '../../../../domain/entities/address.dart';
 import '../../../about/presentation/pages/about_page.dart';
 import '../../../contact_us/presentation/pages/contact_us_page.dart';
 import '../../../diagnostic/presentation/pages/diagnostic_booking_fetch_list_page.dart';
+import '../../../hospital/presentation/pages/hospital_booking_history_screen.dart';
+import '../../../hospital/presentation/pages/hospital_doctor_booking_history_screen.dart';
+import '../../../hospital/presentation/pages/hospital_pharmacy_booking_history_screen.dart';
 import '../../../hospital/presentation/pages/hospitals_tab.dart';
 import '../../../labtest/presentation/pages/lab_test_booking_fetch_list_page.dart';
 import '../../../labtest/presentation/pages/lab_tests_tab.dart';
@@ -361,7 +364,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               padding: const EdgeInsets.only(top: 20),
               child: SideMenuDialog(
                 onMenuItemSelected: (index) {
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // close side menu
                   switch (index) {
                     case 0:
                       Navigator.push(
@@ -393,28 +396,38 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         MaterialPageRoute(builder: (_) => const ContactUsPage()),
                       );
                       break;
-                    case 5:
+                    case 5: // Normal Diagnostic Bookings
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const DiagnosticBookingFetchListPage()),
                       );
                       break;
-
-                    case 6:
+                    case 6: // LabTest Bookings
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const LabTestBookingFetchListPage()),
                       );
                       break;
-                    case 7:
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Contact Us coming soon')),
+                    case 9: // Hospital Diagnostic Bookings (new)
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HospitalBookingHistoryScreen()),
                       );
                       break;
-                    case 8:
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Logout coming soon')),
+                    case 10:
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HospitalPharmacyBookingHistoryScreen()),
                       );
+                      break;
+                    case 11:
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HospitalDoctorBookingHistoryScreen()),
+                      );
+                      break;
+                    default:
+                    // Optional: handle unknown index
                       break;
                   }
                 },

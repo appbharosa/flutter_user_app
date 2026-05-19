@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../data/data_sources/about_remote_datasource.dart';
 import '../../data/data_sources/address_remote_datasource.dart';
+import '../../data/data_sources/ambulance_booking_remote_datasource.dart';
 import '../../data/data_sources/auth_remote_datasource.dart';
 import '../../data/data_sources/banner_remote_datasource.dart';
 import '../../data/data_sources/contact_us_remote_datasource.dart';
@@ -10,11 +11,14 @@ import '../../data/data_sources/diagnostic_booking_fetch_remote_datasource.dart'
 import '../../data/data_sources/diagnostic_booking_remote_datasource.dart';
 import '../../data/data_sources/diagnostic_remote_datasource.dart';
 import '../../data/data_sources/family_member_remote_datasource.dart';
+import '../../data/data_sources/hospital_booking_history_remote_datasource.dart';
 import '../../data/data_sources/hospital_diagnostic_remote_datasource.dart';
+import '../../data/data_sources/hospital_doctor_booking_history_remote_datasource.dart';
 import '../../data/data_sources/hospital_filter_remote_datasource.dart';
 import '../../data/data_sources/hospital_filtered_remote_datasource.dart';
 import '../../data/data_sources/hospital_filters_remote_datasource.dart';
 import '../../data/data_sources/hospital_main_data_remote_datasource.dart';
+import '../../data/data_sources/hospital_pharmacy_booking_history_remote_datasource.dart';
 import '../../data/data_sources/hospital_remote_datasource.dart';
 import '../../data/data_sources/lab_cashfree_order_remote_datasource.dart';
 import '../../data/data_sources/lab_coupon_remote_datasource.dart';
@@ -38,16 +42,20 @@ import '../../data/data_sources/subscription_remote_datasource.dart';
 import '../../data/data_sources/user_local_datasource.dart';
 import '../../data/repositories/about_repository_impl.dart';
 import '../../data/repositories/address_repository_impl.dart';
+import '../../data/repositories/ambulance_booking_repository_impl.dart';
 import '../../data/repositories/contact_us_repository_impl.dart';
 import '../../data/repositories/diagnostic_booking_fetch_repository_impl.dart';
 import '../../data/repositories/diagnostic_booking_repository_impl.dart';
 import '../../data/repositories/diagnostic_repository_impl.dart';
 import '../../data/repositories/family_member_repository_impl.dart';
+import '../../data/repositories/hospital_booking_history_repository_impl.dart';
 import '../../data/repositories/hospital_diagnostic_repository_impl.dart';
+import '../../data/repositories/hospital_doctor_booking_history_repository_impl.dart';
 import '../../data/repositories/hospital_filter_repository_impl.dart';
 import '../../data/repositories/hospital_filtered_repository_impl.dart';
 import '../../data/repositories/hospital_filters_repository_impl.dart';
 import '../../data/repositories/hospital_main_data_repository_impl.dart';
+import '../../data/repositories/hospital_pharmacy_booking_history_repository_impl.dart';
 import '../../data/repositories/hospital_repository_impl.dart';
 import '../../data/repositories/lab_cashfree_order_repository_impl.dart';
 import '../../data/repositories/lab_coupon_repository_impl.dart';
@@ -70,16 +78,20 @@ import '../../data/repositories/subscription_payment_repository_impl.dart';
 import '../../data/repositories/subscription_repository_impl.dart';
 import '../../domain/repositories/about_repository.dart';
 import '../../domain/repositories/address_repository.dart';
+import '../../domain/repositories/ambulance_booking_repository.dart';
 import '../../domain/repositories/contact_us_repository.dart';
 import '../../domain/repositories/diagnostic_booking_fetch_repository.dart';
 import '../../domain/repositories/diagnostic_booking_repository.dart';
 import '../../domain/repositories/diagnostic_repository.dart';
 import '../../domain/repositories/family_member_repository.dart';
+import '../../domain/repositories/hospital_booking_history_repository.dart';
 import '../../domain/repositories/hospital_diagnostic_repository.dart';
+import '../../domain/repositories/hospital_doctor_booking_history_repository.dart';
 import '../../domain/repositories/hospital_filter_repository.dart';
 import '../../domain/repositories/hospital_filtered_repository.dart';
 import '../../domain/repositories/hospital_filters_repository.dart';
 import '../../domain/repositories/hospital_main_data_repository.dart';
+import '../../domain/repositories/hospital_pharmacy_booking_history_repository.dart';
 import '../../domain/repositories/hospital_repository.dart';
 import '../../domain/repositories/lab_cashfree_order_repository.dart';
 import '../../domain/repositories/lab_coupon_repository.dart';
@@ -104,6 +116,7 @@ import '../../domain/use_cases/add_address_usecase.dart';
 import '../../domain/use_cases/add_med_locker_usecase.dart';
 import '../../domain/use_cases/apply_lab_coupon_usecase.dart';
 import '../../domain/use_cases/apply_online_doctor_coupon_usecase.dart';
+import '../../domain/use_cases/book_ambulance.dart';
 import '../../domain/use_cases/book_diagnostic_usecase.dart';
 import '../../domain/use_cases/book_hospital_diagnostic.dart';
 import '../../domain/use_cases/book_medicine_usecase.dart';
@@ -123,8 +136,11 @@ import '../../domain/use_cases/get_completed_lab_test_bookings_usecase.dart';
 import '../../domain/use_cases/get_diagnostics_usecase.dart';
 import '../../domain/use_cases/get_family_members_usecase.dart';
 import '../../domain/use_cases/get_filtered_hospitals_usecase.dart';
+import '../../domain/use_cases/get_hospital_diagnostic_bookings.dart';
+import '../../domain/use_cases/get_hospital_doctor_bookings.dart';
 import '../../domain/use_cases/get_hospital_filters_usecase.dart';
 import '../../domain/use_cases/get_hospital_main_data_usecase.dart';
+import '../../domain/use_cases/get_hospital_pharmacy_bookings.dart';
 import '../../domain/use_cases/get_hospitals_usecase.dart';
 import '../../domain/use_cases/get_lab_coupons_usecase.dart';
 import '../../domain/use_cases/get_lab_slots_usecase.dart';
@@ -155,11 +171,15 @@ import '../../features/diagnostic/presentation/diagnostic_booking_fetch_detail_b
 import '../../features/diagnostic/presentation/diagnostic_bookings_bloc/diagnostic_booking_fetch_list_bloc.dart';
 import '../../features/diagnostic/presentation/family_members_bloc/family_members_bloc.dart';
 import '../../features/home/presentation/address_bloc/address_bloc.dart';
+import '../../features/hospital/presentation/ambulance_booking_bloc/ambulance_booking_bloc.dart';
 import '../../features/hospital/presentation/bloc/filtered_hospitals_bloc/filtered_hospitals_bloc.dart';
 import '../../features/hospital/presentation/bloc/hospital_bloc.dart';
 import '../../features/hospital/presentation/bloc/hospital_diagnostic_booking_bloc/hospital_diagnostic_booking_bloc.dart';
+import '../../features/hospital/presentation/hospital_booking_history_bloc/hospital_booking_history_bloc.dart';
+import '../../features/hospital/presentation/hospital_doctor_booking_history_bloc/hospital_doctor_booking_history_bloc.dart';
 import '../../features/hospital/presentation/hospital_filters_bloc/hospital_filters_bloc.dart';
 import '../../features/hospital/presentation/hospital_main_data_bloc/hospital_main_data_bloc.dart';
+import '../../features/hospital/presentation/hospital_pharmacy_booking_history_bloc/hospital_pharmacy_booking_history_bloc.dart';
 import '../../features/hospital/presentation/medicine_booking_bloc/medicine_booking_bloc.dart';
 import '../../features/labtest/presentation/apply_lab_coupon_bloc/apply_lab_coupon_bloc.dart';
 import '../../features/labtest/presentation/bloc/lab_test_bloc.dart';
@@ -240,9 +260,11 @@ Future<void> init() async {
   sl.registerLazySingleton<HospitalFilteredRemoteDataSource>(() => HospitalFilteredRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<HospitalMainDataRemoteDataSource>(() => HospitalMainDataRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<MedicineBookingRemoteDataSource>(() => MedicineBookingRemoteDataSourceImpl(sl()));
-  sl.registerLazySingleton<HospitalDiagnosticRemoteDataSource>(
-        () => HospitalDiagnosticRemoteDataSourceImpl(sl()),
-  );
+  sl.registerLazySingleton<HospitalDiagnosticRemoteDataSource>(() => HospitalDiagnosticRemoteDataSourceImpl(sl()),);
+  sl.registerLazySingleton<HospitalBookingHistoryRemoteDataSource>(() => HospitalBookingHistoryRemoteDataSourceImpl(dioClient: sl()),);
+  sl.registerLazySingleton<HospitalPharmacyBookingHistoryRemoteDataSource>(() => HospitalPharmacyBookingHistoryRemoteDataSourceImpl(sl()),);
+  sl.registerLazySingleton<HospitalDoctorBookingHistoryRemoteDataSource>(() => HospitalDoctorBookingHistoryRemoteDataSourceImpl(dioClient: sl()),);
+  sl.registerLazySingleton<AmbulanceBookingRemoteDataSource>(() => AmbulanceBookingRemoteDataSourceImpl(dioClient: sl()),);
 
   // ========== Repositories ==========
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
@@ -373,6 +395,25 @@ Future<void> init() async {
       networkInfo: sl(),
     ),
   );
+  sl.registerLazySingleton<HospitalBookingHistoryRepository>(() => HospitalBookingHistoryRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+  sl.registerLazySingleton<HospitalPharmacyBookingHistoryRepository>(() => HospitalPharmacyBookingHistoryRepositoryImpl(remoteDataSource: sl(), networkInfo: sl(),
+    ),
+  );
+  sl.registerLazySingleton<HospitalDoctorBookingHistoryRepository>(() => HospitalDoctorBookingHistoryRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+  sl.registerLazySingleton<AmbulanceBookingRepository>(
+        () => AmbulanceBookingRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
 
 
   // ========== Use Cases ==========
@@ -423,7 +464,10 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetHospitalMainDataUseCase(sl()));
   sl.registerLazySingleton(() => BookMedicineUseCase(sl()));
   sl.registerLazySingleton(() => BookHospitalDiagnosticUseCase(sl()));
-
+  sl.registerLazySingleton(() => GetHospitalDiagnosticBookingsUseCase(sl()));
+  sl.registerLazySingleton(() => GetHospitalPharmacyBookingsUseCase(sl()));
+  sl.registerLazySingleton(() => GetHospitalDoctorBookingsUseCase(sl()));
+  sl.registerLazySingleton(() => BookAmbulanceUseCase(sl()));
 
   // ========== BLoCs ==========
   sl.registerFactory(() => AuthBloc(sendOtpUseCase: sl()));
@@ -470,5 +514,8 @@ Future<void> init() async {
   sl.registerFactory(() => HospitalDiagnosticBookingBloc(
     bookHospitalDiagnosticUseCase: sl(),
   ));
-
+  sl.registerFactory(() => HospitalBookingHistoryBloc(getBookingsUseCase: sl()));
+  sl.registerFactory(() => HospitalPharmacyBookingHistoryBloc(getBookingsUseCase: sl()));
+  sl.registerFactory(() => HospitalDoctorBookingHistoryBloc(getBookingsUseCase: sl()));
+  sl.registerFactory(() => AmbulanceBookingBloc(bookAmbulanceUseCase: sl()));
 }

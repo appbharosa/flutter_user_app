@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:user/core/utils/translations.dart';
 import '../../../../../core/theme/app_colors.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 import '../../../../language/pages/language_selection_page.dart';
-
 
 class SideMenuDialog extends StatelessWidget {
   final Function(int) onMenuItemSelected;
@@ -46,13 +43,11 @@ class SideMenuDialog extends StatelessWidget {
     );
 
     if (shouldLogout == true) {
-      // Clear secure storage
       const storage = FlutterSecureStorage();
       await storage.delete(key: 'access_token');
       await storage.delete(key: 'user_data');
-      await storage.delete(key: 'user_registration_data'); // if any
+      await storage.delete(key: 'user_registration_data');
 
-      // Navigate to Language Selection Page and remove all previous routes
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -83,7 +78,7 @@ class SideMenuDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ----- Header -----
+            // Header
             Container(
               decoration: const BoxDecoration(
                 color: AppColors.blue,
@@ -107,7 +102,7 @@ class SideMenuDialog extends StatelessWidget {
                   const SizedBox(width: 12),
                   GestureDetector(
                     onTap: () {
-                      Navigator.of(context).pop(); // close side menu
+                      Navigator.of(context).pop();
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const LanguageSelectionPage(fromHome: true)),
@@ -128,7 +123,7 @@ class SideMenuDialog extends StatelessWidget {
               ),
             ),
 
-            // ----- Menu items -----
+            // Menu items
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -159,21 +154,59 @@ class SideMenuDialog extends StatelessWidget {
                       title: 'contact_us'.tr(),
                       onTap: () => onMenuItemSelected(4),
                     ),
+
+                    // --- Existing Diagnostic Bookings (Normal) ---
                     _buildMenuItem(
-                      icon: Icons.contact_page,
-                      title: "Diagnostic Bookings",
+                      icon: Icons.medical_services,
+                      title: 'Diagnostic Bookings',
                       onTap: () => onMenuItemSelected(5),
                     ),
+
+                    // --- Expandable Hospital Bookings (New) ---
+                    Theme(
+                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        leading: const Icon(Icons.local_hospital, color: Colors.black87),
+                        title: const Text(
+                          'Hospital Bookings',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                        ),
+                        children: [
+                          _buildSubMenuItem(
+                            title: 'Hospital Diagnostic Bookings',
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              onMenuItemSelected(9);
+                            },
+                          ),
+                          _buildSubMenuItem(
+                            title: 'Pharmacy Bookings',
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              onMenuItemSelected(10);
+                            },
+                          ),
+                          _buildSubMenuItem(
+                            title: 'Doctor Bookings',
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              onMenuItemSelected(11);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
                     _buildMenuItem(
-                      icon: Icons.contact_page,
-                      title: "LabTest Bookings",
+                      icon: Icons.science,
+                      title: 'LabTest Bookings',
                       onTap: () => onMenuItemSelected(6),
                     ),
                     const Divider(height: 20, thickness: 1),
                     _buildMenuItem(
                       icon: Icons.logout,
                       title: 'logout'.tr(),
-                      onTap: () => _showLogoutDialog(context),  // ✅ Show confirmation
+                      onTap: () => _showLogoutDialog(context),
                       textColor: Colors.red,
                     ),
                   ],
@@ -183,6 +216,26 @@ class SideMenuDialog extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+  Widget _buildSubMenuItem({
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: const Text('•', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          fontFamily: 'Poppins',
+        ),
+      ),
+      onTap: onTap,
+      dense: true,
+      horizontalTitleGap: 4, // reduces space between bullet and text
+      contentPadding: const EdgeInsets.only(left: 32),
     );
   }
 
@@ -198,7 +251,7 @@ class SideMenuDialog extends StatelessWidget {
         title,
         style: TextStyle(
           color: textColor ?? Colors.black87,
-          fontSize: 16,
+          fontSize: 14,
           fontWeight: FontWeight.w500,
           fontFamily: 'Poppins',
         ),
