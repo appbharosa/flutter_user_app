@@ -33,7 +33,9 @@ class AppUrls{
   static const String onlineDoctorSlots = "online-doctors-slots";
   static const String onlineDoctorCoupons = "online-doctor-coupons";
   static const String onlineDoctorApplyCoupon = "online-doctor-coupons-apply";
-// Final booking will be added later
+  static const String onlineDoctorActive = "online-doctor-bookings-history-active";
+  static const String onlineDoctorCompleted = "online-doctor-bookings-history-completed";
+
 
   static const String labsList ="labtest-list";
   static const String diagnosticList ="diagnostic-list";
@@ -61,6 +63,9 @@ class AppUrls{
   static const String applyLabCoupon ="lab-test-apply-coupon";
   static const String labTestBookingWithPayment = "lab-test-booking-with-payment";
   static const String labCreateCashfreeOrder = "create-order";
+  static const String pharmacyOngoing = "pharmacy-ongoing-bookings";
+  static const String pharmacyCompleted = "pharmacy-completed-bookings";
+  static const String eCard="ecard";
 
 
   static const String banners = "banners";

@@ -193,6 +193,7 @@ class SideMenuDialog extends StatelessWidget {
                               onMenuItemSelected(11);
                             },
                           ),
+
                         ],
                       ),
                     ),
@@ -201,6 +202,30 @@ class SideMenuDialog extends StatelessWidget {
                       icon: Icons.science,
                       title: 'LabTest Bookings',
                       onTap: () => onMenuItemSelected(6),
+                    ),
+                    _buildMenuItem(
+                      icon: Icons.medication,
+                      title: 'Pharmacy Bookings',
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onMenuItemSelected(12); // new index
+                      },
+                    ),
+                    _buildMenuItem(
+                      icon: Icons.credit_card,
+                      title: 'My eCard',
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onMenuItemSelected(13); // new index
+                      },
+                    ),
+                    _buildMenuItem(
+                      icon: Icons.medical_services,
+                      title: 'Online Doctor Bookings',
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onMenuItemSelected(14); // new index
+                      },
                     ),
                     const Divider(height: 20, thickness: 1),
                     _buildMenuItem(

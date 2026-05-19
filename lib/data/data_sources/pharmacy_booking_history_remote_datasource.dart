@@ -1,0 +1,69 @@
+// lib/features/pharmacy_booking_history/data/datasources/pharmacy_booking_history_remote_datasource.dart
+
+import 'package:dio/dio.dart';
+import '../../../../core/appurls/app_urls.dart';
+import '../../../../core/errors/exceptions.dart';
+import '../../../../core/network/dio_client.dart';
+import '../models/pharmacy_booking_item_model.dart';
+
+abstract class PharmacyBookingHistoryRemoteDataSource {
+  Future<List<PharmacyBookingItemModel>> getOngoingBookings(String language);
+  Future<List<PharmacyBookingItemModel>> getCompletedBookings(String language);
+}
+
+class PharmacyBookingHistoryRemoteDataSourceImpl implements PharmacyBookingHistoryRemoteDataSource {
+  final DioClient dioClient;
+  PharmacyBookingHistoryRemoteDataSourceImpl({required this.dioClient});
+
+  @override
+  Future<List<PharmacyBookingItemModel>> getOngoingBookings(String language) async {
+    try {
+      final response = await dioClient.dio.get(
+        AppUrls.pharmacyOngoing,
+        queryParameters: {'lang': language},
+      );
+      return _parseResponse(response);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  @override
+  Future<List<PharmacyBookingItemModel>> getCompletedBookings(String language) async {
+    try {
+      final response = await dioClient.dio.get(
+        AppUrls.pharmacyCompleted,
+        queryParameters: {'lang': language},
+      );
+      return _parseResponse(response);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  List<PharmacyBookingItemModel> _parseResponse(Response response) {
+    if (response.data['status'] == 200) {
+      final result = response.data['result'];
+      List<dynamic> list = [];
+      if (result is Map && result.containsKey('data')) {
+        list = result['data'] ?? [];
+      } else if (result is List) {
+        list = result;
+      }
+      return list.map((json) => PharmacyBookingItemModel.fromJson(json)).toList();
+    } else {
+      throw ServerException(response.data['message'] ?? 'Failed to load bookings');
+    }
+  }
+
+  Exception _handleError(DioException e) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.connectionError) {
+      return NetworkException();
+    }
+    if (e.response?.statusCode == 401) return UnauthorizedException();
+    final message = e.response?.data['message'] ?? 'Server error';
+    return ServerException(message);
+  }
+}

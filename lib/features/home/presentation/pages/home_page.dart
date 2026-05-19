@@ -15,6 +15,7 @@ import '../../../../domain/entities/address.dart';
 import '../../../about/presentation/pages/about_page.dart';
 import '../../../contact_us/presentation/pages/contact_us_page.dart';
 import '../../../diagnostic/presentation/pages/diagnostic_booking_fetch_list_page.dart';
+import '../../../ecard/presentation/pages/ecard_screen.dart';
 import '../../../hospital/presentation/pages/hospital_booking_history_screen.dart';
 import '../../../hospital/presentation/pages/hospital_doctor_booking_history_screen.dart';
 import '../../../hospital/presentation/pages/hospital_pharmacy_booking_history_screen.dart';
@@ -22,7 +23,9 @@ import '../../../hospital/presentation/pages/hospitals_tab.dart';
 import '../../../labtest/presentation/pages/lab_test_booking_fetch_list_page.dart';
 import '../../../labtest/presentation/pages/lab_tests_tab.dart';
 import '../../../medlocker/presentation/pages/med_locker_list_page.dart';
+import '../../../online_doctor/presentation/pages/online_doctor_booking_history_screen.dart';
 import '../../../pedometer/gps/new_gps/gps_bloc.dart';
+import '../../../pharmacy/presentation/pages/pharmacy_booking_history_screen.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../wallet/presentation/pages/payment_screen.dart';
 import '../address_bloc/address_bloc.dart';
@@ -424,6 +427,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const HospitalDoctorBookingHistoryScreen()),
+                      );
+                      break;
+                    case 12:
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PharmacyBookingHistoryScreen()),
+                      );
+                      break;
+                    case 13:
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ECardScreen()),
+                      );
+                      break;
+                    case 14:
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const OnlineDoctorBookingHistoryScreen()),
                       );
                       break;
                     default:
