@@ -47,6 +47,11 @@ dependencies:
   webview_flutter: ^4.8.0
   flutter_cashfree_pg_sdk: ^2.0.25+28
   location: ^8.0.1
+#  enx_flutter_plugin: ^2.2.6
+#  permission_handler: ^12.0.1
+#  just_audio: ^0.10.4
+#  flutter_background_service: ^5.0.7
+#  wakelock_plus: ^1.2.8
 
 
   # The following adds the Cupertino Icons font to your application.

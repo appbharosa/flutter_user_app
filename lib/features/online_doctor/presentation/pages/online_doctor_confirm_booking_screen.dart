@@ -77,7 +77,16 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
               _appliedCouponCode = state.couponCode;
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Coupon applied! You saved ₹${state.discountAmount.toStringAsFixed(2)}'), backgroundColor: Colors.green),
+              SnackBar(
+                content: Text('Coupon applied! You saved ₹${state.discountAmount.toStringAsFixed(2)}'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                margin: const EdgeInsets.all(10),
+                duration: const Duration(seconds: 2),
+              ),
             );
           } else if (state is OnlineDoctorApplyCouponError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -167,7 +176,12 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                   ),
                   const SizedBox(height: 16),
                   // Patient details
-                  const Text('Patient Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text('Patient Details', style: TextStyle(
+                    color: AppColors.black,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,  // SemiBold
+                    fontFamily: 'Poppins',
+                  )),
                   const SizedBox(height: 8),
                   Card(
                     child: Padding(
@@ -182,7 +196,12 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                   ),
                   const SizedBox(height: 16),
                   // Payment summary
-                  const Text('Payment Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text('Payment Summary', style: TextStyle(
+                    color: AppColors.black,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,  // SemiBold
+                    fontFamily: 'Poppins',
+                  )),
                   const SizedBox(height: 8),
                   Card(
                     child: Padding(

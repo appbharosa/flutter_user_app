@@ -15,6 +15,9 @@ class AppUrls{
   static const String hospitalFilters = "hospitals-filters";
   static const String filteredHospitals = "online-doctors-list";
   static const String filterHospitals ="all-hospitals";
+  static const String hospitalMainData = "total-main-data";
+  static const String hospitalMedicineBooking = "hospital-pharmacy-medicine-booking";
+  static const String hospitalDiagnosticBooking = "hospital-diagnostic-booking";
 
   static const String onlineDoctorsList = "online-doctors-list";
   static const String onlineDoctorSpecialities = "online-doctor-specialities";

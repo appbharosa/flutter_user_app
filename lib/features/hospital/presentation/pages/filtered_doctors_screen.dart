@@ -2,27 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/hospital.dart';
-import '../../../home/presentation/address_bloc/address_bloc.dart';
-import '../../../home/presentation/address_bloc/address_state.dart';
-import '../../../language/bloc/language_bloc.dart';
-import '../../../language/bloc/language_state.dart';
-import '../bloc/hospital_bloc.dart';
-import '../bloc/hospital_event.dart';
-import '../bloc/hospital_state.dart';
+import '../bloc/filtered_hospitals_bloc/filtered_hospitals_bloc.dart';
+import '../bloc/filtered_hospitals_bloc/filtered_hospitals_state.dart';
+import 'hospital_doctor_screen.dart';
+
+
 
 class FilteredDoctorsScreen extends StatefulWidget {
-  final String specialityIds;
+  final String lang;
   final double lat;
   final double lon;
-  final String lang;
+  final int catId;
+  final String specialityIds;
+  final int addressId;
+
   const FilteredDoctorsScreen({
     super.key,
-    required this.specialityIds,
+    required this.lang,
     required this.lat,
     required this.lon,
-    required this.lang,
+    required this.catId,
+    required this.specialityIds,
+    required this.addressId
   });
 
   @override
@@ -30,40 +32,25 @@ class FilteredDoctorsScreen extends StatefulWidget {
 }
 
 class _FilteredDoctorsScreenState extends State<FilteredDoctorsScreen> {
-  late HospitalBloc _hospitalBloc;
-  final ScrollController _scrollController = ScrollController();
+  late FilteredHospitalsBloc _bloc;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _hospitalBloc = sl<HospitalBloc>();
-    _scrollController.addListener(_onScroll);
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    _hospitalBloc.add(LoadHospitalsWithFilters(
-      page: 1,
+    _bloc = sl<FilteredHospitalsBloc>();
+    _bloc.add(LoadFilteredHospitals(
+      lang: widget.lang,
       lat: widget.lat,
       lon: widget.lon,
-      lang: widget.lang,
+      catId: widget.catId,
       specialityIds: widget.specialityIds,
     ));
   }
 
-  void _onScroll() {
-    if (_searchQuery.isEmpty) {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-        _hospitalBloc.add(LoadMoreHospitalsWithFilters(specialityIds: widget.specialityIds));
-      }
-    }
-  }
-
   @override
   void dispose() {
-    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -71,10 +58,15 @@ class _FilteredDoctorsScreenState extends State<FilteredDoctorsScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value: _hospitalBloc,
+      value: _bloc,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Filtered Doctors'),
+          title: const Text('Filtered Hospitals',style: TextStyle(
+            color: AppColors.whiteColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,  // SemiBold
+            fontFamily: 'Poppins',
+          ),),
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
         ),
@@ -103,34 +95,38 @@ class _FilteredDoctorsScreenState extends State<FilteredDoctorsScreen> {
               ),
             ),
             Expanded(
-              child: BlocBuilder<HospitalBloc, HospitalState>(
+              child: BlocBuilder<FilteredHospitalsBloc, FilteredHospitalsState>(
                 builder: (context, state) {
-                  if (state is HospitalInitial || state is HospitalLoading) {
+                  if (state is FilteredHospitalsLoading) {
                     return const Center(child: CircularProgressIndicator());
-                  } else if (state is HospitalLoaded) {
-                    List<Hospital> displayList = state.hospitals;
-                    if (_searchQuery.isNotEmpty) {
-                      displayList = state.hospitals.where((hospital) =>
-                      hospital.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                          hospital.location.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
-                    }
+                  } else if (state is FilteredHospitalsLoaded) {
+                    final hospitals = state.hospitals;
+                    // Filter client-side
+                    final displayList = _searchQuery.isEmpty
+                        ? hospitals
+                        : hospitals.where((h) =>
+                    h.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                        h.location.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
                     if (displayList.isEmpty) {
                       return const Center(child: Text('No hospitals found'));
                     }
                     return ListView.builder(
-                      controller: _scrollController,
-                      itemCount: displayList.length + (state.hasMore ? 1 : 0),
+                      itemCount: displayList.length,
                       itemBuilder: (context, index) {
-                        if (index == displayList.length) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                        return _buildHospitalCard(displayList[index]);
+                        final hospital = displayList[index];
+                        return InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => HospitalDoctorScreen(mainDataId: hospital.id,addressId: widget.addressId,),
+                                ),
+                              );
+                            },
+                            child: _buildHospitalCard(hospital));
                       },
                     );
-                  } else if (state is HospitalError) {
+                  } else if (state is FilteredHospitalsError) {
                     return Center(child: Text(state.message));
                   }
                   return const SizedBox();
@@ -170,47 +166,32 @@ class _FilteredDoctorsScreenState extends State<FilteredDoctorsScreen> {
                 children: [
                   Text(
                     hospital.name,
-                    style: TextStyle(
-                      color: AppColors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Poppins',
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  if (hospital.tagline.isNotEmpty) const SizedBox(height: 4),
-                  if (hospital.tagline.isNotEmpty)
-                    Text(
-                      hospital.tagline,
-                      style: TextStyle(
-                        color: AppColors.black,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
+                  if (hospital.tagline.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(hospital.tagline, style: const TextStyle(fontSize: 13)),
+                  ],
                   const SizedBox(height: 4),
                   if (hospital.openTime.isNotEmpty && hospital.closeTime.isNotEmpty)
-                    Text(
-                      '⏰ ${hospital.openTime} - ${hospital.closeTime}',
-                      style: TextStyle(
-                        color: AppColors.black,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
+                    Text('⏰ ${hospital.openTime} - ${hospital.closeTime}', style: TextStyle(
+                      color: AppColors.black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontFamily: 'Poppins',
+                    ),),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on, size: 16, color: AppColors.red),
+                      const Icon(Icons.location_on, size: 16, color: AppColors.red),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           hospital.location.isNotEmpty ? hospital.location : 'Unknown location',
                           style: TextStyle(
                             color: AppColors.black,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,  // SemiBold
                             fontFamily: 'Poppins',
                           ),
                         ),

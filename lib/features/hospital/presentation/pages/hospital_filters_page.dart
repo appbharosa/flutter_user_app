@@ -13,11 +13,13 @@ class HospitalFiltersPage extends StatefulWidget {
   final double lat;
   final double lon;
   final String lang;
+  final int addressId;
   const HospitalFiltersPage({
     super.key,
     required this.lat,
     required this.lon,
     required this.lang,
+    required this.addressId
   });
 
   @override
@@ -53,14 +55,17 @@ class _HospitalFiltersPageState extends State<HospitalFiltersPage> {
   void _apply() {
     final ids = _selectedSpecialityIds.join(',');
     if (ids.isNotEmpty) {
+      final catId = _selectedCategoryId ?? 0; // if no category selected, use 0
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => FilteredDoctorsScreen(
             specialityIds: ids,
+            catId: catId,
             lat: widget.lat,
             lon: widget.lon,
             lang: widget.lang,
+            addressId: widget.addressId,
           ),
         ),
       );
@@ -74,6 +79,7 @@ class _HospitalFiltersPageState extends State<HospitalFiltersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.whiteColor,
       appBar: AppBar(
         title: const Text('Filter Hospitals',style: TextStyle(
           color: AppColors.whiteColor,

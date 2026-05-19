@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:user/features/hospital/presentation/pages/hospital_doctor_screen.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
@@ -151,6 +152,7 @@ class _HospitalsTabState extends State<HospitalsTab> {
                           lat: lat,
                           lon: lon,
                           lang: lang,
+                          addressId: address.id,
                         ),
                       ),
                     ),
@@ -221,7 +223,33 @@ class _HospitalsTabState extends State<HospitalsTab> {
                         );
                       }
                       final hospital = displayList[index];
-                      return _buildHospitalCard(hospital);
+                      return InkWell(
+                          onTap: () {
+                            final address = widget.addressNotifier.value;
+                            final languageState = context.read<LanguageBloc>().state;
+                            if (address != null && languageState is LanguageChanged) {
+                              final lat = double.tryParse(address.lat) ?? 0.0;
+                              final lon = double.tryParse(address.lon) ?? 0.0;
+                              final lang = languageState.language.apiCode;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BlocProvider(
+                                    create: (context) => sl<HospitalFiltersBloc>(),
+                                    child: HospitalDoctorScreen(
+                                      mainDataId: hospital.id,
+                                      addressId: address.id,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please select an address first'), backgroundColor: Colors.red),
+                              );
+                            }
+                          },
+                          child: _buildHospitalCard(hospital));
                     },
                   );
                 } else if (state is HospitalError) {

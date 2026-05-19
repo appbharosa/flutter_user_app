@@ -10,8 +10,11 @@ import '../../data/data_sources/diagnostic_booking_fetch_remote_datasource.dart'
 import '../../data/data_sources/diagnostic_booking_remote_datasource.dart';
 import '../../data/data_sources/diagnostic_remote_datasource.dart';
 import '../../data/data_sources/family_member_remote_datasource.dart';
+import '../../data/data_sources/hospital_diagnostic_remote_datasource.dart';
 import '../../data/data_sources/hospital_filter_remote_datasource.dart';
+import '../../data/data_sources/hospital_filtered_remote_datasource.dart';
 import '../../data/data_sources/hospital_filters_remote_datasource.dart';
+import '../../data/data_sources/hospital_main_data_remote_datasource.dart';
 import '../../data/data_sources/hospital_remote_datasource.dart';
 import '../../data/data_sources/lab_cashfree_order_remote_datasource.dart';
 import '../../data/data_sources/lab_coupon_remote_datasource.dart';
@@ -21,6 +24,7 @@ import '../../data/data_sources/lab_test_booking_fetch_remote_datasource.dart';
 import '../../data/data_sources/lab_test_booking_remote_datasource.dart';
 import '../../data/data_sources/lab_test_remote_datasource.dart';
 import '../../data/data_sources/med_locker_remote_datasource.dart';
+import '../../data/data_sources/medicine_booking_remote_datasource.dart';
 import '../../data/data_sources/online_doctor_coupon_remote_datasource.dart';
 import '../../data/data_sources/online_doctor_remote_datasource.dart';
 import '../../data/data_sources/online_doctor_slot_remote_datasource.dart';
@@ -39,8 +43,11 @@ import '../../data/repositories/diagnostic_booking_fetch_repository_impl.dart';
 import '../../data/repositories/diagnostic_booking_repository_impl.dart';
 import '../../data/repositories/diagnostic_repository_impl.dart';
 import '../../data/repositories/family_member_repository_impl.dart';
+import '../../data/repositories/hospital_diagnostic_repository_impl.dart';
 import '../../data/repositories/hospital_filter_repository_impl.dart';
+import '../../data/repositories/hospital_filtered_repository_impl.dart';
 import '../../data/repositories/hospital_filters_repository_impl.dart';
+import '../../data/repositories/hospital_main_data_repository_impl.dart';
 import '../../data/repositories/hospital_repository_impl.dart';
 import '../../data/repositories/lab_cashfree_order_repository_impl.dart';
 import '../../data/repositories/lab_coupon_repository_impl.dart';
@@ -50,6 +57,7 @@ import '../../data/repositories/lab_test_booking_fetch_repository_impl.dart';
 import '../../data/repositories/lab_test_booking_repository_impl.dart';
 import '../../data/repositories/lab_test_repository_impl.dart';
 import '../../data/repositories/med_locker_repository_impl.dart';
+import '../../data/repositories/medicine_booking_repository_impl.dart';
 import '../../data/repositories/online_doctor_coupon_repository_impl.dart';
 import '../../data/repositories/online_doctor_repository_impl.dart';
 import '../../data/repositories/online_doctor_slot_repository_impl.dart';
@@ -67,8 +75,11 @@ import '../../domain/repositories/diagnostic_booking_fetch_repository.dart';
 import '../../domain/repositories/diagnostic_booking_repository.dart';
 import '../../domain/repositories/diagnostic_repository.dart';
 import '../../domain/repositories/family_member_repository.dart';
+import '../../domain/repositories/hospital_diagnostic_repository.dart';
 import '../../domain/repositories/hospital_filter_repository.dart';
+import '../../domain/repositories/hospital_filtered_repository.dart';
 import '../../domain/repositories/hospital_filters_repository.dart';
+import '../../domain/repositories/hospital_main_data_repository.dart';
 import '../../domain/repositories/hospital_repository.dart';
 import '../../domain/repositories/lab_cashfree_order_repository.dart';
 import '../../domain/repositories/lab_coupon_repository.dart';
@@ -78,6 +89,7 @@ import '../../domain/repositories/lab_test_booking_fetch_repository.dart';
 import '../../domain/repositories/lab_test_booking_repository.dart';
 import '../../domain/repositories/lab_test_repository.dart';
 import '../../domain/repositories/med_locker_repository.dart';
+import '../../domain/repositories/medicine_booking_repository.dart';
 import '../../domain/repositories/online_doctor_coupon_repository.dart';
 import '../../domain/repositories/online_doctor_repository.dart';
 import '../../domain/repositories/online_doctor_slot_repository.dart';
@@ -93,6 +105,8 @@ import '../../domain/use_cases/add_med_locker_usecase.dart';
 import '../../domain/use_cases/apply_lab_coupon_usecase.dart';
 import '../../domain/use_cases/apply_online_doctor_coupon_usecase.dart';
 import '../../domain/use_cases/book_diagnostic_usecase.dart';
+import '../../domain/use_cases/book_hospital_diagnostic.dart';
+import '../../domain/use_cases/book_medicine_usecase.dart';
 import '../../domain/use_cases/check_payment_status_usecase.dart';
 import '../../domain/use_cases/create_cashfree_order_usecase.dart';
 import '../../domain/use_cases/create_lab_cashfree_order_usecase.dart';
@@ -108,7 +122,9 @@ import '../../domain/use_cases/get_completed_fetch_bookings_usecase.dart';
 import '../../domain/use_cases/get_completed_lab_test_bookings_usecase.dart';
 import '../../domain/use_cases/get_diagnostics_usecase.dart';
 import '../../domain/use_cases/get_family_members_usecase.dart';
+import '../../domain/use_cases/get_filtered_hospitals_usecase.dart';
 import '../../domain/use_cases/get_hospital_filters_usecase.dart';
+import '../../domain/use_cases/get_hospital_main_data_usecase.dart';
 import '../../domain/use_cases/get_hospitals_usecase.dart';
 import '../../domain/use_cases/get_lab_coupons_usecase.dart';
 import '../../domain/use_cases/get_lab_slots_usecase.dart';
@@ -139,8 +155,12 @@ import '../../features/diagnostic/presentation/diagnostic_booking_fetch_detail_b
 import '../../features/diagnostic/presentation/diagnostic_bookings_bloc/diagnostic_booking_fetch_list_bloc.dart';
 import '../../features/diagnostic/presentation/family_members_bloc/family_members_bloc.dart';
 import '../../features/home/presentation/address_bloc/address_bloc.dart';
+import '../../features/hospital/presentation/bloc/filtered_hospitals_bloc/filtered_hospitals_bloc.dart';
 import '../../features/hospital/presentation/bloc/hospital_bloc.dart';
+import '../../features/hospital/presentation/bloc/hospital_diagnostic_booking_bloc/hospital_diagnostic_booking_bloc.dart';
 import '../../features/hospital/presentation/hospital_filters_bloc/hospital_filters_bloc.dart';
+import '../../features/hospital/presentation/hospital_main_data_bloc/hospital_main_data_bloc.dart';
+import '../../features/hospital/presentation/medicine_booking_bloc/medicine_booking_bloc.dart';
 import '../../features/labtest/presentation/apply_lab_coupon_bloc/apply_lab_coupon_bloc.dart';
 import '../../features/labtest/presentation/bloc/lab_test_bloc.dart';
 import '../../features/labtest/presentation/lab_coupon_list_bloc/lab_coupon_list_bloc.dart';
@@ -217,6 +237,12 @@ Future<void> init() async {
   sl.registerLazySingleton<OnlineDoctorSpecialityRemoteDataSource>(() => OnlineDoctorSpecialityRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<OnlineDoctorSlotRemoteDataSource>(() => OnlineDoctorSlotRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<OnlineDoctorCouponRemoteDataSource>(() => OnlineDoctorCouponRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<HospitalFilteredRemoteDataSource>(() => HospitalFilteredRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<HospitalMainDataRemoteDataSource>(() => HospitalMainDataRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<MedicineBookingRemoteDataSource>(() => MedicineBookingRemoteDataSourceImpl(sl()));
+  sl.registerLazySingleton<HospitalDiagnosticRemoteDataSource>(
+        () => HospitalDiagnosticRemoteDataSourceImpl(sl()),
+  );
 
   // ========== Repositories ==========
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
@@ -329,6 +355,25 @@ Future<void> init() async {
   ));
   sl.registerLazySingleton<OnlineDoctorSlotRepository>(() => OnlineDoctorSlotRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()));
   sl.registerLazySingleton<OnlineDoctorCouponRepository>(() => OnlineDoctorCouponRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()));
+  sl.registerLazySingleton<HospitalFilteredRepository>(() => HospitalFilteredRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+  sl.registerLazySingleton<HospitalMainDataRepository>(() => HospitalMainDataRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+  sl.registerLazySingleton<MedicineBookingRepository>(() => MedicineBookingRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+  sl.registerLazySingleton<HospitalDiagnosticRepository>(
+        () => HospitalDiagnosticRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+
 
   // ========== Use Cases ==========
   sl.registerLazySingleton(() => SendOtpUseCase(sl()));
@@ -374,6 +419,11 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetOnlineDoctorSlotsUseCase(sl()));
   sl.registerLazySingleton(() => GetOnlineDoctorCouponsUseCase(sl()));
   sl.registerLazySingleton(() => ApplyOnlineDoctorCouponUseCase(sl()));
+  sl.registerLazySingleton(() => GetFilteredHospitalsUseCase(sl()));
+  sl.registerLazySingleton(() => GetHospitalMainDataUseCase(sl()));
+  sl.registerLazySingleton(() => BookMedicineUseCase(sl()));
+  sl.registerLazySingleton(() => BookHospitalDiagnosticUseCase(sl()));
+
 
   // ========== BLoCs ==========
   sl.registerFactory(() => AuthBloc(sendOtpUseCase: sl()));
@@ -414,5 +464,11 @@ Future<void> init() async {
   sl.registerFactory(() => OnlineDoctorSlotBloc(getSlotsUseCase: sl()));
   sl.registerFactory(() => OnlineDoctorCouponBloc(getCouponsUseCase: sl()));
   sl.registerFactory(() => OnlineDoctorApplyCouponBloc(applyCouponUseCase: sl()));
+  sl.registerFactory(() => FilteredHospitalsBloc(getFilteredHospitalsUseCase: sl()));
+  sl.registerFactory(() => HospitalMainDataBloc(getHospitalDataUseCase: sl()));
+  sl.registerFactory(() => MedicineBookingBloc(bookMedicineUseCase: sl()));
+  sl.registerFactory(() => HospitalDiagnosticBookingBloc(
+    bookHospitalDiagnosticUseCase: sl(),
+  ));
 
 }
