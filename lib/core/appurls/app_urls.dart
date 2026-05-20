@@ -27,6 +27,7 @@ class AppUrls{
   static const String hospitalDoctorSlots = "doctors-slots";
   static const String hospitalDoctorCoupon = "doctor-coupons";
   static const String hospitalDoctorApplyCoupon = "doctor-coupons-apply";
+  static const String hospitalDoctorPayment="doctor-booking";
 
   static const String ambulanceBooking ="hospital-ambulance-booking";
 
@@ -38,6 +39,7 @@ class AppUrls{
   static const String onlineDoctorApplyCoupon = "online-doctor-coupons-apply";
   static const String onlineDoctorActive = "online-doctor-bookings-history-active";
   static const String onlineDoctorCompleted = "online-doctor-bookings-history-completed";
+  static const String onlineDoctorPayment="online-doctor-booking";
 
 
   static const String labsList ="labtest-list";

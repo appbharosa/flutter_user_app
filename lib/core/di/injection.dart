@@ -197,6 +197,7 @@ import '../../features/hospital/presentation/ambulance_booking_bloc/ambulance_bo
 import '../../features/hospital/presentation/bloc/filtered_hospitals_bloc/filtered_hospitals_bloc.dart';
 import '../../features/hospital/presentation/bloc/hospital_bloc.dart';
 import '../../features/hospital/presentation/bloc/hospital_diagnostic_booking_bloc/hospital_diagnostic_booking_bloc.dart';
+import '../../features/hospital/presentation/doctor_booking_bloc/doctor_booking_bloc.dart';
 import '../../features/hospital/presentation/doctor_coupon_bloc/doctor_coupon_bloc.dart';
 import '../../features/hospital/presentation/doctor_slots_bloc/doctor_slots_bloc.dart';
 import '../../features/hospital/presentation/hospital_booking_history_bloc/hospital_booking_history_bloc.dart';
@@ -219,6 +220,7 @@ import '../../features/medlocker/presentation/bloc/med_locker_bloc.dart';
 import '../../features/medlocker/presentation/detail_bloc/med_locker_detail_bloc.dart';
 import '../../features/online_doctor/presentation/bloc/online_doctor_bloc.dart';
 import '../../features/online_doctor/presentation/online_doctor_apply_coupon_bloc/online_doctor_apply_coupon_bloc.dart';
+import '../../features/online_doctor/presentation/online_doctor_booking_bloc/online_doctor_booking_bloc.dart';
 import '../../features/online_doctor/presentation/online_doctor_booking_history_bloc/online_doctor_booking_history_bloc.dart';
 import '../../features/online_doctor/presentation/online_doctor_coupon_bloc/online_doctor_coupon_bloc.dart';
 import '../../features/online_doctor/presentation/online_doctor_slot_bloc/online_doctor_slot_bloc.dart';
@@ -582,6 +584,10 @@ Future<void> init() async {
   sl.registerFactory(() => OnlineDoctorBookingHistoryBloc(getBookingsUseCase: sl()));
   sl.registerFactory(() => DoctorSlotsBloc(getDoctorSlotsUseCase: sl()));
   sl.registerFactory(() => DoctorCouponBloc(getCouponsUseCase: sl(), applyCouponUseCase: sl(),
+  ));
+  sl.registerFactory(() => DoctorBookingBloc(dioClient: sl(), cashfreeService: sl(),
+  ));
+  sl.registerFactory(() => OnlineDoctorBookingBloc(dioClient: sl(), cashfreeService: sl(),
   ));
 
 }

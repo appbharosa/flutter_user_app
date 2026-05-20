@@ -3,6 +3,7 @@ import '../../domain/entities/hospital_doctor.dart';
 class HospitalDoctorModel extends HospitalDoctor {
   const HospitalDoctorModel({
     required super.id,
+    required super.mainDataId,
     required super.name,
     required super.specialization,
     required super.qualification,
@@ -15,7 +16,8 @@ class HospitalDoctorModel extends HospitalDoctor {
 
   factory HospitalDoctorModel.fromJson(Map<String, dynamic> json) {
     return HospitalDoctorModel(
-      id: json['id'],
+      id: json['id'] ?? 0,
+      mainDataId: json['main_data_id'] ?? 0,
       name: json['name'] ?? '',
       specialization: json['specialization'] ?? '',
       qualification: json['qualification'] ?? '',

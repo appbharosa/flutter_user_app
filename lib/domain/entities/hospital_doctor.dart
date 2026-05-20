@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
+
 class HospitalDoctor extends Equatable {
   final int id;
+  final int mainDataId; // new
   final String name;
   final String specialization;
   final String qualification;
@@ -12,6 +14,7 @@ class HospitalDoctor extends Equatable {
 
   const HospitalDoctor({
     required this.id,
+    required this.mainDataId,
     required this.name,
     required this.specialization,
     required this.qualification,
@@ -23,5 +26,5 @@ class HospitalDoctor extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, name];
+  List<Object?> get props => [id, mainDataId, name];
 }

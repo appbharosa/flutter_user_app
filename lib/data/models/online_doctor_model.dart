@@ -9,6 +9,7 @@ class OnlineDoctorModel extends OnlineDoctor {
     required super.availability,
     required super.qualification,
     required super.specialization,
+    required super.specialityId,
     required super.totalRating,
     required super.totalReviews,
   });
@@ -22,6 +23,7 @@ class OnlineDoctorModel extends OnlineDoctor {
       availability: json['availability'] ?? 0,
       qualification: json['qualification'] ?? '',
       specialization: json['specialization'] ?? '',
+      specialityId: json['speciality_id'] ?? 0,
       totalRating: (json['total_rating'] as num?)?.toDouble() ?? 0.0,
       totalReviews: json['total_reviews'] ?? 0,
     );

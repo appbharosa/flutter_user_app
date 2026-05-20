@@ -10,6 +10,7 @@ class OnlineDoctor extends Equatable {
   final int availability;
   final String qualification;
   final String specialization;
+  final int specialityId;
   final double totalRating;
   final int totalReviews;
 
@@ -21,6 +22,7 @@ class OnlineDoctor extends Equatable {
     required this.availability,
     required this.qualification,
     required this.specialization,
+    required this.specialityId,
     required this.totalRating,
     required this.totalReviews,
   });
