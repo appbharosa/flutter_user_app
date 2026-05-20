@@ -24,6 +24,9 @@ class AppUrls{
   static const String hospitalPharmacyCompleted = "hospital-pharmacy-completed-booking";
   static const String hospitalDoctorActive= "doctor-bookings-history-active";
   static const String hospitalDoctorCompleted = "doctor-bookings-history-completed";
+  static const String hospitalDoctorSlots = "doctors-slots";
+  static const String hospitalDoctorCoupon = "doctor-coupons";
+  static const String hospitalDoctorApplyCoupon = "doctor-coupons-apply";
 
   static const String ambulanceBooking ="hospital-ambulance-booking";
 

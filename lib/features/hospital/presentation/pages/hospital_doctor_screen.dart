@@ -10,6 +10,7 @@ import '../hospital_main_data_bloc/hospital_main_data_bloc.dart';
 import '../hospital_main_data_bloc/hospital_main_data_event.dart';
 import '../hospital_main_data_bloc/hospital_main_data_state.dart';
 import 'ambulance_pages/ambulance_family_selection_screen.dart';
+import 'doctor_slot_screen.dart';
 
 
 
@@ -131,10 +132,46 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                         // Doctors Tab (existing)
                         doctors.isEmpty
                             ? const Center(child: Text('No doctors found'))
-                            : ListView.builder(
+                            :
+                        ListView.builder(
                           itemCount: doctors.length,
-                          itemBuilder: (context, index) => _buildDoctorCard(doctors[index]),
+                          itemBuilder: (context, index) {
+                            final doctor = doctors[index];
+                            return InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => DoctorSlotScreen(
+                                      doctor: doctor,
+                                      hospitalId: widget.mainDataId,
+                                      addressId: widget.addressId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: _buildDoctorCard(doctor),
+                            );
+                          },
                         ),
+                        // ListView.builder(
+                        //   itemCount: doctors.length,
+                        //   itemBuilder: (context, index) =>
+                        //       InkWell(
+                        //           onTap: () {
+                        //             Navigator.push(
+                        //               context,
+                        //               MaterialPageRoute(
+                        //                 builder: (_) => DoctorSlotScreen(
+                        //                   doctor: doctor[index],
+                        //                   hospitalId: widget.mainDataId,
+                        //                   addressId: widget.addressId,
+                        //                 ),
+                        //               ),
+                        //             );
+                        //           },
+                        //       child: _buildDoctorCard(doctors[index])),
+                        // ),
                         // Medicines Tab
                         HospitalMedicineTab(
                           hospital: hospital,
