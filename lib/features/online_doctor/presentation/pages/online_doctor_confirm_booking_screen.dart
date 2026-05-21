@@ -111,8 +111,8 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
 
   void _proceedWithPayment(String paymentType) {
     final bookingParams = {
-      'speciality_id': widget.doctor.specialityId,
-      'doctor_id': widget.doctor.id,
+      'speciality_id': widget.doctor.id,
+      'doctor_id': widget.doctor.specialityId,
       'date': widget.selectedDate,
       'slot_id': widget.slot.slotId,
       'time': widget.slot.time,

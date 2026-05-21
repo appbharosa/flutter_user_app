@@ -10,7 +10,8 @@ import 'package:user/features/home/presentation/pages/widgets/side_drawer.dart';
 import 'package:user/features/pedometer/gps/new_gps/gps_tracker_dialog.dart';
 import 'package:user/features/pharmacy/presentation/pages/pharmacy_tab.dart';
 import 'package:user/features/subscription/presentation/pages/subscriptions_page.dart';
-import '../../../../core/di/injection.dart';
+import '../../../../core/di/injection.dart' as di;
+import '../../../../core/services/language_service.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../about/presentation/pages/about_page.dart';
 import '../../../contact_us/presentation/pages/contact_us_page.dart';
@@ -23,6 +24,10 @@ import '../../../hospital/presentation/pages/hospitals_tab.dart';
 import '../../../labtest/presentation/pages/lab_test_booking_fetch_list_page.dart';
 import '../../../labtest/presentation/pages/lab_tests_tab.dart';
 import '../../../medlocker/presentation/pages/med_locker_list_page.dart';
+import '../../../notifications/presentation/bloc/notification_bloc.dart';
+import '../../../notifications/presentation/bloc/notification_event.dart';
+import '../../../notifications/presentation/bloc/notification_state.dart';
+import '../../../notifications/presentation/pages/notification_list_screen.dart';
 import '../../../online_doctor/presentation/pages/online_doctor_booking_history_screen.dart';
 import '../../../pedometer/gps/new_gps/gps_bloc.dart';
 import '../../../pharmacy/presentation/pages/pharmacy_booking_history_screen.dart';
@@ -33,7 +38,6 @@ import '../address_bloc/address_event.dart';
 import 'bottom_pages/home_tab.dart';
 import 'package:location/location.dart' as loc;
 import 'package:geocoding/geocoding.dart';
-
 
 
 class HomePage extends StatefulWidget {
@@ -50,11 +54,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late AddressBloc _addressBloc;
   late GpsBloc _gpsBloc;
   bool _locationDialogHandled = false;
-  bool _userDeniedLocation = false; // NEW: Track if user explicitly denied location
+  bool _userDeniedLocation = false;
+  int _unreadCount = 0;
 
   final ValueNotifier<Address?> _selectedAddressNotifier = ValueNotifier(null);
   Address? _currentLocationAddress;
   String _displayAddress = "Select Address";
+  late NotificationBloc _notificationBloc;
 
   late final List<Widget> _tabs = [
     const HomeTab(),
@@ -68,11 +74,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _gpsBloc = GpsBloc();
-    _addressBloc = sl<AddressBloc>()..add(LoadAddresses());
+    _gpsBloc = di.sl<GpsBloc>();
+    _addressBloc = di.sl<AddressBloc>()..add(LoadAddresses());
+    _notificationBloc = di.sl<NotificationBloc>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _handleStartupLocationFlow();
+      _loadUnreadCount();
     });
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final language = await LanguageService.getCurrentLanguage();
+    _notificationBloc.add(LoadNotifications(language));
   }
 
   @override
@@ -80,102 +93,56 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _addressBloc.close();
     _gpsBloc.close();
+    _notificationBloc.close();
     _searchController.dispose();
     _searchNotifier.dispose();
     _selectedAddressNotifier.dispose();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadUnreadCount();
+    }
+  }
+
+  // ---------- Location Methods ----------
   Future<void> _handleStartupLocationFlow() async {
     if (_locationDialogHandled) return;
     _locationDialogHandled = true;
 
-    bool granted = await checkLocationService();
+    bool granted = await _checkLocationService();
     if (!granted && mounted) {
-      _userDeniedLocation = true; // User explicitly denied location
-      Future.delayed(
-        const Duration(milliseconds: 400),
-            () => _showAddressBottomSheet(),
-      );
+      _userDeniedLocation = true;
+      Future.delayed(const Duration(milliseconds: 400), () => _showAddressBottomSheet());
       return;
     }
-
     await _fetchCurrentLocation();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !_userDeniedLocation) {
-      // Only fetch location if user did NOT deny it
-      _fetchCurrentLocation();
-    }
-  }
-
-  Future<void> _fetchCurrentLocation() async {
-    if (_userDeniedLocation) return; // Skip if user denied location
-    final location = await _getCurrentLocationAsAddress();
-    if (location != null && mounted) {
-      _currentLocationAddress = location;
-      _selectedAddressNotifier.value = location;
-      setState(() => _displayAddress = location.address);
-    }
-  }
-
-  Future<bool> checkLocationService() async {
+  Future<bool> _checkLocationService() async {
     final location = loc.Location();
     bool serviceEnabled = await location.serviceEnabled();
     if (!serviceEnabled) {
       bool requested = await location.requestService();
       if (!requested) return false;
     }
-
     final permissionGranted = await location.hasPermission();
     if (permissionGranted == loc.PermissionStatus.denied) {
       final newPermission = await location.requestPermission();
-      if (newPermission != loc.PermissionStatus.granted) {
-        return false;
-      }
+      if (newPermission != loc.PermissionStatus.granted) return false;
     }
     return true;
   }
 
-  Future<void> _onSelectCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      await Geolocator.openLocationSettings();
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.denied) {
-      _showSnackBar('Location permission denied', isError: true);
-      return;
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      await Geolocator.openAppSettings();
-      return;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
+  Future<void> _fetchCurrentLocation() async {
+    if (_userDeniedLocation) return;
     final location = await _getCurrentLocationAsAddress();
-    if (mounted) Navigator.pop(context);
-
-    if (location != null) {
+    if (location != null && mounted) {
       _currentLocationAddress = location;
-      _onAddressSelected(location);
-      _userDeniedLocation = false; // Reset if user manually enables location
-    } else {
-      _showSnackBar('Unable to fetch current location', isError: true);
+      _selectedAddressNotifier.value = location;
+      setState(() => _displayAddress = location.address);
     }
   }
 
@@ -216,6 +183,40 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return null;
   }
 
+  Future<void> _onSelectCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+      return;
+    }
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied) {
+      _showSnackBar('Location permission denied', isError: true);
+      return;
+    }
+    if (permission == LocationPermission.deniedForever) {
+      await Geolocator.openAppSettings();
+      return;
+    }
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    final location = await _getCurrentLocationAsAddress();
+    if (mounted) Navigator.pop(context);
+    if (location != null) {
+      _currentLocationAddress = location;
+      _onAddressSelected(location);
+      _userDeniedLocation = false;
+    } else {
+      _showSnackBar('Unable to fetch current location', isError: true);
+    }
+  }
+
   void _showSnackBar(String message, {required bool isError}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -247,41 +248,54 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
+  // ---------- UI ----------
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _addressBloc,
-      child: SafeArea(
-        top: false,
-        bottom: true,
-        child: Scaffold(
-          backgroundColor: Colors.white,
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(60),
-            child: _buildAppBar(),
-          ),
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: AppColors.blue,
-            onPressed: () {
-              _gpsBloc.add(StartTracking());
-              showDialog(
-                context: context,
-                builder: (_) => BlocProvider.value(
-                  value: _gpsBloc,
-                  child: const GpsTrackerDialog(),
-                ),
-              );
-            },
-            child: const Icon(Icons.directions_walk, color: AppColors.whiteColor),
-          ),
-          body: Column(
-            children: [
-              Expanded(child: _tabs[_selectedIndex]),
-            ],
-          ),
-          bottomNavigationBar: BottomNavBar(
-            currentIndex: _selectedIndex,
-            onTap: (index) => setState(() => _selectedIndex = index),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _addressBloc),
+        BlocProvider.value(value: _notificationBloc),
+      ],
+      child: BlocListener<NotificationBloc, NotificationState>(
+        listener: (context, state) {
+          if (state is NotificationsLoaded) {
+            setState(() {
+              _unreadCount = state.unreadCount;
+            });
+          }
+        },
+        child: SafeArea(
+          top: false,
+          bottom: true,
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: _buildAppBar(),
+            ),
+            floatingActionButton: FloatingActionButton(
+              backgroundColor: AppColors.blue,
+              onPressed: () {
+                _gpsBloc.add(StartTracking());
+                showDialog(
+                  context: context,
+                  builder: (_) => BlocProvider.value(
+                    value: _gpsBloc,
+                    child: const GpsTrackerDialog(),
+                  ),
+                );
+              },
+              child: const Icon(Icons.directions_walk, color: AppColors.whiteColor),
+            ),
+            body: Column(
+              children: [
+                Expanded(child: _tabs[_selectedIndex]),
+              ],
+            ),
+            bottomNavigationBar: BottomNavBar(
+              currentIndex: _selectedIndex,
+              onTap: (index) => setState(() => _selectedIndex = index),
+            ),
           ),
         ),
       ),
@@ -301,13 +315,48 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       title: _buildScrollableAddressChip(),
       actions: [
         IconButton(
-          icon: const Icon(Icons.notifications_none, color: Colors.white),
+          icon: const Icon(Icons.subscript, color: Colors.white),
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const SubscriptionPage()),
           ),
         ),
         const SizedBox(width: 8),
+        IconButton(
+          icon: Stack(
+            children: [
+              const Icon(Icons.notifications_none, color: Colors.white),
+              if (_unreadCount > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      _unreadCount > 9 ? '9+' : '$_unreadCount',
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationListScreen()),
+            );
+            _loadUnreadCount(); // refresh after returning
+          },
+        ),
       ],
     );
   }
@@ -320,7 +369,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         width: screenWidth * 0.7,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white. withOpacity(0.2),
+          color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -346,7 +395,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
-
   void _showSideMenuDialog(BuildContext context) {
     showGeneralDialog(
       context: context,
@@ -367,88 +415,46 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               padding: const EdgeInsets.only(top: 20),
               child: SideMenuDialog(
                 onMenuItemSelected: (index) {
-                  Navigator.of(context).pop(); // close side menu
+                  Navigator.of(context).pop();
                   switch (index) {
                     case 0:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ProfilePage()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
                       break;
                     case 1:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const MedLockerListPage()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const MedLockerListPage()));
                       break;
                     case 2:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PaymentScreen()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentScreen()));
                       break;
                     case 3:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AboutPage()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutPage()));
                       break;
                     case 4:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ContactUsPage()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactUsPage()));
                       break;
-                    case 5: // Normal Diagnostic Bookings
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const DiagnosticBookingFetchListPage()),
-                      );
+                    case 5:
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const DiagnosticBookingFetchListPage()));
                       break;
-                    case 6: // LabTest Bookings
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LabTestBookingFetchListPage()),
-                      );
+                    case 6:
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LabTestBookingFetchListPage()));
                       break;
-                    case 9: // Hospital Diagnostic Bookings (new)
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HospitalBookingHistoryScreen()),
-                      );
+                    case 9:
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const HospitalBookingHistoryScreen()));
                       break;
                     case 10:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HospitalPharmacyBookingHistoryScreen()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const HospitalPharmacyBookingHistoryScreen()));
                       break;
                     case 11:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HospitalDoctorBookingHistoryScreen()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const HospitalDoctorBookingHistoryScreen()));
                       break;
                     case 12:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PharmacyBookingHistoryScreen()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PharmacyBookingHistoryScreen()));
                       break;
                     case 13:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ECardScreen()),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ECardScreen()));
                       break;
                     case 14:
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const OnlineDoctorBookingHistoryScreen()),
-                      );
-                      break;
-                    default:
-                    // Optional: handle unknown index
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const OnlineDoctorBookingHistoryScreen()));
                       break;
                   }
                 },
@@ -459,5 +465,4 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       },
     );
   }
-
 }

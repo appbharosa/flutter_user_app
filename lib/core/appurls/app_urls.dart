@@ -28,10 +28,7 @@ class AppUrls{
   static const String hospitalDoctorCoupon = "doctor-coupons";
   static const String hospitalDoctorApplyCoupon = "doctor-coupons-apply";
   static const String hospitalDoctorPayment="doctor-booking";
-
   static const String ambulanceBooking ="hospital-ambulance-booking";
-
-
   static const String onlineDoctorsList = "online-doctors-list";
   static const String onlineDoctorSpecialities = "online-doctor-specialities";
   static const String onlineDoctorSlots = "online-doctors-slots";
@@ -40,8 +37,6 @@ class AppUrls{
   static const String onlineDoctorActive = "online-doctor-bookings-history-active";
   static const String onlineDoctorCompleted = "online-doctor-bookings-history-completed";
   static const String onlineDoctorPayment="online-doctor-booking";
-
-
   static const String labsList ="labtest-list";
   static const String diagnosticList ="diagnostic-list";
   static const String medLockerList = "medlocker-list";
@@ -71,7 +66,10 @@ class AppUrls{
   static const String pharmacyOngoing = "pharmacy-ongoing-bookings";
   static const String pharmacyCompleted = "pharmacy-completed-bookings";
   static const String eCard="ecard";
+  static const String notificationList = "notifications-list";
+  static const String readNotifications = "read-notification";
 
 
   static const String banners = "banners";
+  static const String disconnectCall = "disconnect-call"; // adjust to your actual endpoint
 }
