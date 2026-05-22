@@ -45,11 +45,12 @@ class _OnlineDoctorSlotScreenState extends State<OnlineDoctorSlotScreen> {
     return BlocProvider.value(
       value: _slotBloc,
       child: Scaffold(
+        backgroundColor: AppColors.whiteColor,
         appBar: AppBar(
           title: const Text('Select Time Slot',
             style: TextStyle(
               color: AppColors.whiteColor,
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w500,
               fontFamily: 'Poppins',
             ),
@@ -79,10 +80,11 @@ class _OnlineDoctorSlotScreenState extends State<OnlineDoctorSlotScreen> {
                 children: [
                   const Text(
                     'Select Date',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
                       fontFamily: 'Poppins',
+                      color: AppColors.black,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -120,7 +122,12 @@ class _OnlineDoctorSlotScreenState extends State<OnlineDoctorSlotScreen> {
                               const SizedBox(width: 12),
                               Text(
                                 '${_selectedDate.day} ${_getMonthName(_selectedDate.month)} ${_selectedDate.year}',
-                                style: const TextStyle(fontSize: 16, fontFamily: 'Poppins'),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,
+                                  fontFamily: 'Poppins',
+                                  color: AppColors.black,
+                                ),
                               ),
                             ],
                           ),
@@ -139,7 +146,12 @@ class _OnlineDoctorSlotScreenState extends State<OnlineDoctorSlotScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Available Time Slots',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                    color: AppColors.black,
+                  ),
                 ),
               ),
             ),
@@ -177,8 +189,12 @@ class _OnlineDoctorSlotScreenState extends State<OnlineDoctorSlotScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   session.name,
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
-                                ),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Poppins',
+                                    color: AppColors.black,
+                                  ),                                ),
                               ],
                             ),
                             const SizedBox(height: 12),

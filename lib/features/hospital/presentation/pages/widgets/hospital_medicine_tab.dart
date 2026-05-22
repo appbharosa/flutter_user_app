@@ -101,7 +101,7 @@ class _HospitalMedicineTabState extends State<HospitalMedicineTab> {
             ),
             child: Text(
               '⏰ Timing: ${widget.hospital.openTime} - ${widget.hospital.closeTime}',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
           const SizedBox(height: 16),
@@ -120,7 +120,7 @@ class _HospitalMedicineTabState extends State<HospitalMedicineTab> {
                 Expanded(
                   child: Text(
                     widget.hospital.location,
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 13),
                   ),
                 ),
               ],
@@ -130,7 +130,12 @@ class _HospitalMedicineTabState extends State<HospitalMedicineTab> {
           // Prescription title
           const Text(
             'Upload Prescription',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Poppins',
+              color: AppColors.black,
+            ),
           ),
           const SizedBox(height: 12),
           // Upload buttons – rounded with border

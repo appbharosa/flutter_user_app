@@ -263,7 +263,6 @@ class _HospitalsTabState extends State<HospitalsTab> {
       ],
     );
   }
-
   Widget _buildHospitalCard(Hospital hospital) {
     return Card(
       color: AppColors.whiteColor,
@@ -272,65 +271,104 @@ class _HospitalsTabState extends State<HospitalsTab> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                hospital.logo,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.local_hospital, size: 40),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(hospital.name, style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Poppins',
-                  )),
-                  if (hospital.tagline.isNotEmpty) const SizedBox(height: 4),
-                  if (hospital.tagline.isNotEmpty)
-                    Text(hospital.tagline, style: TextStyle(
+            // Top row: square image (left) + name & tagline (right)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Square image with plus icon fallback
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    hospital.logo,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 70,
+                      height: 70,
                       color: AppColors.black,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Poppins',
-                    )),
-                  const SizedBox(height: 4),
-                  if (hospital.openTime.isNotEmpty && hospital.closeTime.isNotEmpty)
-                    Text('⏰ ${hospital.openTime} - ${hospital.closeTime}', style: TextStyle(
-                      color: AppColors.black,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      fontFamily: 'Poppins',
-                    )),
-                  const SizedBox(height: 4),
-                  Row(
+                      child: const Icon(Icons.add, size: 32, color: AppColors.black),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 22),
+                // Right side: name and specialization
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.location_on, size: 16, color: AppColors.red),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          hospital.location.isNotEmpty ? hospital.location : 'Unknown location',
-                          style: TextStyle(
-                            color: AppColors.black,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            fontFamily: 'Poppins',
-                          ),
+                      Text(
+                        hospital.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: AppColors.black,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      if (hospital.tagline.isNotEmpty) const SizedBox(height: 4),
+                      if (hospital.tagline.isNotEmpty)
+                        Text(
+                          hospital.tagline,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'Poppins',
+                            color: AppColors.black.withOpacity(0.7),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Time row (below the image+text row)
+            Row(
+              children: [
+                Icon(Icons.access_time, size: 16, color: AppColors.red),
+                const SizedBox(width: 14),
+                Text(
+                  hospital.openTime.isNotEmpty && hospital.closeTime.isNotEmpty
+                      ? '${hospital.openTime} - ${hospital.closeTime}'
+                      : 'Timings not available',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    fontFamily: 'Poppins',
+                    color: AppColors.black,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Address row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start, // 👈 Add this
+              children: [
+                Icon(Icons.location_on, size: 16, color: AppColors.red),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    hospital.location.isNotEmpty ? hospital.location : 'Unknown location',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: 'Poppins',
+                      color: AppColors.black,
+                    ),
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

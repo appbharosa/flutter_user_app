@@ -16,7 +16,7 @@ import 'attach_prescription_page.dart';
 
 class DiagnosticsTab extends StatefulWidget {
   final ValueNotifier<String> searchNotifier;
-  final ValueNotifier<Address?> addressNotifier; // ✅ added
+  final ValueNotifier<Address?> addressNotifier; // added
   const DiagnosticsTab({
     super.key,
     required this.searchNotifier,
@@ -41,7 +41,7 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
     _diagnosticBloc = sl<DiagnosticBloc>();
     _scrollController.addListener(_onScroll);
     widget.searchNotifier.addListener(_onSearchChanged);
-    widget.addressNotifier.addListener(_onAddressChanged); // ✅ listen to address changes
+    widget.addressNotifier.addListener(_onAddressChanged); //  listen to address changes
   }
 
   void _onAddressChanged() {
@@ -68,13 +68,10 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
       final lat = double.tryParse(address.lat) ?? 0.0;
       final lon = double.tryParse(address.lon) ?? 0.0;
       final lang = languageState.language.apiCode;
-      print("🩺 Loading diagnostics with lat=$lat, lon=$lon, lang=$lang");
       _diagnosticBloc.add(LoadDiagnostics(page: 1, lat: lat, lon: lon, lang: lang));
       setState(() => _dataLoaded = true);
     } else if (address == null) {
-      print("⚠️ DiagnosticsTab: No address selected yet");
     } else if (languageState is! LanguageChanged) {
-      print("⚠️ DiagnosticsTab: Language not settled yet");
     }
   }
 
@@ -109,7 +106,7 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
   @override
   void dispose() {
     widget.searchNotifier.removeListener(_onSearchChanged);
-    widget.addressNotifier.removeListener(_onAddressChanged); // ✅ remove listener
+    widget.addressNotifier.removeListener(_onAddressChanged); //  remove listener
     _scrollController.dispose();
     super.dispose();
   }
@@ -183,46 +180,59 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(diagnostic.name.isNotEmpty ? diagnostic.name : 'Diagnostic Center', style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,  // SemiBold
-                    fontFamily: 'Poppins',
-                  ),),
-                  const SizedBox(height: 4),
-                  if (diagnostic.openTime.isNotEmpty && diagnostic.closeTime.isNotEmpty)
-                    Text('⏰ ${diagnostic.openTime} - ${diagnostic.closeTime}', style: TextStyle(
-                      color: AppColors.black,
+                  Text(diagnostic.name.isNotEmpty ? diagnostic.name : 'Diagnostic Center',
+                    style: const TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontWeight: FontWeight.bold,
                       fontFamily: 'Poppins',
-                    ),),
-                  const SizedBox(height: 4),
+                      color: AppColors.black,
+                    ),
+
+                  ),
+                  SizedBox(height: 8,),
+                  // Time row
+                  if (diagnostic.openTime.isNotEmpty && diagnostic.closeTime.isNotEmpty)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start, // Icon aligns with first line
+                      children: [
+                        Icon(Icons.access_time, size: 16, color: AppColors.red),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${diagnostic.openTime} - ${diagnostic.closeTime}',
+                            style: const TextStyle(
+                              color: AppColors.black,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w400,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 8),
+
+// Location row
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start, // Icon stays at first line
                     children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: AppColors.red,
-                      ),
-                      SizedBox(width: 4), // spacing between icon and text
+                      Icon(Icons.location_on, size: 16, color: AppColors.red),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          diagnostic.location.isNotEmpty
-                              ? diagnostic.location
-                              : 'Unknown location',
-                          style: TextStyle(
+                          diagnostic.location.isNotEmpty ? diagnostic.location : 'Unknown location',
+                          style: const TextStyle(
                             color: AppColors.black,
-                            fontSize: 13,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w400,
                             fontFamily: 'Poppins',
                           ),
-
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
               //    Text('📏 ${diagnostic.distance}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),

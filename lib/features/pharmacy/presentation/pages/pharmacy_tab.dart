@@ -4,8 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user/features/pharmacy/presentation/pages/pharmacy_detail_page.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../data/models/pharmacy_order.dart';
-import '../../../../data/models/pharmacy_order_status.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/pharmacy.dart';
 import '../../../language/bloc/language_bloc.dart';
@@ -72,9 +70,7 @@ class _PharmacyTabState extends State<PharmacyTab> {
       _pharmacyBloc.add(LoadPharmacies(page: 1, lat: lat, lon: lon, lang: lang));
       setState(() => _dataLoaded = true);
     } else if (address == null) {
-      print("⚠️ PharmacyTab: No address selected yet");
     } else if (languageState is! LanguageChanged) {
-      print("⚠️ PharmacyTab: Language not settled yet");
     }
   }
 
@@ -204,7 +200,7 @@ class _PharmacyTabState extends State<PharmacyTab> {
                     pharmacy.name,
                     style: const TextStyle(
                       color: AppColors.black,
-                      fontSize: 16,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'Poppins',
                     ),
@@ -223,8 +219,9 @@ class _PharmacyTabState extends State<PharmacyTab> {
                         Text(
                           '${pharmacy.openTime} - ${pharmacy.closeTime}',
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             color: AppColors.black,
+                            fontWeight: FontWeight.w400,
                             fontFamily: 'Poppins',
                           ),
                         ),
@@ -245,10 +242,11 @@ class _PharmacyTabState extends State<PharmacyTab> {
                           pharmacy.location,
                           style: const TextStyle(
                             color: AppColors.black,
-                            fontSize: 13,
+                            fontSize: 12,
                             fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
                           ),
-                          maxLines: 2,
+                          maxLines: 4,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -290,7 +288,7 @@ class _PharmacyTabState extends State<PharmacyTab> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
         border: Border.all(color: color),
         borderRadius: BorderRadius.circular(20),

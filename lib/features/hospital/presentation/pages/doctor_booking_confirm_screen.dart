@@ -4,13 +4,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/services/language_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../domain/entities/doctor_coupon.dart';
 import '../../../../domain/entities/hospital_doctor.dart';
 import '../../../home/presentation/pages/home_page.dart';
 import '../doctor_booking_bloc/doctor_booking_bloc.dart';
 import '../doctor_booking_bloc/doctor_booking_event.dart';
 import '../doctor_booking_bloc/doctor_booking_state.dart';
 import '../doctor_coupon_bloc/doctor_coupon_bloc.dart';
-
 
 
 class DoctorBookingConfirmScreen extends StatefulWidget {
@@ -49,6 +49,7 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
   int _originalFee = 0;
   int _discountedFee = 0;
   String? _appliedCouponCode;
+  String? _appliedCouponId;
 
   @override
   void initState() {
@@ -67,27 +68,40 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
     _couponBloc.add(LoadDoctorCoupons(language));
   }
 
+  void _applyCoupon(DoctorCoupon coupon) async {
+    // Close bottom sheet if open
+    if (Navigator.canPop(context)) Navigator.pop(context);
+    final language = await LanguageService.getCurrentLanguage();
+    _couponBloc.add(ApplyDoctorCoupon(
+      couponCode: coupon.name,
+      subtotal: _originalFee,
+      language: language,
+    ));
+  }
+
   void _showCouponBottomSheet() {
+    // Ensure previous sheet is closed before opening a new one
+    if (ModalRoute.of(context)?.isCurrent != true) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: BlocBuilder<DoctorCouponBloc, DoctorCouponState>(
-          bloc: _couponBloc,
-          builder: (context, state) {
-            if (state is DoctorCouponLoading) {
-              return const Center(child: CircularProgressIndicator());
+      builder: (context) => BlocBuilder<DoctorCouponBloc, DoctorCouponState>(
+        bloc: _couponBloc,
+        builder: (context, state) {
+          if (state is DoctorCouponLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state is DoctorCouponLoaded) {
+            final coupons = state.coupons;
+            if (coupons.isEmpty) {
+              return const Center(child: Text('No coupons available'));
             }
-            if (state is DoctorCouponLoaded) {
-              final coupons = state.coupons;
-              if (coupons.isEmpty) {
-                return const Center(child: Text('No coupons available'));
-              }
-              return Column(
+            return Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -101,41 +115,43 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
                     itemCount: coupons.length,
                     itemBuilder: (context, index) {
                       final coupon = coupons[index];
+                      final isApplied = _appliedCouponId == coupon.id;
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: ListTile(
-                          title: Text(coupon.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          title: Text(
+                            coupon.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isApplied ? AppColors.blue : Colors.black,
+                            ),
+                          ),
                           subtitle: Text('${coupon.description} (${coupon.percentage}% off)'),
                           trailing: ElevatedButton(
-                            onPressed: () async {
-                              final language = await LanguageService.getCurrentLanguage();
-                              _couponBloc.add(ApplyDoctorCoupon(
-                                couponCode: coupon.name,
-                                subtotal: _originalFee,
-                                language: language,
-                              ));
-                              Navigator.pop(context);
-                            },
+                            onPressed: isApplied ? null : () => _applyCoupon(coupon),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.blue,
+                              backgroundColor: isApplied ? Colors.grey : AppColors.blue,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             ),
-                            child: const Text('Apply', style: TextStyle(color: Colors.white)),
+                            child: Text(
+                              isApplied ? 'Applied' : 'Apply',
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
                       );
                     },
                   ),
                 ],
-              );
-            }
-            if (state is DoctorCouponError) {
-              return Center(child: Text(state.message));
-            }
-            return const SizedBox();
-          },
-        ),
+              ),
+            );
+          }
+          if (state is DoctorCouponError) {
+            return Center(child: Text(state.message));
+          }
+          return const SizedBox();
+        },
       ),
     );
   }
@@ -205,6 +221,7 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
             setState(() {
               _discountedFee = state.applied.finalAmount;
               _appliedCouponCode = state.applied.code;
+           //   _appliedCouponId = state.applied.couponId;
             });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -279,7 +296,7 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
                   'Confirm Booking',
                   style: TextStyle(
                     color: AppColors.whiteColor,
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w500,
                     fontFamily: 'Poppins',
                   ),
@@ -323,11 +340,11 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
                                           children: [
                                             Text(
                                               widget.doctor.name,
-                                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+                                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
                                             ),
                                             const SizedBox(height: 2),
-                                            Text(widget.doctor.specialization, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                                            Text(widget.doctor.qualification, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                                            Text(widget.doctor.specialization, style: const TextStyle(fontSize: 12, color: Colors.black)),
+                                            Text('Qual: ${widget.doctor.qualificationNames}', style: const TextStyle(fontSize: 12, color: Colors.black)),
                                             const SizedBox(height: 4),
                                             Text('Exp: ${widget.doctor.experience} yrs', style: const TextStyle(fontSize: 13)),
                                           ],
@@ -338,7 +355,6 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
                                 ),
                               ),
                               const SizedBox(height: 16),
-
                               // Slot & Fee card
                               Card(
                                 elevation: 2,
@@ -350,11 +366,11 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
                                     children: [
                                       Row(
                                         children: [
-                                          const Icon(Icons.calendar_today, size: 16, color: AppColors.blue),
+                                          const Icon(Icons.calendar_today, size: 14, color: AppColors.blue),
                                           const SizedBox(width: 8),
                                           Text(
                                             '${widget.formattedDate} at ${widget.slotTime}',
-                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                                           ),
                                         ],
                                       ),
@@ -365,7 +381,7 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
                                           const SizedBox(width: 8),
                                           Text(
                                             'Patient: ${widget.familyMemberName}',
-                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                                           ),
                                         ],
                                       ),
@@ -373,7 +389,7 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          const Text('Consultation Fee', style: TextStyle(fontSize: 16)),
+                                          const Text('Consultation Fee', style: TextStyle(fontSize: 14)),
                                           Text('₹${widget.consultationFee}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                                         ],
                                       ),
@@ -384,7 +400,7 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
                                           children: [
                                             Text(
                                               'Coupon Discount ($_appliedCouponCode)',
-                                              style: const TextStyle(color: Colors.green, fontSize: 14),
+                                              style: const TextStyle(color: Colors.green, fontSize: 12.5),
                                             ),
                                             Text(
                                               '- ₹${_originalFee - _discountedFee}',

@@ -25,7 +25,12 @@ class SubscriptionPage extends StatelessWidget {
       ],
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Subscription Plans'),
+          title: const Text('Subscription Plans',style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,  // SemiBold
+            fontFamily: 'Poppins',
+            color: AppColors.whiteColor,
+          ),),
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
         ),
@@ -47,7 +52,7 @@ class SubscriptionPage extends StatelessWidget {
                       'Choose your plan',
                       style: TextStyle(
                         color: AppColors.black,
-                        fontSize: 17,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         fontFamily: 'Poppins',
                       ),
@@ -112,13 +117,28 @@ class SubscriptionPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(plan.name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text(plan.name,style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                    color: AppColors.whiteColor,
+                  ),),
                   const SizedBox(height: 4),
-                  Text(plan.duration, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  Text(plan.duration, style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w300,
+                    fontFamily: 'Poppins',
+                    color: AppColors.whiteColor,
+                  ),),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Text('₹${plan.finalPrice.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text('₹${plan.finalPrice.toStringAsFixed(0)}',style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Poppins',
+                        color: AppColors.whiteColor,
+                      ),),
                       if (plan.price > plan.finalPrice) ...[
                         const SizedBox(width: 8),
                         Text('₹${plan.price.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white70, fontSize: 14, decoration: TextDecoration.lineThrough)),
@@ -128,7 +148,6 @@ class SubscriptionPage extends StatelessWidget {
                 ],
               ),
             ),
-            /// BENEFITS
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -139,13 +158,18 @@ class SubscriptionPage extends StatelessWidget {
                     children: [
                       const Icon(Icons.check_circle, size: 18, color: Colors.green),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(benefit, style: const TextStyle(fontSize: 13))),
+                      Expanded(child: Text(benefit,style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w400,
+                        fontFamily: 'Poppins',
+                        color: AppColors.black,
+                      ))),
                     ],
                   ),
                 )).toList(),
               ),
             ),
-            /// BUTTON
+
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
               child: SizedBox(
@@ -201,9 +225,14 @@ class SubscriptionPage extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Price Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                    const Text('Price Details', style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                      color: AppColors.black,
+                    ),),
                     const SizedBox(height: 16),
-                    _buildDetailRow('Plan', plan.name),
+                    _buildDetailRow('Plan', plan.name,),
                     _buildDetailRow('Subtotal', '₹${plan.finalPrice.toStringAsFixed(2)}'),
                     _buildDetailRow('Persons Covered', plan.personsCovered.toString()),
                     _buildDetailRow('GST (18%)', '₹${plan.gstAmount.toStringAsFixed(2)}'),
@@ -225,7 +254,7 @@ class SubscriptionPage extends StatelessWidget {
                         },
                         child: const Text(
                           'Subscribe Now',
-                          style: TextStyle(color: AppColors.whiteColor, fontSize: 16, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -262,8 +291,18 @@ class SubscriptionPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(label, style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Poppins',
+            color: AppColors.black,
+          )),
+          Text(value, style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Poppins',
+            color: AppColors.black,
+          )),
         ],
       ),
     );

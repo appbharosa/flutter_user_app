@@ -6,6 +6,7 @@ class AppUrls{
   static const String registration ="registration";
   static const String profile ="profile";
   static const String updateProfile ="profile";
+  static const String addFamily="add-family-member";
   static const String about ="get-pages/about_us";
   static const String contactUs="submit-contact-us";
   static const String addressList="address-list";

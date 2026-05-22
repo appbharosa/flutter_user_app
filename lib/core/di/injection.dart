@@ -14,6 +14,7 @@ import '../../data/data_sources/doctor_coupon_remote_datasource.dart';
 import '../../data/data_sources/doctor_slots_remote_datasource.dart';
 import '../../data/data_sources/ecard_remote_datasource.dart';
 import '../../data/data_sources/family_member_remote_datasource.dart';
+import '../../data/data_sources/family_remote_datasource.dart';
 import '../../data/data_sources/hospital_booking_history_remote_datasource.dart';
 import '../../data/data_sources/hospital_diagnostic_remote_datasource.dart';
 import '../../data/data_sources/hospital_doctor_booking_history_remote_datasource.dart';
@@ -57,6 +58,7 @@ import '../../data/repositories/doctor_coupon_repository_impl.dart';
 import '../../data/repositories/doctor_slots_repository_impl.dart';
 import '../../data/repositories/ecard_repository_impl.dart';
 import '../../data/repositories/family_member_repository_impl.dart';
+import '../../data/repositories/family_repository_impl.dart';
 import '../../data/repositories/hospital_booking_history_repository_impl.dart';
 import '../../data/repositories/hospital_diagnostic_repository_impl.dart';
 import '../../data/repositories/hospital_doctor_booking_history_repository_impl.dart';
@@ -99,6 +101,7 @@ import '../../domain/repositories/doctor_coupon_repository.dart';
 import '../../domain/repositories/doctor_slots_repository.dart';
 import '../../domain/repositories/ecard_repository.dart';
 import '../../domain/repositories/family_member_repository.dart';
+import '../../domain/repositories/family_repository.dart';
 import '../../domain/repositories/hospital_booking_history_repository.dart';
 import '../../domain/repositories/hospital_diagnostic_repository.dart';
 import '../../domain/repositories/hospital_doctor_booking_history_repository.dart';
@@ -131,6 +134,7 @@ import '../../domain/repositories/profile_repository.dart';
 import '../../domain/repositories/subscription_payment_repository.dart';
 import '../../domain/repositories/subscription_repository.dart';
 import '../../domain/use_cases/add_address_usecase.dart';
+import '../../domain/use_cases/add_family_member.dart';
 import '../../domain/use_cases/add_med_locker_usecase.dart';
 import '../../domain/use_cases/apply_doctor_coupon.dart';
 import '../../domain/use_cases/apply_lab_coupon_usecase.dart';
@@ -238,6 +242,7 @@ import '../../features/pedometer/gps/new_gps/gps_bloc.dart';
 import '../../features/pharmacy/presentation/bloc/pharmacy_bloc.dart';
 import '../../features/pharmacy/presentation/confirm_bloc/order_bloc.dart';
 import '../../features/pharmacy/presentation/pharmacy_booking_history_bloc/pharmacy_booking_history_bloc.dart';
+import '../../features/profile/presentation/add_family_bloc/add_family_bloc.dart';
 import '../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../../features/registration/presentation/bloc/registration_bloc.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
@@ -306,9 +311,12 @@ Future<void> init() async {
   sl.registerLazySingleton<OnlineDoctorBookingHistoryRemoteDataSource>(() => OnlineDoctorBookingHistoryRemoteDataSourceImpl(dioClient: sl()),);
   sl.registerLazySingleton<DoctorSlotsRemoteDataSource>(() => DoctorSlotsRemoteDataSourceImpl(dioClient: sl()),);
   sl.registerLazySingleton<DoctorCouponRemoteDataSource>(() => DoctorCouponRemoteDataSourceImpl(dioClient: sl()),);
-  sl.registerLazySingleton<NotificationRemoteDataSource>(
-        () => NotificationRemoteDataSourceImpl(sl()),
+  sl.registerLazySingleton<NotificationRemoteDataSource>(() => NotificationRemoteDataSourceImpl(sl()),
   );
+  sl.registerLazySingleton<FamilyRemoteDataSource>(() => FamilyRemoteDataSourceImpl(sl()));
+
+
+
   // ========== Repositories ==========
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
     remoteDataSource: sl(),
@@ -480,6 +488,7 @@ Future<void> init() async {
       networkInfo: sl(),
     ),
   );
+  sl.registerLazySingleton<FamilyRepository>(() => FamilyRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()));
 
   // ========== Use Cases ==========
   sl.registerLazySingleton(() => SendOtpUseCase(sl()));
@@ -544,6 +553,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetUnreadCountUseCase(sl()));
   sl.registerLazySingleton(() => MarkNotificationReadUseCase(sl()));
   sl.registerLazySingleton(() => MarkAllNotificationsReadUseCase(sl()));
+  sl.registerLazySingleton(() => AddFamilyMemberUseCase(sl()));
 
 
   // ========== BLoCs ==========
@@ -605,10 +615,11 @@ Future<void> init() async {
   ));
   sl.registerFactory(() => OnlineDoctorBookingBloc(dioClient: sl(), cashfreeService: sl(),
   ));
-  sl.registerFactory(() => NotificationBloc(
-    getNotificationsUseCase: sl(),
+  sl.registerFactory(() => NotificationBloc(getNotificationsUseCase: sl(),
   //  getUnreadCountUseCase: sl(),
-    markNotificationReadUseCase: sl(),
+      markNotificationReadUseCase: sl(),
   //  markAllNotificationsReadUseCase: sl(),
   ));
+  // Family
+  sl.registerFactory(() => AddFamilyBloc(addFamilyMemberUseCase: sl()));
 }

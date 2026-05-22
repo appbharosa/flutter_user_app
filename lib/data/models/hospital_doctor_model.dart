@@ -7,11 +7,14 @@ class HospitalDoctorModel extends HospitalDoctor {
     required super.name,
     required super.specialization,
     required super.qualification,
+    required super.qualificationNames,
     required super.experience,
     required super.consultationFee,
     required super.image,
-    required super.rating,
-    required super.reviewsCount,
+    required super.phone,
+    required super.status,
+    required super.createdAt,
+    super.updatedAt,
   });
 
   factory HospitalDoctorModel.fromJson(Map<String, dynamic> json) {
@@ -21,11 +24,14 @@ class HospitalDoctorModel extends HospitalDoctor {
       name: json['name'] ?? '',
       specialization: json['specialization'] ?? '',
       qualification: json['qualification'] ?? '',
-      experience: json['experience'] ?? '',
+      qualificationNames: json['qualification_names'] ?? '',
+      experience: json['experience'] ?? 0,
       consultationFee: json['consultation_fee'] ?? 0,
       image: json['image'] ?? '',
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      reviewsCount: json['reviews_count'] ?? 0,
+      phone: json['phone']?.toString() ?? '',
+      status: json['status'] ?? 1,
+      createdAt: json['created_at'] ?? '',
+      updatedAt: json['updated_at'],
     );
   }
 }

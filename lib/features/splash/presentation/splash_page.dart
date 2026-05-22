@@ -1,17 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-import '../../../core/di/injection.dart' as di;
-import '../../../domain/repositories/auth_repository.dart';
+import '../../../core/utils/pending_call.dart';          // ← import global var
+import '../../../core/utils/navigation.dart';           // ← for navigatorKey
 import '../../home/presentation/pages/home_page.dart';
 import '../../language/pages/language_selection_page.dart';
-
-
-
+import '../../video_call_screen.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -39,29 +33,51 @@ class _SplashPageState extends State<SplashPage>
     );
     _controller.forward();
 
-    // After animation, navigate based on token
     Timer(const Duration(seconds: 2), () async {
       final token = await _storage.read(key: 'access_token');
       if (token != null && token.isNotEmpty) {
-        // User is logged in → go to HomePage
         if (mounted) {
-          Navigator.pushReplacement(
+          await Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const HomePage()),
           );
+          _checkPendingCall();
         }
       } else {
-        // Not logged in → go to Language Selection (from splash)
         if (mounted) {
-          Navigator.pushReplacement(
+          await Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (_) => const LanguageSelectionPage(fromSplash: true),
-            ),
+            MaterialPageRoute(builder: (_) => const LanguageSelectionPage(fromSplash: true)),
           );
+          _checkPendingCall();
         }
       }
     });
+  }
+
+  void _checkPendingCall() {
+    if (pendingCallData != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = navigatorKey.currentContext;
+        if (ctx != null) {
+          Navigator.push(
+            ctx,
+            MaterialPageRoute(
+              builder: (_) => VideoCallScreen(
+                token: pendingCallData!['token'] ?? '',
+                name: pendingCallData!['name'] ?? 'Doctor',
+                doctorId: pendingCallData!['doctor_id']?.toString() ?? '',
+                playerId: pendingCallData!['player_id']?.toString() ?? '',
+                familyMemberId: pendingCallData!['family_member_id']?.toString() ?? '',
+                bookingId: pendingCallData!['booking_id']?.toString() ?? '',
+                consultType: pendingCallData!['consult_type'] ?? 'online',
+              ),
+            ),
+          );
+          pendingCallData = null;
+        }
+      });
+    }
   }
 
   @override

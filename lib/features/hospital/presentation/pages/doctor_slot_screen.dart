@@ -74,7 +74,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
             'Select Time Slot',
             style: TextStyle(
               color: AppColors.whiteColor,
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w500,
               fontFamily: 'Poppins',
             ),
@@ -107,7 +107,12 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 children: [
                   const Text(
                     'Select Date',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
+                      color: AppColors.black,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   GestureDetector(
@@ -144,7 +149,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                               const SizedBox(width: 12),
                               Text(
                                 _formatDate(_selectedDate),
-                                style: const TextStyle(fontSize: 16, fontFamily: 'Poppins'),
+                                style: const TextStyle(fontSize: 14, fontFamily: 'Poppins'),
                               ),
                             ],
                           ),
@@ -166,8 +171,8 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                   'Available Time Slots',
                   style: TextStyle(
                     color: AppColors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,  // SemiBold
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,  // SemiBold
                     fontFamily: 'Poppins',
                   ),
                 ),
@@ -219,12 +224,12 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                             const SizedBox(height: 16),
                             Row(
                               children: [
-                                Text(session.sessionIcon, style: const TextStyle(fontSize: 24)),
+                                Text(session.sessionIcon, style: const TextStyle(fontSize: 16)),
                                 const SizedBox(width: 8),
                                 Text(
                                   session.session,
                                   style: const TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: 'Poppins',
                                   ),
@@ -254,7 +259,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                               children: availableSlots.map((slot) {
                                 final isSelected = _selectedSlotId == slot.slotId;
                                 return FilterChip(
-                                  label: Text(slot.time, style: const TextStyle(fontFamily: 'Poppins')),
+                                  label: Text(slot.startTime, style: const TextStyle(fontFamily: 'Poppins')),
                                   selected: isSelected,
                                   onSelected: (selected) {
                                     setState(() {
@@ -357,7 +362,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 Text(
                   widget.doctor.name,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Poppins',
                   ),
@@ -365,11 +370,13 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 const SizedBox(height: 2),
                 Text(
                   widget.doctor.specialization,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: const TextStyle(fontSize: 12, color: Colors.black,  fontFamily: 'Poppins',),
                 ),
+                SizedBox(height: 4,),
                 Text(
-                  widget.doctor.qualification,
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  'Qualification: ${ widget.doctor.qualificationNames} ',
+
+                  style: const TextStyle(fontSize: 12, color: Colors.black,  fontFamily: 'Poppins',),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -378,7 +385,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 ),
                 Text(
                   'Fee: ₹${widget.doctor.consultationFee}',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.blue),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.blue),
                 ),
               ],
             ),

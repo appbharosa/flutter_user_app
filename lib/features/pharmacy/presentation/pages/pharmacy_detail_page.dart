@@ -131,7 +131,7 @@ class _PharmacyDetailPageState extends State<PharmacyDetailPage> {
       appBar: AppBar(
         title: Text(widget.pharmacy.name,style: TextStyle(
           color: AppColors.whiteColor,
-          fontSize: 18,
+          fontSize: 17,
           fontWeight: FontWeight.w600,  // SemiBold
           fontFamily: 'Poppins',
         ),),

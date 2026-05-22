@@ -4,10 +4,13 @@ import 'package:user/core/theme/app_colors.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../core/utils/translations.dart';
+import '../../../../core/utils/user_manager.dart';
 import '../../../../domain/entities/user_profile.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
+import 'add_family_member_screen.dart';
 
 
 
@@ -117,12 +120,37 @@ class _ProfilePageState extends State<ProfilePage> {
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
+            // ... inside ProfilePage class, in the appBar actions
             actions: [
               IconButton(
-                icon: Icon(_isEditing ? Icons.close : Icons.edit),
-                onPressed: () => setState(() => _isEditing = !_isEditing),
+                icon: const Icon(Icons.person_add),
+                onPressed: () async {
+                  final userId = await UserManager.getUserId();
+                  if (userId != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AddFamilyMemberScreen(userId: userId),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('User not found. Please login again.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+                tooltip: 'Add Family Member',
               ),
             ],
+            // actions: [
+            //   IconButton(
+            //     icon: Icon(_isEditing ? Icons.close : Icons.edit),
+            //     onPressed: () => setState(() => _isEditing = !_isEditing),
+            //   ),
+            // ],
           ),
           body: BlocConsumer<ProfileBloc, ProfileState>(
             listener: (context, state) {

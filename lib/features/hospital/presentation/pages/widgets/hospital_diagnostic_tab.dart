@@ -98,7 +98,7 @@ class _HospitalDiagnosticTabState extends State<HospitalDiagnosticTab> {
             ),
             child: Text(
               '⏰ Timing: ${widget.hospital.openTime} - ${widget.hospital.closeTime}',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
           const SizedBox(height: 16),
@@ -123,7 +123,7 @@ class _HospitalDiagnosticTabState extends State<HospitalDiagnosticTab> {
                 Expanded(
                   child: Text(
                     widget.hospital.location,
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 13),
                   ),
                 ),
               ],
@@ -134,10 +134,11 @@ class _HospitalDiagnosticTabState extends State<HospitalDiagnosticTab> {
           // Prescription title
           const Text(
             'Upload Prescription',
-            style: TextStyle(
-              fontSize: 17,
+            style: const TextStyle(
+              fontSize: 13,
               fontWeight: FontWeight.bold,
               fontFamily: 'Poppins',
+              color: AppColors.black,
             ),
           ),
           const SizedBox(height: 12),

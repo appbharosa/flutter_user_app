@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -10,7 +9,6 @@ import '../../../home/presentation/pages/home_page.dart';
 import '../online_doctor_booking_history_bloc/online_doctor_booking_history_bloc.dart';
 import '../online_doctor_booking_history_bloc/online_doctor_booking_history_event.dart';
 import '../online_doctor_booking_history_bloc/online_doctor_booking_history_state.dart';
-
 
 class OnlineDoctorBookingHistoryScreen extends StatefulWidget {
   const OnlineDoctorBookingHistoryScreen({Key? key}) : super(key: key);
@@ -246,38 +244,43 @@ class _OnlineDoctorBookingHistoryScreenState extends State<OnlineDoctorBookingHi
                             children: [
                               Text(
                                 booking.name,
-                                style: const TextStyle(
+                                style: TextStyle(
+                                  color: AppColors.black,
                                   fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,  // SemiBold
                                   fontFamily: 'Poppins',
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Booking ID: ${booking.bookingId}',
-                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                style: TextStyle(
+                                  color: AppColors.black,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,  // SemiBold
+                                  fontFamily: 'Poppins',
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                                  const Icon(Icons.calendar_today, size: 12, color: Colors.black),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${booking.date} | ${booking.time}',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                    style: TextStyle(
+                                      color: AppColors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w400,  // SemiBold
+                                      fontFamily: 'Poppins',
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.person_outline, size: 12, color: Colors.grey),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    booking.patientName,
-                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                                  ),
-                                ],
+                              Text(
+                                booking.specialization,
+                                style: TextStyle(fontSize: 13, color: Colors.black),
                               ),
                             ],
                           ),
@@ -311,15 +314,7 @@ class _OnlineDoctorBookingHistoryScreenState extends State<OnlineDoctorBookingHi
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            booking.specialization,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
+
                       ],
                     ),
                     if (booking.fee > 0)

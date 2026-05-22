@@ -93,7 +93,7 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                                 hospital.name,
                                 style: TextStyle(
                                   color: AppColors.black,
-                                  fontSize: 15,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,  // SemiBold
                                   fontFamily: 'Poppins',
                                 ),
@@ -101,12 +101,11 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                               const SizedBox(height: 4),
                               Text(hospital.tagline,style: TextStyle(
                                 color: AppColors.black,
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w400,  // SemiBold
                                 fontFamily: 'Poppins',
                               ),),
                               const SizedBox(height: 34),
-                             // Text('⏰ ${hospital.openTime} - ${hospital.closeTime}'),
                             ],
                           ),
                         ),
@@ -129,7 +128,6 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        // Doctors Tab (existing)
                         doctors.isEmpty
                             ? const Center(child: Text('No doctors found'))
                             :
@@ -217,61 +215,106 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
+      color: AppColors.whiteColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                doctor.image,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 60),
-              ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    doctor.name,
-                      style: TextStyle(
-                        color: AppColors.black,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,  // SemiBold
-                        fontFamily: 'Poppins',
-                      ),
+            // Top row: square image (left) + name & specialization (right)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    doctor.image,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 70,
+                      height: 70,
+                      color: AppColors.black,
+                      child: const Icon(Icons.person, size: 40, color: AppColors.black),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(doctor.specialization, style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,  // SemiBold
-                    fontFamily: 'Poppins',
-                  ),),
-                  const SizedBox(height: 4),
-                  Text(doctor.qualification, style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,  // SemiBold
-                    fontFamily: 'Poppins',
-                  ),),
-                  const SizedBox(height: 4),
-                  Text('Experience: ${doctor.experience}', style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,  // SemiBold
-                    fontFamily: 'Poppins',
-                  ),),
-                  const SizedBox(height: 4),
-                //  Text('Fee: ₹${doctor.rating}', style: const TextStyle(fontWeight: FontWeight.w500)),
-                ],
-              ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        doctor.name,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: AppColors.black,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        doctor.specialization,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Poppins',
+                          color: AppColors.black.withOpacity(0.7),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Qualification row
+            Row(
+              children: [
+                Icon(Icons.school, size: 16, color: AppColors.red),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    doctor.qualificationNames.isNotEmpty ? doctor.qualificationNames : 'Qualification not available',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: 'Poppins',
+                      color: AppColors.black,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Experience row
+            Row(
+              children: [
+                Icon(Icons.work, size: 16, color: AppColors.red),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Experience: ${doctor.experience}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: 'Poppins',
+                      color: AppColors.black,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

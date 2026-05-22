@@ -134,7 +134,7 @@ class _HospitalFiltersPageState extends State<HospitalFiltersPage> {
                         child: ListTile(
                           title: Text(category.name,style: TextStyle(
                             color: AppColors.black,
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w400,  // SemiBold
                             fontFamily: 'Poppins',
                           ),),
@@ -166,7 +166,7 @@ class _HospitalFiltersPageState extends State<HospitalFiltersPage> {
                         onChanged: (_) => _toggleSpeciality(spec.id),
                         title: Text(spec.name,style: TextStyle(
                           color: AppColors.black,
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w400,  // SemiBold
                           fontFamily: 'Poppins',
                         )),

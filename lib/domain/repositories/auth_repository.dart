@@ -10,7 +10,7 @@ abstract class AuthRepository {
   Future<Either<Failure, LoginResponse>> sendOtp(String phoneNumber);
   Future<Either<Failure, OtpResponse>> verifyOtp(int userId, String otp);
   Future<Either<Failure, Registration>> registerUser(Map<String, dynamic> userData);
-  Future<Either<Failure, OtpResponse>> getSavedUser();   // ✅ add this line
+  Future<Either<Failure, OtpResponse>> getSavedUser();
   Future<Either<Failure, void>> logout();
 
 }

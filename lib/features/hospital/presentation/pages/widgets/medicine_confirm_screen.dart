@@ -127,7 +127,7 @@ class _MedicineConfirmScreenState
                           child: Text(
                             widget.hospital.location ?? "",
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 12.5,
                               height: 1.5,
                               fontWeight: FontWeight.w400,
                             ),
@@ -341,14 +341,7 @@ class _MedicineConfirmScreenState
                         state is MedicineBookingLoading
                             ? null
                             : () {
-                          print(
-                              "📤 Medicine Booking Request:");
-                          print(
-                              "main_data_id: ${widget.hospital.id}");
-                          print(
-                              "order_type: ${widget.orderType}");
-                          print(
-                              "address_id: ${widget.addressId}");
+
 
                           context
                               .read<
@@ -447,7 +440,7 @@ class _MedicineConfirmScreenState
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                 ),
               ),

@@ -78,8 +78,12 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       'Select Delivery Address',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
-                    ),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Poppins',
+                        color: AppColors.black,
+                      ),                    ),
                   ),
                   const SizedBox(height: 8),
                   Expanded(
@@ -123,7 +127,13 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                           }
                         },
                         icon: const Icon(Icons.add, color: Colors.white),
-                        label: const Text('Add New Address', style: TextStyle(color: Colors.white, fontSize: 16)),
+                        label: const Text('Add New Address', style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: AppColors.whiteColor,
+                        ),
+                        ),
                       ),
                     ),
                   ),
@@ -155,7 +165,12 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
             Expanded(
               child: Text(
                 'Use Current Location',
-                style: const TextStyle(fontWeight: FontWeight.w500, fontFamily: 'Poppins'),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins',
+                  color: AppColors.black,
+                ),
               ),
             ),
             if (isSelected) const Icon(Icons.check_circle, color: Colors.green),
@@ -184,7 +199,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
           children: [
             Icon(
               Icons.location_on,
-              color: Colors.grey.shade600,
+              color: Colors.red,
               size: 24,
             ),
             const SizedBox(width: 12),
@@ -194,13 +209,22 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                 children: [
                   Text(
                     formattedAddress,
-                    style: const TextStyle(fontWeight: FontWeight.w500, fontFamily: 'Poppins'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: 'Poppins',
+                      color: AppColors.black,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${addr.city}, ${addr.state} - ${addr.pincode}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontFamily: 'Poppins'),
-                  ),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: 'Poppins',
+                      color: AppColors.black,
+                    ),                  ),
                   if (addr.isDefault)
                     Container(
                       margin: const EdgeInsets.only(top: 6),

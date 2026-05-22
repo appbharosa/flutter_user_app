@@ -70,7 +70,7 @@ class _HospitalDiagnosticConfirmState extends State<HospitalDiagnosticConfirm> {
             'Confirm Diagnostic Booking',
             style: TextStyle(
               color: AppColors.whiteColor,
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w500,
               fontFamily: 'Poppins',
             ),
@@ -145,7 +145,7 @@ class _HospitalDiagnosticConfirmState extends State<HospitalDiagnosticConfirm> {
                         'Booking Summary',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 13,
                           color: AppColors.blue,
                         ),
                       ),
@@ -335,7 +335,7 @@ class _HospitalDiagnosticConfirmState extends State<HospitalDiagnosticConfirm> {
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

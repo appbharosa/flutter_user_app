@@ -249,58 +249,70 @@ class _LabTestsTabState extends State<LabTestsTab> {
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
                 lab.logo,
-                width: 60,
-                height: 60,
+                width: 70,
+                height: 70,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => const Icon(Icons.science, size: 40),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(lab.name.isNotEmpty ? lab.name : 'Lab Test',style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,  // SemiBold
-                    fontFamily: 'Poppins',
-                  ),),
-                  const SizedBox(height: 4),
-                  if (lab.openTime.isNotEmpty && lab.closeTime.isNotEmpty)
-                    Text('⏰ ${lab.openTime} - ${lab.closeTime}', style: TextStyle(
-                      color: AppColors.black,
+                  Text(lab.name.isNotEmpty ? lab.name : 'Lab Test',
+                    style: const TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontWeight: FontWeight.bold,
                       fontFamily: 'Poppins',
-                    ),),
+                      color: AppColors.black,
+                    ),
+                  ),
                   const SizedBox(height: 4),
+                  // Time row
+                  if (lab.openTime.isNotEmpty && lab.closeTime.isNotEmpty)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start, // Ensures icon aligns with first line of text
+                      children: [
+                        Icon(Icons.access_time, size: 16, color: AppColors.red),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${lab.openTime} - ${lab.closeTime}',
+                            style: const TextStyle(
+                              color: AppColors.black,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w400,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 8),
+
+// Location row
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start, // Icon stays at first line
                     children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: AppColors.red,
-                      ),
-                      SizedBox(width: 4), // spacing between icon and text
+                      Icon(Icons.location_on, size: 16, color: AppColors.red),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          lab.location.isNotEmpty
-                              ? lab.location
-                              : 'Unknown location',
-                          style: TextStyle(
+                          lab.location.isNotEmpty ? lab.location : 'Unknown location',
+                          style: const TextStyle(
                             color: AppColors.black,
-                            fontSize: 13,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w400,
                             fontFamily: 'Poppins',
                           ),
-
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-               //   Text('📏 ${lab.distance}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
