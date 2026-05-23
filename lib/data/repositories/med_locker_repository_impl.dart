@@ -4,6 +4,9 @@ import '../../core/errors/exceptions.dart';
 import '../../core/errors/failures.dart';
 import '../../core/network/network_info.dart';
 import '../../domain/entities/med_locker.dart';
+import '../../domain/entities/med_locker_add_response.dart';
+import '../../domain/entities/med_locker_detail.dart';
+import '../../domain/entities/med_locker_list_item.dart';
 import '../../domain/repositories/med_locker_repository.dart';
 import '../data_sources/med_locker_remote_datasource.dart';
 
@@ -15,7 +18,7 @@ class MedLockerRepositoryImpl implements MedLockerRepository {
   MedLockerRepositoryImpl({required this.remoteDataSource, required this.networkInfo});
 
   @override
-  Future<Either<Failure, List<MedLocker>>> getMedLockers() async {
+  Future<Either<Failure, List<MedLockerListItem>>> getMedLockers() async {
     if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
     try {
       final lockers = await remoteDataSource.getMedLockers();
@@ -30,7 +33,7 @@ class MedLockerRepositoryImpl implements MedLockerRepository {
   }
 
   @override
-  Future<Either<Failure, MedLocker>> getMedLockerDetail(int id) async {
+  Future<Either<Failure, MedLockerDetail>> getMedLockerDetail(int id) async {
     if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
     try {
       final detail = await remoteDataSource.getMedLockerDetail(id);
@@ -45,15 +48,11 @@ class MedLockerRepositoryImpl implements MedLockerRepository {
   }
 
   @override
-  Future<Either<Failure, MedLocker>> addMedLocker({
-    required String name,
-    required List<String> imagePaths,
-  }) async {
+  Future<Either<Failure, MedLockerAddResponse>> addMedLocker(String name, List<File> images) async {
     if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
     try {
-      final files = imagePaths.map((path) => File(path)).toList();
-      final added = await remoteDataSource.addMedLocker(name, files);
-      return Right(added);
+      final response = await remoteDataSource.addMedLocker(name, images);
+      return Right(response);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException {

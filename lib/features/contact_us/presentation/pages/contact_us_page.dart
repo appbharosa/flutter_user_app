@@ -3,11 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/repositories/auth_repository.dart';
+import '../../../home/presentation/pages/home_page.dart';
 import '../bloc/contact_us_bloc.dart';
 import '../bloc/contact_us_event.dart';
 import '../bloc/contact_us_state.dart';
-
-
 
 class ContactUsPage extends StatefulWidget {
   const ContactUsPage({super.key});
@@ -43,7 +42,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
           _userId = user.id;
           _nameController.text = user.name;
           _emailController.text = user.email;
-       //   _mobileController.text = user.mobile;
+          _mobileController.text = user.phone;
         });
       },
     );
@@ -71,7 +70,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
               'Contact Us',
               style: TextStyle(
                 color: AppColors.whiteColor,
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w500,
                 fontFamily: 'Poppins',
               ),
@@ -90,14 +89,22 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   if (state is ContactUsSuccess) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(state.message),
+                        content: const Text('Message sent successfully!'),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        margin: const EdgeInsets.all(10),
+                        margin: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        duration: const Duration(seconds: 3),
                       ),
+                    );
+                    // Navigate to home page and clear all previous routes
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomePage()),
+                          (route) => false,
                     );
                     _formKey.currentState?.reset();
                     _messageController.clear();
@@ -115,112 +122,155 @@ class _ContactUsPageState extends State<ContactUsPage> {
                     );
                   }
                 },
-                builder: (context, state) {
-                  return Column(
-                    children: [
-                      // Scrollable form fields
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(20),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                TextFormField(
-                                  controller: _nameController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Full Name',
-                                    border: OutlineInputBorder(),
+                  builder: (context, state) {
+                    return Column(
+                      children: [
+                        // Scrollable form fields
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(20),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Full Name
+                                  TextFormField(
+                                    controller: _nameController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Full Name',
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: AppColors.blue, width: 2),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: Colors.red),
+                                      ),
+                                    ),
+                                    validator: (v) => v == null || v.isEmpty ? 'Enter your name' : null,
                                   ),
-                                  validator: (v) => v == null || v.isEmpty ? 'Enter your name' : null,
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _emailController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Email',
-                                    border: OutlineInputBorder(),
+                                  const SizedBox(height: 16),
+
+                                  // Email
+                                  TextFormField(
+                                    controller: _emailController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Email',
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: AppColors.blue, width: 2),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: Colors.red),
+                                      ),
+                                    ),
+                                    keyboardType: TextInputType.emailAddress,
+                                    validator: (v) {
+                                      if (v == null || v.isEmpty) return 'Enter email';
+                                      if (!v.contains('@')) return 'Enter valid email';
+                                      return null;
+                                    },
                                   ),
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: (v) {
-                                    if (v == null || v.isEmpty) return 'Enter email';
-                                    if (!v.contains('@')) return 'Enter valid email';
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _mobileController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Mobile',
-                                    border: OutlineInputBorder(),
+                                  const SizedBox(height: 16),
+
+                                  // Mobile
+                                  TextFormField(
+                                    controller: _mobileController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Mobile',
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: AppColors.blue, width: 2),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: Colors.red),
+                                      ),
+                                    ),
+                                    keyboardType: TextInputType.phone,
+                                    validator: (v) => v == null || v.isEmpty ? 'Enter mobile number' : null,
                                   ),
-                                  keyboardType: TextInputType.phone,
-                                  validator: (v) => v == null || v.isEmpty ? 'Enter mobile number' : null,
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _messageController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Message',
-                                    border: OutlineInputBorder(),
+                                  const SizedBox(height: 16),
+
+                                  // Message
+                                  TextFormField(
+                                    controller: _messageController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Message',
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: AppColors.blue, width: 2),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(color: Colors.red),
+                                      ),
+                                    ),
+                                    maxLines: 5,
+                                    validator: (v) => v == null || v.isEmpty ? 'Enter your message' : null,
                                   ),
-                                  maxLines: 5,
-                                  validator: (v) => v == null || v.isEmpty ? 'Enter your message' : null,
-                                ),
-                                // Add extra space at the bottom for comfortable scrolling
-                                const SizedBox(height: 20),
-                              ],
+                                  const SizedBox(height: 20),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      // Fixed Submit Button at bottom
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+
+                        // Fixed Submit Button at bottom
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
-                            ),
-                            onPressed: (state is ContactUsLoading || _userId == null)
-                                ? null
-                                : () {
-                              if (_formKey.currentState!.validate()) {
-                                context.read<ContactUsBloc>().add(
-                                  SubmitContactUs(
-                                    userId: _userId!,
-                                    name: _nameController.text.trim(),
-                                    email: _emailController.text.trim(),
-                                    mobile: _mobileController.text.trim(),
-                                    message: _messageController.text.trim(),
-                                  ),
-                                );
-                              }
-                            },
-                            child: state is ContactUsLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text(
-                              'Submit',
-                              style: TextStyle(
-                                color: AppColors.whiteColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Poppins',
+                              onPressed: (state is ContactUsLoading || _userId == null)
+                                  ? null
+                                  : () {
+                                if (_formKey.currentState!.validate()) {
+                                  context.read<ContactUsBloc>().add(
+                                    SubmitContactUs(
+                                      userId: _userId!,
+                                      name: _nameController.text.trim(),
+                                      email: _emailController.text.trim(),
+                                      mobile: _mobileController.text.trim(),
+                                      message: _messageController.text.trim(),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: state is ContactUsLoading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text(
+                                'Submit',
+                                style: TextStyle(
+                                  color: AppColors.whiteColor,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Poppins',
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  }
               );
             },
           ),

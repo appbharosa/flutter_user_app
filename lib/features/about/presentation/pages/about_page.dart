@@ -19,7 +19,7 @@ class AboutPage extends StatelessWidget {
             "About Us",
             style: TextStyle(
               color: AppColors.whiteColor,
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.w600,  // SemiBold
               fontFamily: 'Poppins',
             ),
@@ -44,7 +44,7 @@ class AboutPage extends StatelessWidget {
                 child: Text(
                   state.about.content,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w300,  // SemiBold
                     fontFamily: 'Poppins',
                   ),

@@ -7,6 +7,7 @@ class AppUrls{
   static const String profile ="profile";
   static const String updateProfile ="profile";
   static const String addFamily="add-family-member";
+  static const String coverageCategory="get-coverage-categories?lang=en";
   static const String about ="get-pages/about_us";
   static const String contactUs="submit-contact-us";
   static const String addressList="address-list";
@@ -40,7 +41,7 @@ class AppUrls{
   static const String onlineDoctorPayment="online-doctor-booking";
   static const String labsList ="labtest-list";
   static const String diagnosticList ="diagnostic-list";
-  static const String medLockerList = "medlocker-list";
+  static const String medLockerList = "medlocker-list?lang=en";
   static const String medLockerAdd = "medlocker-add";
   static const String medLockerShow = "medlocker-show/";
   static const String createPharmacyOrder = "booking-pharmacy";

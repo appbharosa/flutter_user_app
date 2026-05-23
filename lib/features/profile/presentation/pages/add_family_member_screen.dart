@@ -5,7 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/add_family_member_request.dart';
 import '../add_family_bloc/add_family_bloc.dart';
 import '../add_family_bloc/add_family_state.dart';
-
+import '../coverage_category_bloc/coverage_category_bloc.dart';
+import '../coverage_category_bloc/coverage_category_state.dart';
 
 class AddFamilyMemberScreen extends StatefulWidget {
   final int userId;
@@ -16,7 +17,8 @@ class AddFamilyMemberScreen extends StatefulWidget {
 }
 
 class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
-  late AddFamilyBloc _bloc;
+  late AddFamilyBloc _addFamilyBloc;
+  late CoverageCategoryBloc _coverageBloc;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -25,20 +27,37 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
 
   String _selectedGender = 'male';
   String _selectedBloodGroup = 'A+';
-  String _selectedCoverage = 'Health Insurance';
+  int? _selectedCoverageId;
   String _selectedRelationship = 'Self';
 
   final List<String> _relationshipOptions = ['Mother', 'Father', 'Daughter', 'Wife', 'Son', 'Other'];
 
+  int _getBloodGroupInt(String bloodGroup) {
+    switch (bloodGroup) {
+      case 'A+': return 1;
+      case 'A-': return 2;
+      case 'B+': return 3;
+      case 'B-': return 4;
+      case 'O+': return 5;
+      case 'O-': return 6;
+      case 'AB+': return 7;
+      case 'AB-': return 8;
+      default: return 1;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _bloc = di.sl<AddFamilyBloc>();
+    _addFamilyBloc = di.sl<AddFamilyBloc>();
+    _coverageBloc = di.sl<CoverageCategoryBloc>();
+    _coverageBloc.add(LoadCoverageCategories('en'));
   }
 
   @override
   void dispose() {
-    _bloc.close();
+    _addFamilyBloc.close();
+    _coverageBloc.close();
     _nameController.dispose();
     _emailController.dispose();
     _mobileController.dispose();
@@ -59,7 +78,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
   }
 
   void _submit() {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate() && _selectedCoverageId != null) {
       final request = AddFamilyMemberRequest(
         userId: widget.userId,
         name: _nameController.text.trim(),
@@ -67,40 +86,61 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
         mobile: _mobileController.text.trim(),
         gender: _selectedGender,
         dob: _dobController.text,
-        bloodGroup: _selectedBloodGroup,
-        coverageCategory: _selectedCoverage,
+        bloodGroup: _getBloodGroupInt(_selectedBloodGroup),
+        coverageCategory: _selectedCoverageId!,
         relationship: _selectedRelationship,
       );
-      _bloc.add(SubmitAddFamily(request));
+      _addFamilyBloc.add(SubmitAddFamily(request));
+    } else if (_selectedCoverageId == null) {
+      _showCustomSnackBar('Please select a coverage category', isError: true);
     }
+  }
+
+  void _showCustomSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+        ),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _bloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _addFamilyBloc),
+        BlocProvider.value(value: _coverageBloc),
+      ],
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Add Family Member',style: TextStyle(
-            color: AppColors.whiteColor,
-            fontSize: 17,
-            fontWeight: FontWeight.w500,  // SemiBold
-            fontFamily: 'Poppins',
-          ),),
+          title: const Text(
+            'Add Family Member',
+            style: TextStyle(
+              color: AppColors.whiteColor,
+              fontSize: 17,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+            ),
+          ),
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
         ),
         body: BlocConsumer<AddFamilyBloc, AddFamilyState>(
           listener: (context, state) {
             if (state is AddFamilySuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.green),
-              );
+              _showCustomSnackBar(state.message);
               Navigator.pop(context);
             } else if (state is AddFamilyError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-              );
+              _showCustomSnackBar(state.message, isError: true);
             }
           },
           builder: (context, state) {
@@ -117,12 +157,14 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                     _buildTextField(_emailController, 'Email', Icons.email),
                     _buildTextField(_mobileController, 'Mobile', Icons.phone, keyboardType: TextInputType.phone),
                     _buildDateField(),
-                    _buildDropdown('Gender', _selectedGender, ['male', 'female'], (value) => setState(() => _selectedGender = value!)),
-                    _buildDropdown('Blood Group', _selectedBloodGroup, ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'], (value) => setState(() => _selectedBloodGroup = value!)),
-                    _buildDropdown('Coverage Category', _selectedCoverage, [
-                      'Health Insurance', 'ESIC/EHS/CGHS', 'Aarogya Sree', 'Cash', 'Other', 'Aarogya Sree and Health Insurance'
-                    ], (value) => setState(() => _selectedCoverage = value!)),
-                    _buildDropdown('Relationship', _selectedRelationship, _relationshipOptions, (value) => setState(() => _selectedRelationship = value!)),
+                    _buildDropdown('Gender', _selectedGender, ['male', 'female'],
+                            (value) => setState(() => _selectedGender = value!)),
+                    _buildDropdown('Blood Group', _selectedBloodGroup,
+                        ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'],
+                            (value) => setState(() => _selectedBloodGroup = value!)),
+                    _buildCoverageDropdown(),
+                    _buildDropdown('Relationship', _selectedRelationship, _relationshipOptions,
+                            (value) => setState(() => _selectedRelationship = value!)),
                     const SizedBox(height: 30),
                     ElevatedButton(
                       onPressed: _submit,
@@ -130,7 +172,8 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                         backgroundColor: AppColors.blue,
                         minimumSize: const Size(double.infinity, 50),
                       ),
-                      child: const Text('Add Member', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      child: const Text('Add Member',
+                          style: TextStyle(color: Colors.white, fontSize: 16)),
                     ),
                   ],
                 ),
@@ -142,7 +185,8 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType}) {
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon,
+      {TextInputType? keyboardType}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
@@ -175,24 +219,88 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
     );
   }
 
-
   Widget _buildDropdown(String label, String value, List<String> items, Function(String?) onChanged) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<String>(
         value: items.contains(value) ? value : items.first,
-        style: const TextStyle(fontSize: 14, fontFamily: 'Poppins',color: AppColors.black), // smaller selected value text
+        style: const TextStyle(fontSize: 14, fontFamily: 'Poppins', color: AppColors.black),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(fontSize: 14), // smaller label
+          labelStyle: const TextStyle(fontSize: 14),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         items: items.map((e) => DropdownMenuItem(
           value: e,
-          child: Text(e, style: const TextStyle(fontSize: 14)), // smaller menu item text
+          child: Text(e, style: const TextStyle(fontSize: 14)),
         )).toList(),
         onChanged: onChanged,
       ),
+    );
+  }
+
+  Widget _buildCoverageDropdown() {
+    return BlocBuilder<CoverageCategoryBloc, CoverageCategoryState>(
+      builder: (context, state) {
+        if (state is CoverageCategoryLoading) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              child: const Row(
+                children: [
+                  SizedBox(width: 8),
+                  Text('Loading coverage options...'),
+                ],
+              ),
+            ),
+          );
+        } else if (state is CoverageCategoryLoaded) {
+          if (state.categories.isEmpty) {
+            return const Padding(
+              padding: EdgeInsets.only(bottom: 16),
+              child: Text('No coverage categories available'),
+            );
+          }
+          if (_selectedCoverageId == null && state.categories.isNotEmpty) {
+            _selectedCoverageId = state.categories.first.id;
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: DropdownButtonFormField<int>(
+              value: _selectedCoverageId,
+              style: const TextStyle(fontSize: 14, fontFamily: 'Poppins', color: AppColors.black),
+              decoration: InputDecoration(
+                labelText: 'Coverage Category',
+                labelStyle: const TextStyle(fontSize: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              items: state.categories.map((cat) {
+                return DropdownMenuItem<int>(
+                  value: cat.id,
+                  child: Text(cat.name, style: const TextStyle(fontSize: 14)),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedCoverageId = value;
+                });
+              },
+              validator: (value) => value == null ? 'Please select a coverage category' : null,
+            ),
+          );
+        } else if (state is CoverageCategoryError) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text('Error: ${state.message}', style: const TextStyle(color: Colors.red)),
+          );
+        }
+        return const SizedBox();
+      },
     );
   }
 }

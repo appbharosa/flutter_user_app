@@ -5,9 +5,9 @@ class AddFamilyMemberRequest {
   final String mobile;
   final String gender;
   final String dob;
-  final String bloodGroup;      // "A+", "B-", etc.
-  final String coverageCategory; // "Health Insurance", "Cash", etc.
-  final String relationship;    // "Self", "Spouse", etc.
+  final int bloodGroup;
+  final int coverageCategory;
+  final String relationship;
 
   AddFamilyMemberRequest({
     required this.userId,
@@ -29,7 +29,7 @@ class AddFamilyMemberRequest {
     'gender': gender,
     'dob': dob,
     'blood_group': bloodGroup,
-    'coverage_category': coverageCategory,
+    'coverage_category': coverageCategory.toString(),
     'relationship': relationship,
   };
 }

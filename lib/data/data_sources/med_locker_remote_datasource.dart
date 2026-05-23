@@ -3,12 +3,18 @@ import 'package:dio/dio.dart';
 import '../../core/appurls/app_urls.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/errors/exceptions.dart';
+import '../../domain/entities/med_locker_add_response.dart';
+import '../../domain/entities/med_locker_detail.dart';
+import '../../domain/entities/med_locker_list_item.dart';
+import '../models/med_locker_add_response_model.dart';
+import '../models/med_locker_detail_model.dart';
+import '../models/med_locker_list_item_model.dart';
 import '../models/med_locker_model.dart';
 
 abstract class MedLockerRemoteDataSource {
-  Future<List<MedLockerModel>> getMedLockers();
-  Future<MedLockerModel> getMedLockerDetail(int id);
-  Future<MedLockerModel> addMedLocker(String name, List<File> images);
+  Future<List<MedLockerListItem>> getMedLockers();
+  Future<MedLockerDetail> getMedLockerDetail(int id);
+  Future<MedLockerAddResponse> addMedLocker(String name, List<File> images);
 }
 
 class MedLockerRemoteDataSourceImpl implements MedLockerRemoteDataSource {
@@ -17,13 +23,15 @@ class MedLockerRemoteDataSourceImpl implements MedLockerRemoteDataSource {
   MedLockerRemoteDataSourceImpl(this.dioClient);
 
   @override
-  Future<List<MedLockerModel>> getMedLockers() async {
+  Future<List<MedLockerListItem>> getMedLockers() async {
     try {
       final response = await dioClient.dio.get(AppUrls.medLockerList);
       if (response.data['status'] == 200) {
         final resultData = response.data['result'];
         if (resultData is! List || resultData.isEmpty) return [];
-        return resultData.map((json) => MedLockerModel.fromJson(json)).toList();
+        return resultData
+            .map((json) => MedLockerListItemModel.fromJson(json))
+            .toList();
       } else {
         throw ServerException(response.data['message'] ?? 'Failed to load med lockers');
       }
@@ -33,12 +41,12 @@ class MedLockerRemoteDataSourceImpl implements MedLockerRemoteDataSource {
   }
 
   @override
-  Future<MedLockerModel> getMedLockerDetail(int id) async {
+  Future<MedLockerDetail> getMedLockerDetail(int id) async {
     try {
       final response = await dioClient.dio.get('${AppUrls.medLockerShow}$id');
       if (response.data['status'] == 200) {
         final result = response.data['result'];
-        return MedLockerModel.fromJson(result);
+        return MedLockerDetailModel.fromJson(result);
       } else {
         throw ServerException(response.data['message'] ?? 'Failed to load detail');
       }
@@ -48,16 +56,23 @@ class MedLockerRemoteDataSourceImpl implements MedLockerRemoteDataSource {
   }
 
   @override
-  Future<MedLockerModel> addMedLocker(String name, List<File> images) async {
+  Future<MedLockerAddResponse> addMedLocker(String name, List<File> images) async {
     try {
+      final multipartFiles = images.map((file) => MultipartFile.fromFileSync(file.path)).toList();
       FormData formData = FormData.fromMap({
         'name': name,
-        'images[]': images.map((file) => MultipartFile.fromFileSync(file.path)).toList(),
+        'image': multipartFiles,
       });
-      final response = await dioClient.dio.post(AppUrls.medLockerAdd, data: formData);
+
+      final response = await dioClient.dio.post(
+        AppUrls.medLockerAdd,
+        data: formData,
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      );
+
       if (response.data['status'] == 200) {
         final result = response.data['result'];
-        return MedLockerModel.fromJson(result);
+        return MedLockerAddResponseModel.fromJson(result);
       } else {
         throw ServerException(response.data['message'] ?? 'Failed to add med locker');
       }

@@ -96,7 +96,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: 18,
+          horizontal: 16,
           vertical: 10,
         ),
         decoration: BoxDecoration(
@@ -133,7 +133,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             'Wallet',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 17,
               fontWeight: FontWeight.w600,
               fontFamily: 'Poppins',
             ),
@@ -228,14 +228,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   "Wallet Balance",
                                   style: TextStyle(
                                     color: Colors.white70,
-                                    fontSize: 15,
+                                    fontSize: 14,
                                     fontFamily: 'Poppins',
                                   ),
                                 ),
                                 Icon(
                                   Icons.account_balance_wallet,
                                   color: Colors.white,
-                                  size: 28,
+                                  size: 22,
                                 ),
                               ],
                             ),
@@ -244,7 +244,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               "₹ 0.00",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 34,
+                                fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Poppins',
                               ),
@@ -276,7 +276,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             const Text(
                               "Add Money",
                               style: TextStyle(
-                                fontSize: 22,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Poppins',
                               ),
@@ -288,7 +288,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               "Enter amount to add into your wallet",
                               style: TextStyle(
                                 color: Colors.grey.shade600,
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontFamily: 'Poppins',
                               ),
                             ),
@@ -318,8 +318,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 const Color(0xffF5F7FB),
                                 contentPadding:
                                 const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 18,
+                                  horizontal: 14,
+                                  vertical: 10,
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius:
@@ -397,7 +397,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   "Proceed to Pay",
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 17,
+                                    fontSize: 14,
                                     fontWeight:
                                     FontWeight.w600,
                                     fontFamily:
