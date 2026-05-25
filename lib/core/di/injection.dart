@@ -5,9 +5,9 @@ import '../../data/data_sources/about_remote_datasource.dart';
 import '../../data/data_sources/address_remote_datasource.dart';
 import '../../data/data_sources/ambulance_booking_remote_datasource.dart';
 import '../../data/data_sources/auth_remote_datasource.dart';
-import '../../data/data_sources/banner_remote_datasource.dart';
 import '../../data/data_sources/contact_us_remote_datasource.dart';
 import '../../data/data_sources/coverage_category_remote_datasource.dart';
+import '../../data/data_sources/dashboard_remote_datasource.dart';
 import '../../data/data_sources/diagnostic_booking_fetch_remote_datasource.dart';
 import '../../data/data_sources/diagnostic_booking_remote_datasource.dart';
 import '../../data/data_sources/diagnostic_remote_datasource.dart';
@@ -53,6 +53,7 @@ import '../../data/repositories/address_repository_impl.dart';
 import '../../data/repositories/ambulance_booking_repository_impl.dart';
 import '../../data/repositories/contact_us_repository_impl.dart';
 import '../../data/repositories/coverage_category_repository_impl.dart';
+import '../../data/repositories/dashboard_repository_impl.dart';
 import '../../data/repositories/diagnostic_booking_fetch_repository_impl.dart';
 import '../../data/repositories/diagnostic_booking_repository_impl.dart';
 import '../../data/repositories/diagnostic_repository_impl.dart';
@@ -97,6 +98,7 @@ import '../../domain/repositories/address_repository.dart';
 import '../../domain/repositories/ambulance_booking_repository.dart';
 import '../../domain/repositories/contact_us_repository.dart';
 import '../../domain/repositories/coverage_category_repository.dart';
+import '../../domain/repositories/dashboard_repository.dart';
 import '../../domain/repositories/diagnostic_booking_fetch_repository.dart';
 import '../../domain/repositories/diagnostic_booking_repository.dart';
 import '../../domain/repositories/diagnostic_repository.dart';
@@ -155,11 +157,11 @@ import '../../domain/use_cases/create_order_usecase.dart';
 import '../../domain/use_cases/create_subscription_order_usecase.dart';
 import '../../domain/use_cases/get_about_usecase.dart';
 import '../../domain/use_cases/get_addresses_usecase.dart';
-import '../../domain/use_cases/get_banners_usecase.dart';
 import '../../domain/use_cases/get_booking_fetch_detail_usecase.dart';
 import '../../domain/use_cases/get_completed_fetch_bookings_usecase.dart';
 import '../../domain/use_cases/get_completed_lab_test_bookings_usecase.dart';
 import '../../domain/use_cases/get_coverage_categories.dart';
+import '../../domain/use_cases/get_dashboard.dart';
 import '../../domain/use_cases/get_diagnostics_usecase.dart';
 import '../../domain/use_cases/get_doctor_coupons.dart';
 import '../../domain/use_cases/get_doctor_slots.dart';
@@ -206,6 +208,7 @@ import '../../features/diagnostic/presentation/diagnostic_bookings_bloc/diagnost
 import '../../features/diagnostic/presentation/family_members_bloc/family_members_bloc.dart';
 import '../../features/ecard/presentation/bloc/ecard_bloc.dart';
 import '../../features/home/presentation/address_bloc/address_bloc.dart';
+import '../../features/home/presentation/dashboard_bloc/dashboard_bloc.dart';
 import '../../features/hospital/presentation/ambulance_booking_bloc/ambulance_booking_bloc.dart';
 import '../../features/hospital/presentation/bloc/filtered_hospitals_bloc/filtered_hospitals_bloc.dart';
 import '../../features/hospital/presentation/bloc/hospital_bloc.dart';
@@ -252,11 +255,9 @@ import '../../features/wallet/presentation/bloc/payment_bloc.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
 import '../../data/repositories/auth_repository_impl.dart';
-import '../../data/repositories/banner_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/banner_repository.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../features/banners/presentation/bloc/banner_bloc.dart';
 import '../services/cashfree_service.dart';
 
 final sl = GetIt.instance;
@@ -272,7 +273,6 @@ Future<void> init() async {
 
   // ========== Data Sources ==========
   sl.registerLazySingleton<AuthRemoteDataSource>(() => AuthRemoteDataSourceImpl(sl()));
-  sl.registerLazySingleton<BannerRemoteDataSource>(() => BannerRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<UserLocalDataSource>(() => UserLocalDataSourceImpl(secureStorage: sl()));
   sl.registerLazySingleton<AboutRemoteDataSource>(() => AboutRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<ContactUsRemoteDataSource>(() => ContactUsRemoteDataSourceImpl(sl()));
@@ -316,7 +316,8 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<FamilyRemoteDataSource>(() => FamilyRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<CoverageCategoryRemoteDataSource>(() => CoverageCategoryRemoteDataSourceImpl(sl()),);
-
+  sl.registerLazySingleton<DashboardRemoteDataSource>(() => DashboardRemoteDataSourceImpl( sl()),
+  );
 
 
   // ========== Repositories ==========
@@ -325,10 +326,7 @@ Future<void> init() async {
     localDataSource: sl(),
     networkInfo: sl(),
   ));
-  sl.registerLazySingleton<BannerRepository>(() => BannerRepositoryImpl(
-    remoteDataSource: sl(),
-    networkInfo: sl(),
-  ));
+
   sl.registerLazySingleton<AboutRepository>(() => AboutRepositoryImpl(
     remoteDataSource: sl(),
     networkInfo: sl(),
@@ -492,12 +490,15 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<FamilyRepository>(() => FamilyRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()));
   sl.registerLazySingleton<CoverageCategoryRepository>(() => CoverageCategoryRepositoryImpl(sl<CoverageCategoryRemoteDataSource>()),);
+  sl.registerLazySingleton<DashboardRepository>(() => DashboardRepositoryImpl(
+    remoteDataSource: sl(), networkInfo: sl(),
+    ),
+  );
 
 
   // ========== Use Cases ==========
   sl.registerLazySingleton(() => SendOtpUseCase(sl()));
   sl.registerLazySingleton(() => VerifyOtpUseCase(sl()));
-  sl.registerLazySingleton(() => GetBannersUseCase(sl()));
   sl.registerLazySingleton(() => GetProfileUseCase(sl()));
   sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
   sl.registerLazySingleton(() => GetAboutUseCase(sl()));
@@ -559,13 +560,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => MarkAllNotificationsReadUseCase(sl()));
   sl.registerLazySingleton(() => AddFamilyMemberUseCase(sl()));
   sl.registerLazySingleton(() => GetCoverageCategories(sl()));
-
+  sl.registerLazySingleton(() => GetDashboardUseCase(sl()));
 
 
   // ========== BLoCs ==========
   sl.registerFactory(() => AuthBloc(sendOtpUseCase: sl()));
   sl.registerFactory(() => OtpVerificationBloc(verifyOtpUseCase: sl()));
-  sl.registerFactory(() => BannerBloc(getBannersUseCase: sl()));
   sl.registerFactory(() => AboutBloc(getAboutUseCase: sl()));
   sl.registerFactory(() => ContactUsBloc(submitContactUsUseCase: sl()));
   sl.registerFactory(() => HospitalBloc(getHospitalsUseCase: sl()));
@@ -632,4 +632,6 @@ Future<void> init() async {
   // Family
   sl.registerFactory(() => AddFamilyBloc(addFamilyMemberUseCase: sl()));
   sl.registerFactory(() => CoverageCategoryBloc(getCoverageCategories: sl()));
+  sl.registerFactory(() => DashboardBloc(getDashboardUseCase: sl()));
+
 }

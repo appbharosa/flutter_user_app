@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/di/injection.dart';
+import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/diagnostic.dart';
-
 import '../../../language/bloc/language_bloc.dart';
 import '../../../language/bloc/language_state.dart';
 import '../bloc/diagnostic_bloc.dart';
@@ -14,14 +13,16 @@ import 'attach_prescription_page.dart';
 
 
 
+
 class DiagnosticsTab extends StatefulWidget {
   final ValueNotifier<String> searchNotifier;
-  final ValueNotifier<Address?> addressNotifier; // added
+  final ValueNotifier<Address?> addressNotifier;
+
   const DiagnosticsTab({
-    super.key,
+    Key? key,
     required this.searchNotifier,
     required this.addressNotifier,
-  });
+  }) : super(key: key);
 
   @override
   State<DiagnosticsTab> createState() => _DiagnosticsTabState();
@@ -34,20 +35,44 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
   String _searchQuery = '';
   List<Diagnostic> _originalDiagnostics = [];
   List<Diagnostic> _filteredDiagnostics = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _diagnosticBloc = sl<DiagnosticBloc>();
+    _diagnosticBloc = di.sl<DiagnosticBloc>();
     _scrollController.addListener(_onScroll);
-    widget.searchNotifier.addListener(_onSearchChanged);
-    widget.addressNotifier.addListener(_onAddressChanged); //  listen to address changes
+    // Listen to external search notifier (if any)
+    widget.searchNotifier.addListener(_onExternalSearchChanged);
+    widget.addressNotifier.addListener(_onAddressChanged);
+    _searchController.addListener(_onSearchTextChanged);
   }
 
   void _onAddressChanged() {
     if (mounted) {
       _dataLoaded = false;
       _loadData();
+    }
+  }
+
+  void _onExternalSearchChanged() {
+    if (mounted) {
+      setState(() {
+        _searchQuery = widget.searchNotifier.value;
+        _searchController.text = _searchQuery;
+        _applyFilter();
+      });
+    }
+  }
+
+  void _onSearchTextChanged() {
+    if (mounted) {
+      setState(() {
+        _searchQuery = _searchController.text;
+        // Also update the external notifier if needed (optional)
+        widget.searchNotifier.value = _searchQuery;
+        _applyFilter();
+      });
     }
   }
 
@@ -70,17 +95,6 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
       final lang = languageState.language.apiCode;
       _diagnosticBloc.add(LoadDiagnostics(page: 1, lat: lat, lon: lon, lang: lang));
       setState(() => _dataLoaded = true);
-    } else if (address == null) {
-    } else if (languageState is! LanguageChanged) {
-    }
-  }
-
-  void _onSearchChanged() {
-    if (mounted) {
-      setState(() {
-        _searchQuery = widget.searchNotifier.value;
-        _applyFilter();
-      });
     }
   }
 
@@ -105,8 +119,9 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
 
   @override
   void dispose() {
-    widget.searchNotifier.removeListener(_onSearchChanged);
-    widget.addressNotifier.removeListener(_onAddressChanged); //  remove listener
+    widget.searchNotifier.removeListener(_onExternalSearchChanged);
+    widget.addressNotifier.removeListener(_onAddressChanged);
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -125,26 +140,58 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
               _applyFilter();
             }
             final displayList = _searchQuery.isEmpty ? state.diagnostics : _filteredDiagnostics;
-            if (displayList.isEmpty) {
-              return const Center(child: Text('No diagnostics found'));
-            }
-            return ListView.builder(
-              controller: _scrollController,
-              itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == displayList.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                final diagnostic = displayList[index];
-                return GestureDetector(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => AttachPrescriptionPage(diagnosticId: diagnostic.id,diagnosticAddress:diagnostic.location)));
+            return Column(
+              children: [
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.all(13),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search diagnostics',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade300,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 18),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: displayList.isEmpty
+                      ? const Center(child: Text('No diagnostics found'))
+                      : ListView.builder(
+                    controller: _scrollController,
+                    itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == displayList.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final diagnostic = displayList[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AttachPrescriptionPage(
+                                diagnosticId: diagnostic.id,
+                                diagnosticAddress: diagnostic.location,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _buildDiagnosticCard(diagnostic),
+                      );
                     },
-                    child: _buildDiagnosticCard(diagnostic));
-              },
+                  ),
+                ),
+              ],
             );
           } else if (state is DiagnosticError) {
             return Center(child: Text(state.message));
@@ -180,20 +227,20 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(diagnostic.name.isNotEmpty ? diagnostic.name : 'Diagnostic Center',
+                  Text(
+                    diagnostic.name.isNotEmpty ? diagnostic.name : 'Diagnostic Center',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Poppins',
                       color: AppColors.black,
                     ),
-
                   ),
-                  SizedBox(height: 8,),
+                  const SizedBox(height: 8),
                   // Time row
                   if (diagnostic.openTime.isNotEmpty && diagnostic.closeTime.isNotEmpty)
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start, // Icon aligns with first line
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.access_time, size: 16, color: AppColors.red),
                         const SizedBox(width: 4),
@@ -211,10 +258,9 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
                       ],
                     ),
                   const SizedBox(height: 8),
-
-// Location row
+                  // Location row
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start, // Icon stays at first line
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(Icons.location_on, size: 16, color: AppColors.red),
                       const SizedBox(width: 8),
@@ -233,7 +279,6 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
                       ),
                     ],
                   ),
-              //    Text('📏 ${diagnostic.distance}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),

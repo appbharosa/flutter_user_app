@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user/features/pharmacy/presentation/pages/pharmacy_detail_page.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/pharmacy.dart';
@@ -12,34 +13,39 @@ import '../bloc/pharmacy_bloc.dart';
 import '../bloc/pharmacy_event.dart';
 import '../bloc/pharmacy_state.dart';
 
+
 class PharmacyTab extends StatefulWidget {
   final ValueNotifier<String> searchNotifier;
   final ValueNotifier<Address?> addressNotifier;
+
   const PharmacyTab({
-    super.key,
+    Key? key,
     required this.searchNotifier,
     required this.addressNotifier,
-  });
+  }) : super(key: key);
 
   @override
   State<PharmacyTab> createState() => _PharmacyTabState();
 }
+
 class _PharmacyTabState extends State<PharmacyTab> {
   late PharmacyBloc _pharmacyBloc;
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
   bool _dataLoaded = false;
   String _searchQuery = '';
   List<Pharmacy> _originalPharmacies = [];
   List<Pharmacy> _filteredPharmacies = [];
 
-
   @override
   void initState() {
     super.initState();
-    _pharmacyBloc = sl<PharmacyBloc>();
+    _pharmacyBloc = di.sl<PharmacyBloc>();
     _scrollController.addListener(_onScroll);
-    widget.searchNotifier.addListener(_onSearchChanged);
+    // Listen to external search notifier (from HomePage)
+    widget.searchNotifier.addListener(_onExternalSearchChanged);
     widget.addressNotifier.addListener(_onAddressChanged);
+    _searchController.addListener(_onSearchTextChanged);
   }
 
   void _onAddressChanged() {
@@ -49,6 +55,25 @@ class _PharmacyTabState extends State<PharmacyTab> {
     }
   }
 
+  void _onExternalSearchChanged() {
+    if (mounted) {
+      setState(() {
+        _searchQuery = widget.searchNotifier.value;
+        _searchController.text = _searchQuery;
+        _applyFilter();
+      });
+    }
+  }
+
+  void _onSearchTextChanged() {
+    if (mounted) {
+      setState(() {
+        _searchQuery = _searchController.text;
+        widget.searchNotifier.value = _searchQuery;
+        _applyFilter();
+      });
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -69,18 +94,6 @@ class _PharmacyTabState extends State<PharmacyTab> {
       final lang = languageState.language.apiCode;
       _pharmacyBloc.add(LoadPharmacies(page: 1, lat: lat, lon: lon, lang: lang));
       setState(() => _dataLoaded = true);
-    } else if (address == null) {
-    } else if (languageState is! LanguageChanged) {
-    }
-  }
-
-
-  void _onSearchChanged() {
-    if (mounted) {
-      setState(() {
-        _searchQuery = widget.searchNotifier.value;
-        _applyFilter();
-      });
     }
   }
 
@@ -105,11 +118,13 @@ class _PharmacyTabState extends State<PharmacyTab> {
 
   @override
   void dispose() {
-    widget.searchNotifier.removeListener(_onSearchChanged);
+    widget.searchNotifier.removeListener(_onExternalSearchChanged);
     widget.addressNotifier.removeListener(_onAddressChanged);
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -124,34 +139,58 @@ class _PharmacyTabState extends State<PharmacyTab> {
               _applyFilter();
             }
             final displayList = _searchQuery.isEmpty ? state.pharmacies : _filteredPharmacies;
-            if (displayList.isEmpty) {
-              return const Center(child: Text('No pharmacies found'));
-            }
-            return ListView.builder(
-              controller: _scrollController,
-              itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == displayList.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                final pharmacy = displayList[index];
-                return InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PharmacyDetailPage(
-                            pharmacy: pharmacy,
-                            addressNotifier: widget.addressNotifier,
-                          ),
-                        ),
+            return Column(
+              children: [
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search pharmacies',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade300,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: displayList.isEmpty
+                      ? const Center(child: Text('No pharmacies found'))
+                      : ListView.builder(
+                    controller: _scrollController,
+                    itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == displayList.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final pharmacy = displayList[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PharmacyDetailPage(
+                                pharmacy: pharmacy,
+                                addressNotifier: widget.addressNotifier,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _buildPharmacyCard(pharmacy),
                       );
-                    } ,
-                    child: _buildPharmacyCard(pharmacy));
-              },
+                    },
+                  ),
+                ),
+              ],
             );
           } else if (state is PharmacyError) {
             return Center(child: Text(state.message));
@@ -183,11 +222,9 @@ class _PharmacyTabState extends State<PharmacyTab> {
                 width: 65,
                 height: 65,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                const Icon(Icons.store, size: 40),
+                errorBuilder: (_, __, ___) => const Icon(Icons.store, size: 40),
               ),
             ),
-
             const SizedBox(width: 12),
 
             // Details Section
@@ -205,16 +242,13 @@ class _PharmacyTabState extends State<PharmacyTab> {
                       fontFamily: 'Poppins',
                     ),
                   ),
-
                   const SizedBox(height: 6),
 
                   /// Time Row
-                  if (pharmacy.openTime != null &&
-                      pharmacy.closeTime != null)
+                  if (pharmacy.openTime != null && pharmacy.closeTime != null)
                     Row(
                       children: [
-                        const Icon(Icons.access_time,
-                            size: 14, color: Colors.black),
+                        const Icon(Icons.access_time, size: 14, color: Colors.black),
                         const SizedBox(width: 4),
                         Text(
                           '${pharmacy.openTime} - ${pharmacy.closeTime}',
@@ -227,15 +261,13 @@ class _PharmacyTabState extends State<PharmacyTab> {
                         ),
                       ],
                     ),
-
                   const SizedBox(height: 6),
 
                   /// Location Row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.location_on,
-                          color: Colors.red, size: 16),
+                      const Icon(Icons.location_on, color: Colors.red, size: 16),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -252,7 +284,6 @@ class _PharmacyTabState extends State<PharmacyTab> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 8),
 
                   /// Tags Row (Delivery / Pickup + View Details)
@@ -282,6 +313,7 @@ class _PharmacyTabState extends State<PharmacyTab> {
       ),
     );
   }
+
   Widget _buildTag({
     required IconData icon,
     required String label,

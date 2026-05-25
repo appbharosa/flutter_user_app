@@ -13,7 +13,7 @@ class OnlineDoctorDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Doctor Details', style: TextStyle(
           color: AppColors.whiteColor,
-          fontSize: 18,
+          fontSize: 16.5,
           fontWeight: FontWeight.w600,
           fontFamily: 'Poppins',
         )),
@@ -45,14 +45,19 @@ class OnlineDoctorDetailScreen extends StatelessWidget {
                   Center(
                     child: Text(
                       doctor.name,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Poppins',
+                        color: AppColors.black,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Center(
                     child: Text(
                       doctor.specialization,
-                      style: const TextStyle(fontSize: 16, color: Colors.grey),
+                      style: const TextStyle(fontSize: 14, color: Colors.black),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -76,7 +81,7 @@ class OnlineDoctorDetailScreen extends StatelessWidget {
                       ),
                       child: const Text(
                         'Available Today',
-                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.w500),
+                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.w400,fontSize: 13),
                       ),
                     ),
                 ],
@@ -105,7 +110,12 @@ class OnlineDoctorDetailScreen extends StatelessWidget {
                 ),
                 child: const Text(
                   'Request Booking',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
+                    color: AppColors.whiteColor,
+                  ),
                 ),
               ),
             ),
@@ -123,13 +133,23 @@ class OnlineDoctorDetailScreen extends StatelessWidget {
           width: 100,
           child: Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Poppins',
+              color: AppColors.black,
+            ),
           ),
         ),
         Expanded(
           child: Text(
             value.isNotEmpty ? value : 'Not specified',
-            style: const TextStyle(fontSize: 14),
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w400,
+              fontFamily: 'Poppins',
+              color: AppColors.black,
+            ),
           ),
         ),
       ],

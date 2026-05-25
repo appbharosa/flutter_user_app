@@ -70,6 +70,7 @@ class AppUrls{
   static const String eCard="ecard";
   static const String notificationList = "notifications-list";
   static const String readNotifications = "read-notification";
+  static const String dashboard="dashboard?lang=en";
 
 
   static const String banners = "banners";

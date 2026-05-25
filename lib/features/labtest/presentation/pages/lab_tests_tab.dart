@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/di/injection.dart';
+import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/lab_test.dart';
@@ -14,15 +14,15 @@ import 'attach_lab_prescription_page.dart';
 import 'lab_test_booking_page.dart';
 
 
-
 class LabTestsTab extends StatefulWidget {
   final ValueNotifier<String> searchNotifier;
-  final ValueNotifier<Address?> addressNotifier; // ✅ added
+  final ValueNotifier<Address?> addressNotifier;
+
   const LabTestsTab({
-    super.key,
+    Key? key,
     required this.searchNotifier,
     required this.addressNotifier,
-  });
+  }) : super(key: key);
 
   @override
   State<LabTestsTab> createState() => _LabTestsTabState();
@@ -31,6 +31,7 @@ class LabTestsTab extends StatefulWidget {
 class _LabTestsTabState extends State<LabTestsTab> {
   late LabTestBloc _labTestBloc;
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
   bool _dataLoaded = false;
   String _searchQuery = '';
   List<LabTest> _originalLabTests = [];
@@ -39,16 +40,38 @@ class _LabTestsTabState extends State<LabTestsTab> {
   @override
   void initState() {
     super.initState();
-    _labTestBloc = sl<LabTestBloc>();
+    _labTestBloc = di.sl<LabTestBloc>();
     _scrollController.addListener(_onScroll);
-    widget.searchNotifier.addListener(_onSearchChanged);
-    widget.addressNotifier.addListener(_onAddressChanged); // ✅ listen to address changes
+    // Listen to external search notifier (from HomePage)
+    widget.searchNotifier.addListener(_onExternalSearchChanged);
+    widget.addressNotifier.addListener(_onAddressChanged);
+    _searchController.addListener(_onSearchTextChanged);
   }
 
   void _onAddressChanged() {
     if (mounted) {
       _dataLoaded = false;
       _loadData();
+    }
+  }
+
+  void _onExternalSearchChanged() {
+    if (mounted) {
+      setState(() {
+        _searchQuery = widget.searchNotifier.value;
+        _searchController.text = _searchQuery;
+        _applyFilter();
+      });
+    }
+  }
+
+  void _onSearchTextChanged() {
+    if (mounted) {
+      setState(() {
+        _searchQuery = _searchController.text;
+        widget.searchNotifier.value = _searchQuery;
+        _applyFilter();
+      });
     }
   }
 
@@ -69,22 +92,8 @@ class _LabTestsTabState extends State<LabTestsTab> {
       final lat = double.tryParse(address.lat) ?? 0.0;
       final lon = double.tryParse(address.lon) ?? 0.0;
       final lang = languageState.language.apiCode;
-      print("🔬 Loading lab tests with lat=$lat, lon=$lon, lang=$lang");
       _labTestBloc.add(LoadLabTests(page: 1, lat: lat, lon: lon, lang: lang));
       setState(() => _dataLoaded = true);
-    } else if (address == null) {
-      print("⚠️ LabTestsTab: No address selected yet");
-    } else if (languageState is! LanguageChanged) {
-      print("⚠️ LabTestsTab: Language not settled yet");
-    }
-  }
-
-  void _onSearchChanged() {
-    if (mounted) {
-      setState(() {
-        _searchQuery = widget.searchNotifier.value;
-        _applyFilter();
-      });
     }
   }
 
@@ -109,8 +118,9 @@ class _LabTestsTabState extends State<LabTestsTab> {
 
   @override
   void dispose() {
-    widget.searchNotifier.removeListener(_onSearchChanged);
-    widget.addressNotifier.removeListener(_onAddressChanged); // ✅ remove listener
+    widget.searchNotifier.removeListener(_onExternalSearchChanged);
+    widget.addressNotifier.removeListener(_onAddressChanged);
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -129,102 +139,80 @@ class _LabTestsTabState extends State<LabTestsTab> {
               _applyFilter();
             }
             final displayList = _searchQuery.isEmpty ? state.labTests : _filteredLabTests;
-            if (displayList.isEmpty) {
-              return const Center(child: Text('No labs found'));
-            }
-            return ListView.builder(
-              controller: _scrollController,
-              itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == displayList.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                final lab = displayList[index];
-                return GestureDetector(
-                    onTap: () {
-                      if (lab.packages.isNotEmpty) {
-                        final address = widget.addressNotifier.value;
-                        if (address == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please select an address first'), backgroundColor: Colors.red),
-                          );
-                          return;
-                        }
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BlocProvider(
-                              create: (context) => sl<LabSlotBloc>(),
-                              child: LabTestBookingPage(
-                                labTest: lab,
-                                addressId: address.id,
-                              ),
-                            ),
-                          ),
-                        );
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AttachLabPrescriptionPage(
-                              labTestId: lab.id,
-                              labTestAddress: lab.location,
-                            ),
-                          ),
+            return Column(
+              children: [
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search lab ',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade300,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: displayList.isEmpty
+                      ? const Center(child: Text('No lab tests found'))
+                      : ListView.builder(
+                    controller: _scrollController,
+                    itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == displayList.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
                         );
                       }
+                      final lab = displayList[index];
+                      return GestureDetector(
+                        onTap: () {
+                          if (lab.packages.isNotEmpty) {
+                            final address = widget.addressNotifier.value;
+                            if (address == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please select an address first'), backgroundColor: Colors.red),
+                              );
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => BlocProvider(
+                                  create: (context) => di.sl<LabSlotBloc>(),
+                                  child: LabTestBookingPage(
+                                    labTest: lab,
+                                    addressId: address.id,
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AttachLabPrescriptionPage(
+                                  labTestId: lab.id,
+                                  labTestAddress: lab.location,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: _buildLabTestCard(lab),
+                      );
                     },
-                    // onTap: () {
-                    //   // if (lab.packages.isNotEmpty) {
-                    //   //
-                    //   //   Navigator.push(
-                    //   //     context,
-                    //   //     MaterialPageRoute(
-                    //   //       builder: (_) => BlocProvider(
-                    //   //         create: (context) => sl<LabSlotBloc>(),
-                    //   //         child: LabTestBookingPage(
-                    //   //           labTest: lab,
-                    //   //           addressId: address.id,
-                    //   //         ),
-                    //   //       ),
-                    //   //     ),
-                    //   //   );
-                    //   // } else
-                    //   // {
-                    //   //   Navigator.push(context, MaterialPageRoute(
-                    //   //     builder: (_) => AttachLabPrescriptionPage(
-                    //   //       labTestId: lab.id,
-                    //   //       labTestAddress: lab.location,
-                    //   //     ),
-                    //   //   ));
-                    //   // }
-                    //   if (lab.packages.isNotEmpty) {
-                    //     final address = widget.addressNotifier.value;
-                    //     if (address == null) {
-                    //       ScaffoldMessenger.of(context).showSnackBar(
-                    //         const SnackBar(content: Text('Please select an address first'), backgroundColor: Colors.red),
-                    //       );
-                    //       return;
-                    //     }
-                    //     Navigator.push(
-                    //       context,
-                    //       MaterialPageRoute(
-                    //         builder: (_) => BlocProvider(
-                    //           create: (context) => sl<LabSlotBloc>(),
-                    //           child: LabTestBookingPage(
-                    //             labTest: lab,
-                    //             addressId: address.id,
-                    //           ),
-                    //         ),
-                    //       ),
-                    //     );
-                    //   }
-                    // },
-                    child: _buildLabTestCard(lab));
-              },
+                  ),
+                ),
+              ],
             );
           } else if (state is LabTestError) {
             return Center(child: Text(state.message));
@@ -260,7 +248,8 @@ class _LabTestsTabState extends State<LabTestsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(lab.name.isNotEmpty ? lab.name : 'Lab Test',
+                  Text(
+                    lab.name.isNotEmpty ? lab.name : 'Lab Test',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -272,7 +261,7 @@ class _LabTestsTabState extends State<LabTestsTab> {
                   // Time row
                   if (lab.openTime.isNotEmpty && lab.closeTime.isNotEmpty)
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start, // Ensures icon aligns with first line of text
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.access_time, size: 16, color: AppColors.red),
                         const SizedBox(width: 4),
@@ -290,10 +279,9 @@ class _LabTestsTabState extends State<LabTestsTab> {
                       ],
                     ),
                   const SizedBox(height: 8),
-
-// Location row
+                  // Location row
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start, // Icon stays at first line
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(Icons.location_on, size: 16, color: AppColors.red),
                       const SizedBox(width: 8),

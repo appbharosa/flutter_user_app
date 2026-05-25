@@ -63,7 +63,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late NotificationBloc _notificationBloc;
 
   late final List<Widget> _tabs = [
-    const HomeTab(),
+    HomeTab(searchNotifier: _searchNotifier, addressNotifier: _selectedAddressNotifier),
     HospitalsTab(searchNotifier: _searchNotifier, addressNotifier: _selectedAddressNotifier),
     LabTestsTab(searchNotifier: _searchNotifier, addressNotifier: _selectedAddressNotifier),
     DiagnosticsTab(searchNotifier: _searchNotifier, addressNotifier: _selectedAddressNotifier),
@@ -273,20 +273,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               preferredSize: const Size.fromHeight(60),
               child: _buildAppBar(),
             ),
-            floatingActionButton: FloatingActionButton(
-              backgroundColor: AppColors.blue,
-              onPressed: () {
-                _gpsBloc.add(StartTracking());
-                showDialog(
-                  context: context,
-                  builder: (_) => BlocProvider.value(
-                    value: _gpsBloc,
-                    child: const GpsTrackerDialog(),
-                  ),
-                );
-              },
-              child: const Icon(Icons.directions_walk, color: AppColors.whiteColor),
-            ),
+            // floatingActionButton: FloatingActionButton(
+            //   backgroundColor: AppColors.blue,
+            //   onPressed: () {
+            //     _gpsBloc.add(StartTracking());
+            //     showDialog(
+            //       context: context,
+            //       builder: (_) => BlocProvider.value(
+            //         value: _gpsBloc,
+            //         child: const GpsTrackerDialog(),
+            //       ),
+            //     );
+            //   },
+            //   child: const Icon(Icons.directions_walk, color: AppColors.whiteColor),
+            // ),
             body: Column(
               children: [
                 Expanded(child: _tabs[_selectedIndex]),
@@ -341,7 +341,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       minHeight: 16,
                     ),
                     child: Text(
-                      _unreadCount > 9 ? '9+' : '$_unreadCount',
+                      '$_unreadCount',
                       style: const TextStyle(color: Colors.white, fontSize: 10),
                       textAlign: TextAlign.center,
                     ),
@@ -354,9 +354,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               context,
               MaterialPageRoute(builder: (_) => const NotificationListScreen()),
             );
-            _loadUnreadCount(); // refresh after returning
+            _loadUnreadCount();
           },
-        ),
+        )
       ],
     );
   }
@@ -382,7 +382,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 physics: const BouncingScrollPhysics(),
                 child: Text(
                   _displayAddress,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: Colors.white, fontSize: 12.5),
                   softWrap: false,
                 ),
               ),

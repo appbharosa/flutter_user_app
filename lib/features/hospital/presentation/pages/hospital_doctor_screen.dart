@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:user/features/hospital/presentation/pages/widgets/hospital_diagnostic_tab.dart';
 import 'package:user/features/hospital/presentation/pages/widgets/hospital_medicine_tab.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/hospital_doctor.dart';
 import '../hospital_main_data_bloc/hospital_main_data_bloc.dart';
@@ -14,10 +15,11 @@ import 'doctor_slot_screen.dart';
 
 
 
+
 class HospitalDoctorScreen extends StatefulWidget {
   final int mainDataId;
   final int addressId;
-  const HospitalDoctorScreen({super.key, required this.mainDataId,required this.addressId});
+  const HospitalDoctorScreen({super.key, required this.mainDataId, required this.addressId});
 
   @override
   State<HospitalDoctorScreen> createState() => _HospitalDoctorScreenState();
@@ -42,16 +44,16 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => sl<HospitalMainDataBloc>()..add(LoadHospitalMainData(widget.mainDataId)),
+      create: (context) => di.sl<HospitalMainDataBloc>()..add(LoadHospitalMainData(widget.mainDataId)),
       child: Scaffold(
         backgroundColor: AppColors.whiteColor,
         appBar: AppBar(
-          title: const Text('Hospital Details',style: TextStyle(
+          title: const Text('Hospital Details', style: TextStyle(
             color: AppColors.whiteColor,
-            fontSize: 18,
-            fontWeight: FontWeight.w500,  // SemiBold
+            fontSize: 16.5,
+            fontWeight: FontWeight.w500,
             fontFamily: 'Poppins',
-          ),),
+          )),
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
         ),
@@ -91,20 +93,23 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                             children: [
                               Text(
                                 hospital.name,
-                                style: TextStyle(
-                                  color: AppColors.black,
+                                style: const TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w600,  // SemiBold
+                                  fontWeight: FontWeight.w600,
                                   fontFamily: 'Poppins',
+                                  color: AppColors.black,
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(hospital.tagline,style: TextStyle(
-                                color: AppColors.black,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,  // SemiBold
-                                fontFamily: 'Poppins',
-                              ),),
+                              Text(
+                                hospital.tagline,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,
+                                  fontFamily: 'Poppins',
+                                  color: AppColors.black,
+                                ),
+                              ),
                               const SizedBox(height: 34),
                             ],
                           ),
@@ -122,60 +127,64 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                     indicatorColor: AppColors.blue,
                     labelColor: AppColors.blue,
                     unselectedLabelColor: Colors.grey,
-
                   ),
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        doctors.isEmpty
-                            ? const Center(child: Text('No doctors found'))
-                            :
-                        ListView.builder(
-                          itemCount: doctors.length,
-                          itemBuilder: (context, index) {
-                            final doctor = doctors[index];
-                            return InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => DoctorSlotScreen(
-                                      doctor: doctor,
-                                      hospitalId: widget.mainDataId,
-                                      addressId: widget.addressId,
-                                    ),
+                        // Doctors Tab (with Admit button at the bottom)
+                        Column(
+                          children: [
+                            Expanded(
+                              child: doctors.isEmpty
+                                  ? const Center(child: Text('No doctors found'))
+                                  : ListView.builder(
+                                itemCount: doctors.length,
+                                itemBuilder: (context, index) {
+                                  final doctor = doctors[index];
+                                  return InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => DoctorSlotScreen(
+                                            doctor: doctor,
+                                            hospitalId: widget.mainDataId,
+                                            addressId: widget.addressId,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: _buildDoctorCard(doctor),
+                                  );
+                                },
+                              ),
+                            ),
+                            // Admit button only on Doctors tab
+                            Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed: () => _showAmbulanceBottomSheet(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
-                                );
-                              },
-                              child: _buildDoctorCard(doctor),
-                            );
-                          },
+                                  child: const Text('Admit', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
                         ),
-                        // ListView.builder(
-                        //   itemCount: doctors.length,
-                        //   itemBuilder: (context, index) =>
-                        //       InkWell(
-                        //           onTap: () {
-                        //             Navigator.push(
-                        //               context,
-                        //               MaterialPageRoute(
-                        //                 builder: (_) => DoctorSlotScreen(
-                        //                   doctor: doctor[index],
-                        //                   hospitalId: widget.mainDataId,
-                        //                   addressId: widget.addressId,
-                        //                 ),
-                        //               ),
-                        //             );
-                        //           },
-                        //       child: _buildDoctorCard(doctors[index])),
-                        // ),
                         // Medicines Tab
                         HospitalMedicineTab(
                           hospital: hospital,
                           addressId: widget.addressId,
                         ),
-                        // Diagnostics Tab (placeholder)
+                        // Diagnostics Tab
                         HospitalDiagnosticTab(
                           hospital: hospital,
                           addressId: widget.addressId,
@@ -183,24 +192,6 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                       ],
                     ),
                   ),
-
-                  // Add this to the bottom of the Column in HospitalDoctorScreen, after TabBarView
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: () => _showAmbulanceBottomSheet(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: const Text('Admit', style: TextStyle(color: Colors.white, fontSize: 16)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
                 ],
               );
             }
@@ -222,7 +213,7 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top row: square image (left) + name & specialization (right)
+            // Top row: square image + name & specialization
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -237,7 +228,7 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                       width: 70,
                       height: 70,
                       color: AppColors.black,
-                      child: const Icon(Icons.person, size: 40, color: AppColors.black),
+                      child:  Icon(Icons.person, size: 40, color: AppColors.whiteColor),
                     ),
                   ),
                 ),
@@ -268,6 +259,16 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Fee: ${doctor.consultationFee.toString()}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Poppins',
+                          color: AppColors.black.withOpacity(0.7),
+                        ),
                       ),
                     ],
                   ),
@@ -333,7 +334,6 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Ambulance SVG
             SvgPicture.asset(
               'assets/ambulance.svg',
               height: 80,
@@ -356,7 +356,7 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
               height: 45,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context); // close bottom sheet
+                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(

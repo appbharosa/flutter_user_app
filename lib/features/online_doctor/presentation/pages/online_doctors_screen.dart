@@ -100,7 +100,7 @@ class _OnlineDoctorsScreenState extends State<OnlineDoctorsScreen> {
         appBar: AppBar(
           title: const Text('Online Doctors', style: TextStyle(
             color: AppColors.whiteColor,
-            fontSize: 18,
+            fontSize: 17,
             fontWeight: FontWeight.w500,
             fontFamily: 'Poppins',
           )),
@@ -132,14 +132,14 @@ class _OnlineDoctorsScreenState extends State<OnlineDoctorsScreen> {
                         ),
                         value: _selectedSpecialityId,
                         items: [
-                          const DropdownMenuItem(value: null, child: Text('All Specialities', overflow: TextOverflow.ellipsis)),
+                          const DropdownMenuItem(value: null, child: Text('All Specialities', overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 12),)),
                           ...specialities.map((spec) => DropdownMenuItem(
                             value: spec.id,
                             child: Text(
                               spec.name,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 12,
                                 color: AppColors.black,
                                 fontWeight: FontWeight.w400,
                                 fontFamily: 'Poppins',
@@ -235,12 +235,22 @@ class _OnlineDoctorsScreenState extends State<OnlineDoctorsScreen> {
                     children: [
                       Text(
                         doctor.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: AppColors.black,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         doctor.specialization,
-                        style: const TextStyle(fontSize: 13, color: Colors.black),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'Poppins',
+                          color: AppColors.black,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       if (doctor.qualification.isNotEmpty)
@@ -291,8 +301,12 @@ class _OnlineDoctorsScreenState extends State<OnlineDoctorsScreen> {
                 },
                 child: const Text(
                   'Consult Now',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
-                ),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
+                    color: AppColors.whiteColor,
+                  ),                ),
               ),
             ),
           ],

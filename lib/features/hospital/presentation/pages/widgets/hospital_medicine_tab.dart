@@ -120,7 +120,7 @@ class _HospitalMedicineTabState extends State<HospitalMedicineTab> {
                 Expanded(
                   child: Text(
                     widget.hospital.location,
-                    style: const TextStyle(fontSize: 13),
+                    style: const TextStyle(fontSize: 12.5),
                   ),
                 ),
               ],
