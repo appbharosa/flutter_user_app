@@ -370,7 +370,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 const SizedBox(height: 2),
                 Text(
                   widget.doctor.specialization,
-                  style: const TextStyle(fontSize: 12, color: Colors.black,  fontFamily: 'Poppins',),
+                  style: const TextStyle(fontSize: 12, color: Colors.black,  fontFamily: 'Poppins',       fontWeight: FontWeight.w600,),
                 ),
                 SizedBox(height: 4,),
                 Text(
@@ -381,7 +381,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Experience: ${widget.doctor.experience} years',
-                  style: const TextStyle(fontSize: 13),
+                  style: const TextStyle(fontSize: 13,),
                 ),
                 Text(
                   'Fee: ₹${widget.doctor.consultationFee}',

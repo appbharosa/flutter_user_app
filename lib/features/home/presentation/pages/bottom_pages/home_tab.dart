@@ -1,42 +1,61 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:user/domain/entities/dashboard_banner.dart';
-import '../../../../../core/di/injection.dart' as di;
-import '../../../../../core/theme/app_colors.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:user/core/di/injection.dart' as di;
+import 'package:user/features/admin_support/admin_support_screen.dart';
+import '../../../../../core/utils/user_manager.dart';
 import '../../../../../data/models/otp_response_model.dart';
 import '../../../../../domain/entities/address.dart';
-import '../../../../hospital/presentation/pages/hospital_doctor_screen.dart';
+import '../../../../diagnostic/presentation/pages/diagnostics_tab.dart';
+import '../../../../free_lab/presentation/pages/free_lab_packages_screen.dart';
+import '../../../../hospital/presentation/pages/hospitals_tab.dart';
+import '../../../../labtest/presentation/pages/lab_tests_tab.dart';
 import '../../../../online_doctor/presentation/pages/online_doctors_screen.dart';
+import '../../../../pharmacy/presentation/pages/pharmacy_tab.dart';
+import '../../../../subscription/presentation/pages/subscriptions_page.dart';
 import '../../dashboard_bloc/dashboard_bloc.dart';
 import '../../dashboard_bloc/dashboard_event.dart';
 import '../../dashboard_bloc/dashboard_state.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-
 
 
 class HomeTab extends StatefulWidget {
   final ValueNotifier<String> searchNotifier;
   final ValueNotifier<Address?> addressNotifier;
+  final Function(int) onTabSelected;
 
   const HomeTab({
-    Key? key,
+    super.key,
     required this.searchNotifier,
     required this.addressNotifier,
-  }) : super(key: key);
+    required this.onTabSelected,
+  });
 
   @override
   State<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> {
+class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  String _userName = "User";
-  late DashboardBloc _dashboardBloc;
-  String _greeting = "Good Morning";
   final TextEditingController _searchController = TextEditingController();
+  late DashboardBloc _dashboardBloc;
+
+  String _userName = "User";
+  String _greeting = "Good Morning";
+
+
+  late AnimationController _blinkController;
+  late Animation<double> _blinkAnimation;
+  late Animation<double> _scaleAnimation;
+
+  final List<Map<String, dynamic>> _quickActions = [
+    {"icon": Icons.video_call, "title": "Online\nDoctor", "color": const Color(0xff0057FF), "screen": "online_doctor"},
+    {"icon": Icons.local_hospital, "title": "Find\nHospitals", "color": const Color(0xff2D7DFF), "screen": "hospitals"},
+    {"icon": Icons.science, "title": "Book Lab\nTest", "color": const Color(0xff8A5BFF), "screen": "lab_tests"},
+    {"icon": Icons.medical_services_rounded, "title": "Order\nMedicine", "color": const Color(0xff00B894), "screen": "pharmacy"},
+    {"icon": Icons.biotech_rounded, "title": "Diagnostics", "color": const Color(0xffFF5A5F), "screen": "diagnostics"},
+  ];
 
   @override
   void initState() {
@@ -45,8 +64,55 @@ class _HomeTabState extends State<HomeTab> {
     _loadDashboard();
     _loadUserName();
     _updateGreeting();
-    _searchController.addListener(_onSearchTextChanged);
+    _searchController.addListener(_onSearchChanged);
     widget.searchNotifier.addListener(_onExternalSearchChanged);
+
+    _blinkController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
+
+    _blinkAnimation = Tween<double>(
+      begin: 0.3,
+      end: 1.0,
+    ).animate(_blinkController);
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.92,
+      end: 1.02,
+    ).animate(
+      CurvedAnimation(
+        parent: _blinkController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  Future<void> _loadDashboard() async {
+    _dashboardBloc.add(LoadDashboard("en"));
+  }
+
+
+  Future<void> _loadUserName() async {
+    final userName = await UserManager.getUserName();
+    if (userName != null && userName.isNotEmpty) {
+      setState(() {
+        _userName = userName;
+      });
+      return;
+    }
+
+    final userJson = await _storage.read(key: 'user_data');
+    if (userJson != null) {
+      try {
+        final user = OtpResponseModel.fromJsonString(userJson);
+        setState(() => _userName = user.name.isNotEmpty ? user.name : "User");
+      } catch (_) {
+        setState(() => _userName = "User");
+      }
+    } else {
+      setState(() => _userName = "User");
+    }
   }
 
   void _updateGreeting() {
@@ -58,36 +124,35 @@ class _HomeTabState extends State<HomeTab> {
     });
   }
 
-  Future<void> _loadDashboard() async {
-    const language = 'en';
-    _dashboardBloc.add(LoadDashboard(language));
-  }
+  void _onSearchChanged() => widget.searchNotifier.value = _searchController.text;
+  void _onExternalSearchChanged() => _searchController.text = widget.searchNotifier.value;
 
-  Future<void> _loadUserName() async {
-    final userJson = await _storage.read(key: 'user_data');
-    if (userJson != null) {
-      try {
-        final user = OtpResponseModel.fromJsonString(userJson);
-        setState(() => _userName = user.name.isNotEmpty ? user.name : 'User');
-      } catch (e) {
-        setState(() => _userName = 'User');
-      }
-    } else {
-      setState(() => _userName = 'User');
-    }
-  }
-
-  void _onExternalSearchChanged() {
-    if (mounted) {
-      setState(() {
-        _searchController.text = widget.searchNotifier.value;
-      });
-    }
-  }
-
-  void _onSearchTextChanged() {
-    if (mounted) {
-      widget.searchNotifier.value = _searchController.text;
+  void _handleQuickActionTap(Map<String, dynamic> action) {
+    final screen = action['screen'] as String;
+    switch (screen) {
+      case 'online_doctor':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const OnlineDoctorsScreen()));
+        break;
+      case 'hospitals':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => HospitalsTab(
+          searchNotifier: widget.searchNotifier, addressNotifier: widget.addressNotifier,
+        )));
+        break;
+      case 'lab_tests':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => LabTestsTab(
+          searchNotifier: widget.searchNotifier, addressNotifier: widget.addressNotifier,
+        )));
+        break;
+      case 'pharmacy':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => PharmacyTab(
+          searchNotifier: widget.searchNotifier, addressNotifier: widget.addressNotifier,
+        )));
+        break;
+      case 'diagnostics':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => DiagnosticsTab(
+          searchNotifier: widget.searchNotifier, addressNotifier: widget.addressNotifier,
+        )));
+        break;
     }
   }
 
@@ -95,6 +160,7 @@ class _HomeTabState extends State<HomeTab> {
   void dispose() {
     _searchController.dispose();
     widget.searchNotifier.removeListener(_onExternalSearchChanged);
+    _blinkController.dispose();
     super.dispose();
   }
 
@@ -102,298 +168,193 @@ class _HomeTabState extends State<HomeTab> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _dashboardBloc,
-      child: BlocConsumer<DashboardBloc, DashboardState>(
-        listener: (context, state) {
-          if (state is DashboardError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-            );
-          }
-        },
+      child: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Greeting & Health Score
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // Greeting & Health Score Row
+                    Row(
                       children: [
-                        Text(_greeting, style: TextStyle(fontSize: 12, color: Colors.black)),
-                        const SizedBox(height: 2),
-                        Text(_userName, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("$_greeting 👋", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xff13234B))),
+                              const SizedBox(height: 4),
+                              Text(_userName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xff1F6BFF))),
+                              const SizedBox(height: 4),
+                              Text("Stay informed. Stay healthy.", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                            ],
+                          ),
+                        ),
+
+                        AnimatedBuilder(
+                          animation: _blinkController,
+                          builder: (context, child) {
+                            return Opacity(
+                              opacity: _blinkAnimation.value,
+                              child: Transform.scale(
+                                scale: _scaleAnimation.value,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const SubscriptionPage(),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              height: 95,
+                              width: 95,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(0.35),
+                                    blurRadius: 16,
+                                    spreadRadius: 2,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: Image.asset(
+                                  "assets/care.png",
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
+                    const SizedBox(height: 40),
+
+                    // Quick Actions
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        children: [
-                          Text("Health Score", style: TextStyle(fontSize: 10, color: Colors.green.shade700)),
-                          const SizedBox(height: 2),
-                          const Text("82/100", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Search Bar
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: "Search doctors, hospitals, tests, medicines...",
-                    hintStyle: const TextStyle(fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Top Banners (from dashboard API)
-                if (state is DashboardLoaded && state.dashboard.banners.where((b) => b.position == 'top-section').isNotEmpty)
-                  _buildTopBannerCarousel(state.dashboard.banners.where((b) => b.position == 'top-section').toList()),
-                if (state is DashboardLoaded && state.dashboard.banners.isNotEmpty) const SizedBox(height: 20),
-
-                // Categories (quick actions)
-                const Text("Categories", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Row(
-                    children: [
-                      _buildActionCard(
-                        icon: Icons.videocam,
-                        label: "Online\nDoctor",
-                        color: Colors.blue,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnlineDoctorsScreen())),
-                      ),
-                      const SizedBox(width: 20),
-                      _buildActionCard(
-                        icon: Icons.local_hospital,
-                        label: "Find\nHospitals",
-                        color: Colors.red,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OnlineDoctorsScreen())),
-                      ),
-                      const SizedBox(width: 20),
-                      _buildActionCard(
-                        icon: Icons.science,
-                        label: "Book Lab\nTest",
-                        color: Colors.purple,
-                        onTap: () {},
-                      ),
-                      const SizedBox(width: 20),
-                      _buildActionCard(
-                        icon: Icons.medication,
-                        label: "Order\nMedicine",
-                        color: Colors.green,
-                        onTap: () {},
-                      ),
-                      const SizedBox(width: 20),
-                      _buildActionCard(
-                        icon: Icons.verified,
-                        label: "Insurance\nSupport",
-                        color: Colors.orange,
-                        onTap: () {},
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Promotion Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.blue, Colors.lightBlue.shade300],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("Prevent Today", style: TextStyle(fontSize: 12, color: Colors.white70)),
-                      const SizedBox(height: 2),
-                      const Text("Better Health\nStronger Tomorrow", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Regular checkups help you and your family stay disease-free.",
-                        style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.9)),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.blue,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _quickActions.map((action) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: _quickAction(action["icon"], action["title"], action["color"], () => _handleQuickActionTap(action)),
+                          )).toList(),
                         ),
-                        child: const Text("Book Appointment →", style: TextStyle(fontSize: 12)),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Lab Test Banners (if available)
-                if (state is DashboardLoaded && state.dashboard.labTestBanners.isNotEmpty) ...[
-                  const Text("Lab Tests", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  _buildLabBannerCarousel(state.dashboard.labTestBanners),
-                  const SizedBox(height: 20),
-                ],
-
-                // Health Snapshot
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Health Snapshot", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text("", style: TextStyle(fontSize: 12)),
-                      style: TextButton.styleFrom(padding: EdgeInsets.zero),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildHealthMetric("Heart Rate", "72 bpm", "Normal", Colors.red),
-                    const SizedBox(width: 10),
-                    _buildHealthMetric("SpO₂", "98%", "Normal", Colors.blue),
-                    const SizedBox(width: 10),
-                    _buildHealthMetric("Sleep", "7h 20m", "Good", Colors.green),
-                    const SizedBox(width: 10),
-                    _buildHealthMetric("Steps", "4,230", "Active", Colors.orange),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                    const SizedBox(height: 40),
 
-                // Upcoming Appointment Card
-                Card(
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.blue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.person, size: 24, color: AppColors.blue),
+                    // Top Banners
+                    if (state is DashboardLoaded && state.dashboard.banners.isNotEmpty)
+                      CarouselSlider(
+                        options: CarouselOptions(height: 160, autoPlay: true, enlargeCenterPage: true, viewportFraction: 0.95),
+                        items: state.dashboard.banners.map((banner) => ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: CachedNetworkImage(imageUrl: banner.image, fit: BoxFit.cover, width: double.infinity),
+                        )).toList(),
+                      ),
+                    const SizedBox(height: 20),
+
+                    // Free Lab Packages Banner
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => FreeLabPackagesScreen(
+                          addressNotifier: widget.addressNotifier,
+                        )));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xff0057FF), Color(0xff1F6BFF)]),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text("Dr. Rohan Mehta", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                              Text("General Physician", style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                              const SizedBox(height: 2),
-                              Row(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text("🩺 Free Lab Packages", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                SizedBox(height: 4),
+                                Text("Get free lab tests", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(25)),
+                              child: const Text("Book Now", style: TextStyle(color: Color(0xff0057FF), fontWeight: FontWeight.w600, fontSize: 13)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Promotion Card
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdmissionSupportScreen()),
+
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [const Color(0xffEFF5FF), Colors.blue.shade50]),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                              child: const Text("🛡 Prevent Today", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text("Better Health\nStronger Tomorrow", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, height: 1.2)),
+                            const SizedBox(height: 8),
+                            Text("Regular checkups help you and your family stay disease-free.", style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(colors: [Color(0xff0057FF), Color(0xff1F6BFF)]),
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.calendar_today, size: 12, color: Colors.grey),
-                                  const SizedBox(width: 4),
-                                  Text("20 May 2024 • 11:00 AM", style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                                  Text("Book Appointment", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                                  SizedBox(width: 6),
+                                  Icon(Icons.arrow_forward, color: Colors.white, size: 16),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            "Confirmed",
-                            style: TextStyle(fontSize: 10, color: Colors.green.shade800, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-                const SizedBox(height: 20),
-
-                // Medicine Reminder
-                const Text("Medicine Reminder", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Card(
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.medication, size: 24, color: Colors.orange),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text("Calcium Tablet", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                              Text("1 Tablet after Lunch", style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  const Icon(Icons.access_time, size: 12, color: Colors.grey),
-                                  const SizedBox(width: 4),
-                                  Text("Today, 1:00 PM", style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange.shade50,
-                            foregroundColor: Colors.orange,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          ),
-                          child: const Text("Refill Now", style: TextStyle(fontSize: 11)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
+              ),
             ),
           );
         },
@@ -401,114 +362,17 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  Widget _buildTopBannerCarousel(List<DashboardBanner> banners) {
-    return CarouselSlider(
-      options: CarouselOptions(height: 150, autoPlay: true, enlargeCenterPage: true, viewportFraction: 0.9),
-      items: banners.map((banner) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: CachedNetworkImage(
-            imageUrl: banner.image,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            placeholder: (_, __) => Container(color: Colors.grey.shade200),
-            errorWidget: (_, __, ___) => const Icon(Icons.broken_image, size: 40),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildLabBannerCarousel(List<DashboardBanner> banners) {
-    return CarouselSlider(
-      options: CarouselOptions(height: 100, autoPlay: true, viewportFraction: 0.8),
-      items: banners.map((banner) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            image: DecorationImage(image: NetworkImage(banner.image), fit: BoxFit.cover),
-          ),
-          child: Center(
-            child: Text(
-              banner.position, // For lab test banners, the API field is 'name', but in mapping we set position = name
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 4, color: Colors.black)], fontSize: 12),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildActionCard({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
+  Widget _quickAction(IconData icon, String title, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          Container(
-            width: 55,
-            height: 55,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.withOpacity(0.1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(icon, size: 30, color: color),
+          Container(width: 55, height: 55, decoration: BoxDecoration(shape: BoxShape.circle, color: color.withOpacity(0.1)),
+            child: Icon(icon, color: color, size: 28),
           ),
           const SizedBox(height: 6),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-          ),
+          Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
         ],
-      ),
-    );
-  }
-
-  Widget _buildHealthMetric(String label, String value, String status, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.08),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-            const SizedBox(height: 2),
-            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 2),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(status, style: TextStyle(fontSize: 8, color: color, fontWeight: FontWeight.w500)),
-            ),
-          ],
-        ),
       ),
     );
   }

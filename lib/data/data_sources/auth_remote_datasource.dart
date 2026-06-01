@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:user/data/models/login_response_model.dart';
 import 'package:user/data/models/otp_response_model.dart';
 import 'package:user/data/models/user_register_model.dart';
@@ -58,21 +59,44 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-  Future<UserRegisterModel> registerUser(Map<String, dynamic> userData) async {
+  Future<UserRegisterModel> registerUser(Map<String, dynamic> userData,) async {
     try {
-      final response = await dioClient.dio.post(AppUrls.registration, data: userData);
-      if (response.data['status'] == 200) {
-        final resultList = response.data['result'] as List;
+      final response = await dioClient.dio.post(
+        AppUrls.registration,
+        data: userData,
+      );
+      debugPrint("Response: ${response.data}");
+      final data = response.data;
+      if (data['status'] == 200) {
+        final resultList = data['result'] as List;
         if (resultList.isNotEmpty) {
-          return UserRegisterModel.fromJson(resultList.first);
-        } else {
-          throw ServerException('No user data returned');
+          return UserRegisterModel.fromJson(resultList.first,);
+        } else {throw ServerException('No user data returned',);
         }
-      } else {
-        throw ServerException(response.data['message'] ?? 'Registration failed');
+      }
+      else {
+        String errorMessage = data['message'] ?? 'Registration failed';
+        if (data['result'] != null && data['result'] is Map) {
+          final resultMap = data['result'] as Map<String, dynamic>;
+          List<String> errors = [];
+          resultMap.forEach((key, value) {
+            if (value is List && value.isNotEmpty) {
+              errors.add(value.first.toString());
+            }
+          });
+          if (errors.isNotEmpty) {
+            errorMessage = errors.join('\n');
+          }
+        }
+        throw ServerException(errorMessage);
       }
     } on DioException catch (e) {
       throw _handleDioError(e);
+    } catch (e) {
+      if (e is ServerException) {
+        rethrow;
+      }
+      throw ServerException(e.toString(),);
     }
   }
 

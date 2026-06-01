@@ -4,14 +4,13 @@ import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/diagnostic.dart';
+import '../../../home/presentation/pages/home_page.dart';
 import '../../../language/bloc/language_bloc.dart';
 import '../../../language/bloc/language_state.dart';
 import '../bloc/diagnostic_bloc.dart';
 import '../bloc/diagnostic_event.dart';
 import '../bloc/diagnostic_state.dart';
 import 'attach_prescription_page.dart';
-
-
 
 
 class DiagnosticsTab extends StatefulWidget {
@@ -31,18 +30,18 @@ class DiagnosticsTab extends StatefulWidget {
 class _DiagnosticsTabState extends State<DiagnosticsTab> {
   late DiagnosticBloc _diagnosticBloc;
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
   bool _dataLoaded = false;
   String _searchQuery = '';
   List<Diagnostic> _originalDiagnostics = [];
   List<Diagnostic> _filteredDiagnostics = [];
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _diagnosticBloc = di.sl<DiagnosticBloc>();
     _scrollController.addListener(_onScroll);
-    // Listen to external search notifier (if any)
+    // Listen to external search notifier (from HomePage)
     widget.searchNotifier.addListener(_onExternalSearchChanged);
     widget.addressNotifier.addListener(_onAddressChanged);
     _searchController.addListener(_onSearchTextChanged);
@@ -69,7 +68,6 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
     if (mounted) {
       setState(() {
         _searchQuery = _searchController.text;
-        // Also update the external notifier if needed (optional)
         widget.searchNotifier.value = _searchQuery;
         _applyFilter();
       });
@@ -128,76 +126,103 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _diagnosticBloc,
-      child: BlocBuilder<DiagnosticBloc, DiagnosticState>(
-        builder: (context, state) {
-          if (state is DiagnosticInitial || state is DiagnosticLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is DiagnosticLoaded) {
-            if (_originalDiagnostics.length != state.diagnostics.length) {
-              _originalDiagnostics = List.from(state.diagnostics);
-              _applyFilter();
-            }
-            final displayList = _searchQuery.isEmpty ? state.diagnostics : _filteredDiagnostics;
-            return Column(
-              children: [
-                // Search Bar
-                Padding(
-                  padding: const EdgeInsets.all(13),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search diagnostics',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade300,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 18),
-                    ),
-                  ),
+    return Scaffold(
+      backgroundColor: AppColors.whiteColor,
+      appBar: AppBar(
+        backgroundColor: AppColors.blue,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const HomePage()),
+                  (route) => false,
+            );
+          },
+        ),
+        title: const Text(
+          'Diagnostics',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Container(
+              height: 45,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search diagnostics...',
+                  hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 ),
-                Expanded(
-                  child: displayList.isEmpty
-                      ? const Center(child: Text('No diagnostics found'))
-                      : ListView.builder(
-                    controller: _scrollController,
-                    itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == displayList.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      final diagnostic = displayList[index];
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AttachPrescriptionPage(
-                                diagnosticId: diagnostic.id,
-                                diagnosticAddress: diagnostic.location,
-                              ),
-                            ),
-                          );
-                        },
-                        child: _buildDiagnosticCard(diagnostic),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: BlocProvider.value(
+        value: _diagnosticBloc,
+        child: BlocBuilder<DiagnosticBloc, DiagnosticState>(
+          builder: (context, state) {
+            if (state is DiagnosticInitial || state is DiagnosticLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is DiagnosticLoaded) {
+              if (_originalDiagnostics.length != state.diagnostics.length) {
+                _originalDiagnostics = List.from(state.diagnostics);
+                _applyFilter();
+              }
+              final displayList = _searchQuery.isEmpty ? state.diagnostics : _filteredDiagnostics;
+              if (displayList.isEmpty) {
+                return const Center(child: Text('No diagnostics found'));
+              }
+              return ListView.builder(
+                controller: _scrollController,
+                itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == displayList.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final diagnostic = displayList[index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AttachPrescriptionPage(
+                            diagnosticId: diagnostic.id,
+                            diagnosticAddress: diagnostic.location,
+                          ),
+                        ),
                       );
                     },
-                  ),
-                ),
-              ],
-            );
-          } else if (state is DiagnosticError) {
-            return Center(child: Text(state.message));
-          }
-          return const SizedBox();
-        },
+                    child: _buildDiagnosticCard(diagnostic),
+                  );
+                },
+              );
+            } else if (state is DiagnosticError) {
+              return Center(child: Text(state.message));
+            }
+            return const SizedBox();
+          },
+        ),
       ),
     );
   }

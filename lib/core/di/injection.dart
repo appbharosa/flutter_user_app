@@ -16,6 +16,7 @@ import '../../data/data_sources/doctor_slots_remote_datasource.dart';
 import '../../data/data_sources/ecard_remote_datasource.dart';
 import '../../data/data_sources/family_member_remote_datasource.dart';
 import '../../data/data_sources/family_remote_datasource.dart';
+import '../../data/data_sources/free_lab_remote_datasource.dart';
 import '../../data/data_sources/hospital_booking_history_remote_datasource.dart';
 import '../../data/data_sources/hospital_diagnostic_remote_datasource.dart';
 import '../../data/data_sources/hospital_doctor_booking_history_remote_datasource.dart';
@@ -62,6 +63,7 @@ import '../../data/repositories/doctor_slots_repository_impl.dart';
 import '../../data/repositories/ecard_repository_impl.dart';
 import '../../data/repositories/family_member_repository_impl.dart';
 import '../../data/repositories/family_repository_impl.dart';
+import '../../data/repositories/free_lab_repository_impl.dart';
 import '../../data/repositories/hospital_booking_history_repository_impl.dart';
 import '../../data/repositories/hospital_diagnostic_repository_impl.dart';
 import '../../data/repositories/hospital_doctor_booking_history_repository_impl.dart';
@@ -107,6 +109,7 @@ import '../../domain/repositories/doctor_slots_repository.dart';
 import '../../domain/repositories/ecard_repository.dart';
 import '../../domain/repositories/family_member_repository.dart';
 import '../../domain/repositories/family_repository.dart';
+import '../../domain/repositories/free_lab_repository.dart';
 import '../../domain/repositories/hospital_booking_history_repository.dart';
 import '../../domain/repositories/hospital_diagnostic_repository.dart';
 import '../../domain/repositories/hospital_doctor_booking_history_repository.dart';
@@ -168,6 +171,8 @@ import '../../domain/use_cases/get_doctor_slots.dart';
 import '../../domain/use_cases/get_ecard.dart';
 import '../../domain/use_cases/get_family_members_usecase.dart';
 import '../../domain/use_cases/get_filtered_hospitals_usecase.dart';
+import '../../domain/use_cases/get_free_lab_packages.dart';
+import '../../domain/use_cases/get_free_lab_slots.dart';
 import '../../domain/use_cases/get_hospital_diagnostic_bookings.dart';
 import '../../domain/use_cases/get_hospital_doctor_bookings.dart';
 import '../../domain/use_cases/get_hospital_filters_usecase.dart';
@@ -191,6 +196,7 @@ import '../../domain/use_cases/get_pharmacy_bookings.dart';
 import '../../domain/use_cases/get_profile_usecase.dart';
 import '../../domain/use_cases/get_subscription_plans_usecase.dart';
 import '../../domain/use_cases/get_unread_count.dart';
+import '../../domain/use_cases/get_user_subscription.dart';
 import '../../domain/use_cases/login_usecase.dart';
 import '../../domain/use_cases/mark_notification_read.dart';
 import '../../domain/use_cases/mark_notifications_read.dart';
@@ -207,6 +213,9 @@ import '../../features/diagnostic/presentation/diagnostic_booking_fetch_detail_b
 import '../../features/diagnostic/presentation/diagnostic_bookings_bloc/diagnostic_booking_fetch_list_bloc.dart';
 import '../../features/diagnostic/presentation/family_members_bloc/family_members_bloc.dart';
 import '../../features/ecard/presentation/bloc/ecard_bloc.dart';
+import '../../features/free_lab/presentation/bloc/free_lab_booking_bloc/free_lab_booking_bloc.dart';
+import '../../features/free_lab/presentation/bloc/free_lab_packages_bloc/free_lab_packages_bloc.dart';
+import '../../features/free_lab/presentation/bloc/free_lab_slots_bloc/free_lab_slots_bloc.dart';
 import '../../features/home/presentation/address_bloc/address_bloc.dart';
 import '../../features/home/presentation/dashboard_bloc/dashboard_bloc.dart';
 import '../../features/hospital/presentation/ambulance_booking_bloc/ambulance_booking_bloc.dart';
@@ -251,6 +260,7 @@ import '../../features/profile/presentation/coverage_category_bloc/coverage_cate
 import '../../features/registration/presentation/bloc/registration_bloc.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import '../../features/subscription/presentation/create_order_bloc/subscription_payment_bloc.dart';
+import '../../features/subscription/presentation/subscription_status_bloc/subscription_status_bloc.dart';
 import '../../features/wallet/presentation/bloc/payment_bloc.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
@@ -318,7 +328,8 @@ Future<void> init() async {
   sl.registerLazySingleton<CoverageCategoryRemoteDataSource>(() => CoverageCategoryRemoteDataSourceImpl(sl()),);
   sl.registerLazySingleton<DashboardRemoteDataSource>(() => DashboardRemoteDataSourceImpl( sl()),
   );
-
+  sl.registerLazySingleton<FreeLabRemoteDataSource>(() => FreeLabRemoteDataSourceImpl( sl()),
+  );
 
   // ========== Repositories ==========
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
@@ -494,6 +505,8 @@ Future<void> init() async {
     remoteDataSource: sl(), networkInfo: sl(),
     ),
   );
+  sl.registerLazySingleton<FreeLabRepository>(() => FreeLabRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()),
+  );
 
 
   // ========== Use Cases ==========
@@ -561,6 +574,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AddFamilyMemberUseCase(sl()));
   sl.registerLazySingleton(() => GetCoverageCategories(sl()));
   sl.registerLazySingleton(() => GetDashboardUseCase(sl()));
+  sl.registerLazySingleton(() => GetFreeLabPackagesUseCase(sl()));
+  sl.registerLazySingleton(() => GetFreeLabSlotsUseCase(sl()));
+  sl.registerLazySingleton(() => GetUserSubscriptionUseCase(sl()));
 
 
   // ========== BLoCs ==========
@@ -576,10 +592,7 @@ Future<void> init() async {
   sl.registerFactory(() => PharmacyBloc(getPharmaciesUseCase: sl()));
   sl.registerFactory(() => RegistrationBloc(registerUserUseCase: sl()));
   sl.registerFactory(() => LanguageBloc());
-  sl.registerFactory(() => MedLockerBloc(
-    getMedLockersUseCase: sl(),
-    getMedLockerDetailUseCase: sl(),
-    addMedLockerUseCase: sl(),
+  sl.registerFactory(() => MedLockerBloc(getMedLockersUseCase: sl(), getMedLockerDetailUseCase: sl(), addMedLockerUseCase: sl(),
   ));
 
   sl.registerFactory(() => OrderBloc(createOrderUseCase: sl()));
@@ -624,14 +637,15 @@ Future<void> init() async {
   ));
   sl.registerFactory(() => OnlineDoctorBookingBloc(dioClient: sl(), cashfreeService: sl(),
   ));
-  sl.registerFactory(() => NotificationBloc(getNotificationsUseCase: sl(),
-  //  getUnreadCountUseCase: sl(),
-      markNotificationReadUseCase: sl(),
-  //  markAllNotificationsReadUseCase: sl(),
+  sl.registerFactory(() => NotificationBloc(getNotificationsUseCase: sl(), markNotificationReadUseCase: sl(),
   ));
-  // Family
   sl.registerFactory(() => AddFamilyBloc(addFamilyMemberUseCase: sl()));
   sl.registerFactory(() => CoverageCategoryBloc(getCoverageCategories: sl()));
   sl.registerFactory(() => DashboardBloc(getDashboardUseCase: sl()));
+  sl.registerFactory(() => FreeLabPackagesBloc(getFreeLabPackagesUseCase: sl()));
+  sl.registerFactory(() => FreeLabSlotsBloc(getFreeLabSlotsUseCase: sl()));
+  sl.registerFactory(() => FreeLabBookingBloc(dioClient: sl()));
+  sl.registerFactory(() => SubscriptionStatusBloc(getUserSubscriptionUseCase: sl()));
+
 
 }

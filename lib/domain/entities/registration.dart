@@ -1,4 +1,4 @@
-// lib/domain/entities/registration.dart
+
 import 'package:equatable/equatable.dart';
 
 class Registration extends Equatable {

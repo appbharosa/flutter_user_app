@@ -10,8 +10,20 @@ import '../bloc/ecard_bloc.dart';
 import '../bloc/ecard_event.dart';
 import '../bloc/ecard_state.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../core/di/injection.dart' as di;
+import '../../../../core/theme/app_colors.dart';
+import '../bloc/ecard_bloc.dart';
+
 class ECardScreen extends StatefulWidget {
-  const ECardScreen({Key? key}) : super(key: key);
+  final bool isFromBottomNav; // Add this parameter
+
+  const ECardScreen({
+    Key? key,
+    this.isFromBottomNav = false,
+  }) : super(key: key);
 
   @override
   State<ECardScreen> createState() => _ECardScreenState();
@@ -34,14 +46,16 @@ class _ECardScreenState extends State<ECardScreen> {
     _bloc.add(LoadECard(language));
   }
 
-  @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _bloc,
       child: Scaffold(
         backgroundColor: AppColors.whiteColor,
         appBar: AppBar(
-          leading: IconButton(
+          // Conditionally show leading back button
+          leading: widget.isFromBottomNav
+              ? null // No back button when from bottom navigation
+              : IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () {
               Navigator.pushAndRemoveUntil(
@@ -60,6 +74,7 @@ class _ECardScreenState extends State<ECardScreen> {
               fontFamily: 'Poppins',
             ),
           ),
+          centerTitle: widget.isFromBottomNav, // Center title when no back button
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
           elevation: 0,

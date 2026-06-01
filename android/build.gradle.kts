@@ -1,9 +1,14 @@
 allprojects {
     repositories {
         google()
-        maven { url = uri("https://jitpack.io") }
+        mavenCentral()
+        flatDir {
+            dirs("src/main/libs")
+            dirs(project(":enx_flutter_plugin").file("libs"))
+        }
     }
 }
+
 
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory

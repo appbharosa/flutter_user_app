@@ -1,35 +1,17 @@
 name: user
 description: "A new Flutter project."
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 
-# The following defines the version and build number for your application.
-# A version number is three numbers separated by dots, like 1.2.43
-# followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.0+4
 
 environment:
   sdk: ^3.11.4
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
     sdk: flutter
+
+  # Networking & State Management
   dio: ^5.9.2
   flutter_bloc: ^9.1.1
   get_it: ^9.2.1
@@ -37,59 +19,58 @@ dependencies:
   connectivity_plus: ^7.1.1
   flutter_secure_storage: ^10.0.0
   dartz: ^0.10.1
+
+  # UI & Assets
   flutter_svg: ^2.0.10+1
   lottie: ^3.3.3
+  cached_network_image: ^3.3.0
+  cupertino_icons: ^1.0.8
+  carousel_slider: ^5.0.0
+
+  # Location & Maps
   geolocator: ^14.0.2
   geocoding: ^4.0.0
+  location: ^8.0.1
+
+  # Media & Files
   image_picker: ^1.2.2
-  flutter_launcher_icons: ^0.14.4
   file_picker: ^8.0.0+1
+
+  # WebView & Payments
   webview_flutter: ^4.8.0
   flutter_cashfree_pg_sdk: ^2.0.25+28
-  location: ^8.0.1
-  cached_network_image: ^3.3.0
-#  enx_flutter_plugin: ^2.2.6
-#  permission_handler: ^12.0.1
-#  just_audio: ^0.10.4
-#  flutter_background_service: ^5.0.7
-#  wakelock_plus: ^1.2.8
 
+  # Push Notifications
+  onesignal_flutter: ^5.5.4
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
+  # Video Calling (EnableX)
+  enx_flutter_plugin: ^3.1.5
+  permission_handler: ^12.0.1
+  just_audio: ^0.10.4
+  flutter_background_service: ^5.0.7
+  wakelock_plus: ^1.2.8
+
+  flutter_launcher_icons: ^0.14.4
+  firebase_core: ^4.9.0
+  firebase_messaging: ^16.2.2
+  flutter_local_notifications: ^21.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner: ^2.13.1
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
+# 🔧 Resolve the js version conflict between enx_flutter_plugin and flutter_cashfree_pg_sdk
+dependency_overrides:
+  js: ^0.7.2
 
-# The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
   assets:
     - assets/
     - assets/animations/
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/app_logo.png"
 
   fonts:
     - family: Poppins
@@ -105,3 +86,7 @@ flutter_launcher_icons:
         - asset: assets/fonts/poppins/Poppins-SemiBold.ttf
           weight: 600
 
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_logo.png"

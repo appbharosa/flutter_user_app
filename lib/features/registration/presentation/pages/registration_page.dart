@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:user/features/home/presentation/pages/home_page.dart';
 import 'package:user/features/home/presentation/pages/widgets/add_address_screen.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -129,25 +129,61 @@ class _RegistrationPageState extends State<RegistrationPage> {
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
         ),
-        body: BlocConsumer<RegistrationBloc, RegistrationState>(
+        body:
+        BlocConsumer<RegistrationBloc, RegistrationState>(
           listener: (context, state) {
             if (state is RegistrationSuccess) {
+
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile updated successfully'), backgroundColor: Colors.green),
+                SnackBar(
+                  content: const Text(
+                    'Profile updated successfully',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.all(16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  duration: const Duration(seconds: 3),
+                ),
               );
+
               final addressBloc = sl<AddressBloc>();
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => AddAddressScreen(
                     addressBloc: addressBloc,
-                    fromRegistration: true, //  important
+                    fromRegistration: true,
                   ),
                 ),
               );
+
             } else if (state is RegistrationError) {
+
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                SnackBar(
+                  content: Text(
+                    state.message,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.all(16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  duration: const Duration(seconds: 3),
+                ),
               );
             }
           },
@@ -174,7 +210,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     const SizedBox(height: 16),
                     _buildTextField(_nameCtrl, 'Full Name', required: true),
                     const SizedBox(height: 12),
-                    _buildTextField(_mobileCtrl, 'Mobile Number', required: true, keyboardType: TextInputType.phone),
+                    _buildMobileNumberField(_mobileCtrl, 'Mobile Number', required: true),
                     const SizedBox(height: 12),
                     _buildTextField(_emailCtrl, 'Email', required: true, keyboardType: TextInputType.emailAddress),
                     const SizedBox(height: 12),
@@ -198,7 +234,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     const SizedBox(height: 16),
                     _buildTextField(_nomineeFullNameCtrl, 'Nominee Full Name', required: true),
                     const SizedBox(height: 12),
-                    _buildTextField(_nomineeMobileCtrl, 'Nominee Mobile', required: true, keyboardType: TextInputType.phone),
+                    _buildMobileNumberField(_nomineeMobileCtrl, 'Nominee Mobile', required: true),
                     const SizedBox(height: 12),
                     _buildDateField(_nomineeDobCtrl, 'Nominee DOB', required: true),
                     const SizedBox(height: 12),
@@ -218,7 +254,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                           backgroundColor: AppColors.blue,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        onPressed: () => _submit(context),   // ✅ fixed
+                        onPressed: () => _submit(context),
                         child: const Text('Submit', style: TextStyle(color: Colors.white, fontSize: 16)),
                       ),
                     ),
@@ -230,6 +266,40 @@ class _RegistrationPageState extends State<RegistrationPage> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildMobileNumberField(TextEditingController controller, String label,
+      {bool required = true}) {
+    return TextFormField(
+      controller: controller,
+      style: const TextStyle(fontSize: 14, color: Colors.black),
+      keyboardType: TextInputType.phone,
+      maxLength: 10,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.black54),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        counterText: '', // Hide the character counter
+        hintText: 'Enter 10-digit mobile number',
+      ),
+      validator: required ? (value) {
+        if (value == null || value.isEmpty) {
+          return '$label is required';
+        }
+        if (value.length != 10) {
+          return 'Mobile number must be exactly 10 digits';
+        }
+        if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
+          return 'Enter a valid Indian mobile number';
+        }
+        return null;
+      } : null,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly, // Allow only digits
+        LengthLimitingTextInputFormatter(10), // Limit to 10 characters
+      ],
     );
   }
 
@@ -270,7 +340,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   Widget _buildDropdown(String label, String value, Function(String?) onChanged, List<String> items,
       {String Function(String)? displayMapper}) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       style: const TextStyle(fontSize: 14, color: Colors.black),
       decoration: InputDecoration(
         labelText: label,

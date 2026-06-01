@@ -304,7 +304,7 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'Experience: ${doctor.experience}',
+                    'Experience: ${doctor.experience} years',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/di/injection.dart' as sl;
 import '../../../../core/theme/app_colors.dart';
+import '../../../home/presentation/pages/home_page.dart';
 import '../bloc/med_locker_bloc.dart';
 import '../bloc/med_locker_event.dart';
 import '../bloc/med_locker_state.dart';
@@ -11,17 +13,34 @@ import 'med_locker_detail_page.dart';
 
 
 class MedLockerListPage extends StatelessWidget {
-  const MedLockerListPage({super.key});
+  final bool isFromBottomNav; // Add this parameter
+
+  const MedLockerListPage({
+    Key? key,
+    this.isFromBottomNav = false,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => sl<MedLockerBloc>()..add(LoadMedLockers()),
+      create: (context) => sl.sl<MedLockerBloc>()..add(LoadMedLockers()),
       child: Builder(
-        // 👈 This Builder provides a context that is inside the BlocProvider
         builder: (context) {
           return Scaffold(
             appBar: AppBar(
+              // Conditionally show leading back button
+              leading: isFromBottomNav
+                  ? null // No back button when from bottom navigation
+                  : IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomePage()),
+                        (route) => false,
+                  );
+                },
+              ),
               title: const Text(
                 'Med Locker',
                 style: TextStyle(
@@ -31,6 +50,7 @@ class MedLockerListPage extends StatelessWidget {
                   fontFamily: 'Poppins',
                 ),
               ),
+              centerTitle: isFromBottomNav, // Center title when no back button
               backgroundColor: AppColors.blue,
               foregroundColor: Colors.white,
             ),
@@ -116,7 +136,7 @@ class MedLockerListPage extends StatelessWidget {
             ),
             floatingActionButton: FloatingActionButton(
               backgroundColor: AppColors.blue,
-              onPressed: () => _showAddBottomSheet(context), // context is now inside provider
+              onPressed: () => _showAddBottomSheet(context),
               child: const Icon(Icons.add, color: Colors.white),
             ),
           );
@@ -126,7 +146,7 @@ class MedLockerListPage extends StatelessWidget {
   }
 
   void _showAddBottomSheet(BuildContext context) {
-    final medLockerBloc = context.read<MedLockerBloc>(); // ✅ works now
+    final medLockerBloc = context.read<MedLockerBloc>();
     final nameController = TextEditingController();
     final List<File> selectedImages = [];
     final ImagePicker imagePicker = ImagePicker();
@@ -245,7 +265,7 @@ class MedLockerListPage extends StatelessWidget {
                           );
                           return;
                         }
-                        Navigator.pop(modalContext); // close bottom sheet
+                        Navigator.pop(modalContext);
                         medLockerBloc.add(AddMedLocker(name, List.from(selectedImages)));
                       },
                       style: ElevatedButton.styleFrom(

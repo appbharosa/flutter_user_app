@@ -1,12 +1,9 @@
 import 'package:user/domain/entities/subscription_plans.dart';
-
 import '../../domain/entities/dashboard.dart';
 import '../../domain/entities/dashboard_banner.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/family_members.dart';
 import '../../domain/entities/lab_charges.dart';
-import '../../domain/entities/subscription_plan.dart';
-
 
 
 class DashboardModel extends Dashboard {

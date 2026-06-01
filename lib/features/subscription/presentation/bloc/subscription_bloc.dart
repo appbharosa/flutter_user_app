@@ -16,9 +16,18 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   Future<void> _onLoadSubscriptionPlans(LoadSubscriptionPlans event, Emitter<SubscriptionState> emit) async {
     emit(SubscriptionLoading());
     final result = await getSubscriptionPlansUseCase();
+
+    print(" SubscriptionBloc result: ${result.fold((l) => 'Left', (r) => 'Right')}");
+
     result.fold(
-          (failure) => emit(SubscriptionError(failure.message)),
-          (plans) => emit(SubscriptionLoaded(plans)),
+          (failure) {
+        print(" SubscriptionBloc failure: ${failure.message}");
+        emit(SubscriptionError(failure.message));
+      },
+          (plans) {
+        print(" SubscriptionBloc success: ${plans.length} plans");
+        emit(SubscriptionLoaded(plans));
+      },
     );
   }
 }

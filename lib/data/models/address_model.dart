@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../domain/entities/address.dart';
 
 class AddressModel extends Address {
@@ -18,23 +19,24 @@ class AddressModel extends Address {
 
   factory AddressModel.fromJson(Map<String, dynamic> json) {
     return AddressModel(
-      id: json['id'],
-      address: json['address'],
+      id: json['id'] ?? 0,
+      address: json['address'] ?? '',
       hno: json['hno'],
       buildingNo: json['building_no'],
       landmark: json['landmark'],
-      lat: json['lat'].toString(),
-      lon: json['lon'].toString(),
-      addressType: json['address_type'],
-      pincode: json['pincode'].toString(),
-      state: json['state'],
-      city: json['city'],
+      lat: json['lat']?.toString() ?? '0.0',
+      lon: json['lon']?.toString() ?? '0.0',
+      addressType: json['address_type'] ?? '',
+      pincode: json['pincode']?.toString() ?? '',
+      state: json['state'] ?? '',
+      city: json['city'] ?? '',
       isDefault: json['default_address'] == 1,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'address': address,
       'hno': hno,
       'building_no': buildingNo,
@@ -45,6 +47,18 @@ class AddressModel extends Address {
       'pincode': pincode,
       'state': state,
       'city': city,
+      'default_address': isDefault ? 1 : 0,
     };
+  }
+
+  // ✅ Convert from JSON string to Address object
+  factory AddressModel.fromJsonString(String jsonString) {
+    final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+    return AddressModel.fromJson(jsonMap);
+  }
+
+  // ✅ Convert to JSON string
+  String toJsonString() {
+    return jsonEncode(toJson());
   }
 }

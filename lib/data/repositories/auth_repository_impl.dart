@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dartz/dartz.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:user/domain/entities/login_response.dart';
@@ -8,10 +6,10 @@ import 'package:user/domain/entities/registration.dart';
 import '../../core/errors/exceptions.dart';
 import '../../core/errors/failures.dart';
 import '../../core/network/network_info.dart';
+import '../../core/utils/user_manager.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../data_sources/auth_remote_datasource.dart';
 import '../data_sources/user_local_datasource.dart';
-
 
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -44,6 +42,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+
   @override
   Future<Either<Failure, OtpResponse>> verifyOtp(int userId, String otp) async {
     if (!(await networkInfo.isConnected)) {
@@ -52,8 +51,10 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final userProfileModel = await remoteDataSource.verifyOtp(userId, otp);
       await localDataSource.saveUser(userProfileModel);
-      const secureStorage = FlutterSecureStorage();
-      await secureStorage.write(key: 'access_token', value: userProfileModel.accessToken);
+
+      // ✅ Save user data using UserManager
+      await UserManager.saveUser(userProfileModel);
+
       return Right(userProfileModel);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -83,12 +84,18 @@ class AuthRepositoryImpl implements AuthRepository {
     if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
     try {
       final userModel = await remoteDataSource.registerUser(userData);
-      // Only update the token if it changed (optional)
       const secureStorage = FlutterSecureStorage();
+
       if (userModel.accessToken.isNotEmpty) {
         await secureStorage.write(key: 'access_token', value: userModel.accessToken);
       }
-      // Do NOT save the full user model again – the existing local data remains.
+
+      // ✅ Save user name and email using UserManager
+      await UserManager.saveUserDetails(
+        name: userModel.name,
+        email: userModel.email,
+      );
+
       return Right(userModel);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -98,7 +105,6 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure('Unexpected error: $e'));
     }
   }
-
   @override
   Future<Either<Failure, void>> logout() async {
     await localDataSource.clearUser();

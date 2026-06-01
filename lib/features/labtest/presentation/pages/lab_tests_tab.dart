@@ -4,6 +4,7 @@ import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/lab_test.dart';
+import '../../../home/presentation/pages/home_page.dart';
 import '../../../language/bloc/language_bloc.dart';
 import '../../../language/bloc/language_state.dart';
 import '../bloc/lab_test_bloc.dart';
@@ -12,6 +13,8 @@ import '../bloc/lab_test_state.dart';
 import '../lab_slot_bloc/lab_slot_bloc.dart';
 import 'attach_lab_prescription_page.dart';
 import 'lab_test_booking_page.dart';
+
+
 
 
 class LabTestsTab extends StatefulWidget {
@@ -42,7 +45,6 @@ class _LabTestsTabState extends State<LabTestsTab> {
     super.initState();
     _labTestBloc = di.sl<LabTestBloc>();
     _scrollController.addListener(_onScroll);
-    // Listen to external search notifier (from HomePage)
     widget.searchNotifier.addListener(_onExternalSearchChanged);
     widget.addressNotifier.addListener(_onAddressChanged);
     _searchController.addListener(_onSearchTextChanged);
@@ -127,98 +129,125 @@ class _LabTestsTabState extends State<LabTestsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _labTestBloc,
-      child: BlocBuilder<LabTestBloc, LabTestState>(
-        builder: (context, state) {
-          if (state is LabTestInitial || state is LabTestLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is LabTestLoaded) {
-            if (_originalLabTests.length != state.labTests.length) {
-              _originalLabTests = List.from(state.labTests);
-              _applyFilter();
-            }
-            final displayList = _searchQuery.isEmpty ? state.labTests : _filteredLabTests;
-            return Column(
-              children: [
-                // Search Bar
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search lab ',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade300,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                    ),
-                  ),
+    return Scaffold(
+      backgroundColor: AppColors.whiteColor,
+      appBar: AppBar(
+        backgroundColor: AppColors.blue,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const HomePage()),
+                  (route) => false,
+            );
+          },
+        ),
+        title: const Text(
+          'Lab Tests',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Container(
+              height: 45,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search lab tests...',
+                  hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 ),
-                Expanded(
-                  child: displayList.isEmpty
-                      ? const Center(child: Text('No lab tests found'))
-                      : ListView.builder(
-                    controller: _scrollController,
-                    itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == displayList.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: BlocProvider.value(
+        value: _labTestBloc,
+        child: BlocBuilder<LabTestBloc, LabTestState>(
+          builder: (context, state) {
+            if (state is LabTestInitial || state is LabTestLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is LabTestLoaded) {
+              if (_originalLabTests.length != state.labTests.length) {
+                _originalLabTests = List.from(state.labTests);
+                _applyFilter();
+              }
+              final displayList = _searchQuery.isEmpty ? state.labTests : _filteredLabTests;
+              if (displayList.isEmpty) {
+                return const Center(child: Text('No lab tests found'));
+              }
+              return ListView.builder(
+                controller: _scrollController,
+                itemCount: displayList.length + (_searchQuery.isEmpty && state.hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == displayList.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final lab = displayList[index];
+                  return GestureDetector(
+                    onTap: () {
+                      if (lab.packages.isNotEmpty) {
+                        final address = widget.addressNotifier.value;
+                        if (address == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please select an address first'), backgroundColor: Colors.red),
+                          );
+                          return;
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider(
+                              create: (context) => di.sl<LabSlotBloc>(),
+                              child: LabTestBookingPage(
+                                labTest: lab,
+                                addressId: address.id,
+                              ),
+                            ),
+                          ),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AttachLabPrescriptionPage(
+                              labTestId: lab.id,
+                              labTestAddress: lab.location,
+                            ),
+                          ),
                         );
                       }
-                      final lab = displayList[index];
-                      return GestureDetector(
-                        onTap: () {
-                          if (lab.packages.isNotEmpty) {
-                            final address = widget.addressNotifier.value;
-                            if (address == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please select an address first'), backgroundColor: Colors.red),
-                              );
-                              return;
-                            }
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => BlocProvider(
-                                  create: (context) => di.sl<LabSlotBloc>(),
-                                  child: LabTestBookingPage(
-                                    labTest: lab,
-                                    addressId: address.id,
-                                  ),
-                                ),
-                              ),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => AttachLabPrescriptionPage(
-                                  labTestId: lab.id,
-                                  labTestAddress: lab.location,
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                        child: _buildLabTestCard(lab),
-                      );
                     },
-                  ),
-                ),
-              ],
-            );
-          } else if (state is LabTestError) {
-            return Center(child: Text(state.message));
-          }
-          return const SizedBox();
-        },
+                    child: _buildLabTestCard(lab),
+                  );
+                },
+              );
+            } else if (state is LabTestError) {
+              return Center(child: Text(state.message));
+            }
+            return const SizedBox();
+          },
+        ),
       ),
     );
   }
@@ -258,7 +287,6 @@ class _LabTestsTabState extends State<LabTestsTab> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  // Time row
                   if (lab.openTime.isNotEmpty && lab.closeTime.isNotEmpty)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,7 +307,6 @@ class _LabTestsTabState extends State<LabTestsTab> {
                       ],
                     ),
                   const SizedBox(height: 8),
-                  // Location row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -12,8 +11,13 @@ import '../hospital_doctor_booking_history_bloc/hospital_doctor_booking_history_
 import '../hospital_doctor_booking_history_bloc/hospital_doctor_booking_history_state.dart';
 
 
+
 class HospitalDoctorBookingHistoryScreen extends StatefulWidget {
-  const HospitalDoctorBookingHistoryScreen({Key? key}) : super(key: key);
+  final bool isFromBottomNav; // Add this parameter
+  const HospitalDoctorBookingHistoryScreen({
+    Key? key,
+    this.isFromBottomNav = false,
+  }) : super(key: key);
 
   @override
   State<HospitalDoctorBookingHistoryScreen> createState() =>
@@ -48,65 +52,198 @@ class _HospitalDoctorBookingHistoryScreenState
       child: Scaffold(
         backgroundColor: AppColors.whiteColor,
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const HomePage()),
-                    (route) => false,
-              );
-            },
-          ),
-          title: const Text(
-            'Doctor Bookings',
-            style: TextStyle(
-              color: AppColors.whiteColor,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Poppins',
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(15),
+              bottomRight: Radius.circular(15),
             ),
           ),
-          backgroundColor: AppColors.blue,
-          elevation: 0,                     // Removes the shadow/bottom line
+          automaticallyImplyLeading: false,
+          elevation: 0,
           scrolledUnderElevation: 0,
-          // Also removes when scrolling
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(60),
-            child: Container(
-              width: double.infinity,
+          backgroundColor: const Color(0xFF1F52A5),
 
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                // No border, no shadow – ensures no line appears
+          title: Row(
+            children: [
+
+              /// BACK BUTTON
+              if (!widget.isFromBottomNav)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HomePage(),
+                      ),
+                          (route) => false,
+                    );
+                  },
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+
+              if (!widget.isFromBottomNav)
+                const SizedBox(width: 14),
+
+              /// TITLE
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                  widget.isFromBottomNav
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
+                  children: [
+
+                    const Text(
+                      "Doctor Appointments",
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+
+                  ],
+                ),
               ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: AppColors.blue,
-                  borderRadius: BorderRadius.circular(25),
+
+              /// REFRESH BUTTON
+              GestureDetector(
+                onTap: _loadData,
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.refresh,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                 ),
-                labelColor: Colors.white,
-                unselectedLabelColor: AppColors.blue,
-                labelStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
+              ),
+            ],
+          ),
+
+          toolbarHeight: 45,
+
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(90),
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(
+                16,
+                0,
+                16,
+                18,
+              ),
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Container(
+                height: 54,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: 'Poppins',
+                child: TabBar(
+                  controller: _tabController,
+                  dividerColor: Colors.transparent,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  splashBorderRadius:
+                  BorderRadius.circular(16),
+
+                  indicator: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF1F52A5),
+                        Color(0xFF1F52A5),
+                      ],
+                    ),
+                    borderRadius:
+                    BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.25),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+
+                  labelColor: Colors.white,
+                  unselectedLabelColor:
+                  Colors.grey.shade700,
+
+                  labelStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Poppins',
+                  ),
+
+                  unselectedLabelStyle:
+                  const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
+                  ),
+
+                  tabs: [
+
+                    /// ACTIVE TAB
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment:
+                        MainAxisAlignment.center,
+                        children: const [
+
+                          Icon(
+                            Icons.access_time_filled,
+                            size: 18,
+                          ),
+
+                          SizedBox(width: 8),
+
+                          Text("Active"),
+                        ],
+                      ),
+                    ),
+
+                    /// COMPLETED TAB
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment:
+                        MainAxisAlignment.center,
+                        children: const [
+
+                          Icon(
+                            Icons.check_circle,
+                            size: 18,
+                          ),
+
+                          SizedBox(width: 8),
+
+                          Text("Completed"),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerHeight: 0,
-                tabs: const [
-                  Tab(text: 'Active'),
-                  Tab(text: 'Completed'),
-                ],
               ),
             ),
           ),
@@ -174,209 +311,388 @@ class _HospitalDoctorBookingHistoryScreenState
     );
   }
 
-  Widget _buildBookingList(List<HospitalDoctorBookingItem> bookings, {required String emptyMessage}) {
+  Widget _buildBookingList(
+      List<HospitalDoctorBookingItem> bookings, {
+        required String emptyMessage,
+      }) {
     if (bookings.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.medical_services, size: 80, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
+            Icon(
+              Icons.medical_services_outlined,
+              size: 90,
+              color: Colors.grey.shade300,
+            ),
+            const SizedBox(height: 18),
             Text(
               emptyMessage,
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+                fontFamily: 'Poppins',
+              ),
             ),
           ],
         ),
       );
     }
+
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       itemCount: bookings.length,
       itemBuilder: (context, index) {
         final booking = bookings[index];
+
+        final isOnline =
+            booking.consultType.toLowerCase() == "offline";
+
         return Container(
-          margin: const EdgeInsets.only(bottom: 16),
+          margin: const EdgeInsets.only(bottom: 18),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(26),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.shade200,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                // Optional: navigate to details
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            children: [
+
+              /// TOP BLUE SECTION
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xff0057FF),
+                      Color(0xff1F6BFF),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(26),
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Doctor image
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey.shade100,
-                          ),
-                          child: ClipOval(
-                            child: booking.image != null && booking.image!.isNotEmpty
-                                ? CachedNetworkImage(
-                              imageUrl: booking.image!,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => const Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                              errorWidget: (_, __, ___) => const Icon(
-                                Icons.person,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                            )
-                                : const Icon(Icons.person, size: 40, color: Colors.grey),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                booking.name.isNotEmpty ? booking.name : 'Doctor',
-                                style: TextStyle(
-                                  color: AppColors.black,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,  // SemiBold
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Booking ID: ${booking.bookingId}',
-                                style: TextStyle(
-                                  color: AppColors.black,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,  // SemiBold
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.calendar_today, size: 12, color: Colors.black),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${booking.date} | ${booking.time}',
-                                    style: TextStyle(
-                                      color: AppColors.black,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w400,  // SemiBold
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.person_outline, size: 12, color: Colors.grey),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    booking.patientName,
-                                    style: TextStyle(
-                                      color: AppColors.black,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w400,  // SemiBold
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Specialization row
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: booking.consultType == 'online'
-                                ? Colors.blue.shade50
-                                : Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: booking.consultType == 'online'
-                                  ? Colors.blue.shade200
-                                  : Colors.green.shade200,
-                            ),
-                          ),
-                          child: Text(
-                            booking.consultType.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: booking.consultType == 'online'
-                                  ? Colors.blue.shade800
-                                  : Colors.green.shade800,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            booking.specialization,
-                            style: TextStyle(
-                              color: AppColors.black,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,  // SemiBold
-                              fontFamily: 'Poppins',
-                            ),                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Fee info
-                    if (booking.fee > 0)
-                      Text(
-                        'Consultation Fee: ₹${booking.fee}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.blue,
+
+                    /// DOCTOR IMAGE
+                    Container(
+                      width: 74,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 3,
                         ),
                       ),
+                      child: ClipOval(
+                        child: booking.image != null &&
+                            booking.image!.isNotEmpty
+                            ? CachedNetworkImage(
+                          imageUrl: booking.image!,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) =>
+                          const Center(
+                            child:
+                            CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                          errorWidget: (_, __, ___) =>
+                          const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        )
+                            : const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    /// DOCTOR DETAILS
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                        children: [
+
+                          Text(
+                            booking.name.isNotEmpty
+                                ? booking.name
+                                : "Doctor",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          Text(
+                            booking.specialization,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Container(
+                            padding:
+                            const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white
+                                  .withOpacity(0.18),
+                              borderRadius:
+                              BorderRadius.circular(30),
+                            ),
+                            child: Text(
+                              isOnline
+                                  ? "ONLINE CONSULTATION"
+                                  : "OFFLINE CONSULTATION",
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight:
+                                FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
+
+              /// BODY
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  children: [
+
+                    /// BOOKING ID
+                    _infoTile(
+                      Icons.confirmation_number_outlined,
+                      "Booking ID",
+                      booking.bookingId.toString(),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    /// DATE
+                    _infoTile(
+                      Icons.calendar_month,
+                      "Appointment Date",
+                      booking.date,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    /// TIME
+                    _infoTile(
+                      Icons.access_time,
+                      "Appointment Time",
+                      booking.time,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    /// PATIENT NAME
+                    _infoTile(
+                      Icons.person_outline,
+                      "Patient Name",
+                      booking.patientName,
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    /// FEE + STATUS
+                    Row(
+                      children: [
+
+                        Expanded(
+                          child: Container(
+                            padding:
+                            const EdgeInsets.symmetric(
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green
+                                  .withOpacity(0.08),
+                              borderRadius:
+                              BorderRadius.circular(
+                                  16),
+                            ),
+                            child: Column(
+                              children: [
+
+                                const Text(
+                                  "Consultation Fee",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+
+                                const SizedBox(height: 5),
+
+                                Text(
+                                  "₹${booking.fee}",
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight:
+                                    FontWeight.bold,
+                                    color: Colors.green,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        Expanded(
+                          child: Container(
+                            padding:
+                            const EdgeInsets.symmetric(
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue
+                                  .withOpacity(0.08),
+                              borderRadius:
+                              BorderRadius.circular(
+                                  16),
+                            ),
+                            child: Column(
+                              children: [
+
+                                const Text(
+                                  "Status",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+
+                                const SizedBox(height: 5),
+
+                                Text(
+                                  booking.doctorSpecialization.toString(),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight:
+                                    FontWeight.w700,
+                                    color: AppColors.blue,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 18),
+
+
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
+  Widget _infoTile(
+      IconData icon,
+      String title,
+      String value,
+      ) {
+    return Row(
+      children: [
+
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.blue.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.blue,
+            size: 22,
+          ),
+        ),
+
+        const SizedBox(width: 14),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+            children: [
+
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+
+              const SizedBox(height: 3),
+
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.black,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ],
+          ),
+        )
+      ],
+    );
+  }
   @override
   void dispose() {
     _tabController.dispose();

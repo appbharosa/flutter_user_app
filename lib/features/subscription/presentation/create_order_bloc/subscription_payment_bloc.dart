@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:user/features/subscription/presentation/create_order_bloc/subscription_payment_event.dart';
@@ -25,20 +26,34 @@ class SubscriptionPaymentBloc extends Bloc<SubscriptionPaymentEvent, Subscriptio
   }
 
   Future<void> _onCreateOrder(CreateSubscriptionPaymentOrder event, Emitter<SubscriptionPaymentState> emit) async {
+    debugPrint("🔵 CreateSubscriptionPaymentOrder - amount: ${event.amount}, subscriptionId: ${event.subscriptionId}");
     emit(SubscriptionPaymentLoading());
     final result = await createOrderUseCase(event.amount);
     result.fold(
-          (failure) => emit(SubscriptionPaymentError(failure.message)),
-          (order) => emit(SubscriptionPaymentOrderCreated(order, event.subscriptionId)),
+          (failure) {
+        debugPrint("❌ Create order failure: ${failure.message}");
+        emit(SubscriptionPaymentError(failure.message));
+      },
+          (order) {
+        debugPrint("✅ Order created - orderId: ${order.orderId}");
+        emit(SubscriptionPaymentOrderCreated(order, event.subscriptionId));
+      },
     );
   }
 
   Future<void> _onConfirmPayment(ConfirmSubscriptionPayment event, Emitter<SubscriptionPaymentState> emit) async {
+    debugPrint("🔵 ConfirmSubscriptionPayment - orderId: ${event.orderId}, subscriptionId: ${event.subscriptionId}");
     emit(SubscriptionPaymentLoading());
     final result = await submitSubscriptionUseCase(event.orderId, event.subscriptionId);
     result.fold(
-          (failure) => emit(SubscriptionPaymentError(failure.message)),
-          (_) => emit(SubscriptionPaymentSuccess()),
+          (failure) {
+        debugPrint("❌ Confirm payment failure: ${failure.message}");
+        emit(SubscriptionPaymentError(failure.message));
+      },
+          (_) {
+        debugPrint("✅ Confirm payment success");
+        emit(SubscriptionPaymentSuccess());
+      },
     );
   }
 }

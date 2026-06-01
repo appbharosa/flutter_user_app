@@ -83,6 +83,8 @@ class SideMenuDialog extends StatelessWidget {
               decoration: const BoxDecoration(
                 color: AppColors.blue,
                 borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(20),
+                  topLeft: Radius.circular(20),
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
                 ),
@@ -145,20 +147,18 @@ class SideMenuDialog extends StatelessWidget {
                       onTap: () => onMenuItemSelected(2),
                     ),
                     _buildMenuItem(
+                      icon: Icons.subscriptions,
+                      title: 'Subscription',
+                      onTap: () => onMenuItemSelected(3),
+                    ),
+                    _buildMenuItem(
                       icon: Icons.info,
                       title: 'about'.tr(),
-                      onTap: () => onMenuItemSelected(3),
+                      onTap: () => onMenuItemSelected(4),
                     ),
                     _buildMenuItem(
                       icon: Icons.contact_page,
                       title: 'contact_us'.tr(),
-                      onTap: () => onMenuItemSelected(4),
-                    ),
-
-                    // --- Existing Diagnostic Bookings (Normal) ---
-                    _buildMenuItem(
-                      icon: Icons.medical_services,
-                      title: 'Diagnostic Bookings',
                       onTap: () => onMenuItemSelected(5),
                     ),
 
@@ -168,49 +168,43 @@ class SideMenuDialog extends StatelessWidget {
                       child: ExpansionTile(
                         leading: const Icon(Icons.local_hospital, color: Colors.black87),
                         title: const Text(
-                          'Hospital Bookings',
+                          ' Bookings',
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                         ),
                         children: [
                           _buildSubMenuItem(
+                            title: 'Diagnostic Bookings',
+                            onTap: () => onMenuItemSelected(6), // Index 7
+                          ),
+                          _buildSubMenuItem(
                             title: 'Hospital Diagnostic Bookings',
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              onMenuItemSelected(9);
-                            },
+                            onTap: () => onMenuItemSelected(7), // Index 7
+                          ),
+                          _buildSubMenuItem(
+                            title: 'Hospital Pharmacy Bookings',
+                            onTap: () => onMenuItemSelected(8), // Index 8
+                          ),
+                          _buildSubMenuItem(
+                            title: 'Hospital Doctor Bookings',
+                            onTap: () => onMenuItemSelected(9), // Index 9
+                          ),
+
+                          _buildSubMenuItem(
+                            title: 'LabTest Bookings',
+                            onTap: () => onMenuItemSelected(10), // Index 9
                           ),
                           _buildSubMenuItem(
                             title: 'Pharmacy Bookings',
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              onMenuItemSelected(10);
-                            },
+                            onTap: () => onMenuItemSelected(11), // Index 9
                           ),
                           _buildSubMenuItem(
-                            title: 'Doctor Bookings',
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              onMenuItemSelected(11);
-                            },
+                            title: 'Online Doctor Bookings',
+                            onTap: () => onMenuItemSelected(12), // Index 9
                           ),
-
                         ],
                       ),
                     ),
 
-                    _buildMenuItem(
-                      icon: Icons.science,
-                      title: 'LabTest Bookings',
-                      onTap: () => onMenuItemSelected(6),
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.medication,
-                      title: 'Pharmacy Bookings',
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        onMenuItemSelected(12); // new index
-                      },
-                    ),
                     _buildMenuItem(
                       icon: Icons.credit_card,
                       title: 'My eCard',
@@ -219,14 +213,7 @@ class SideMenuDialog extends StatelessWidget {
                         onMenuItemSelected(13); // new index
                       },
                     ),
-                    _buildMenuItem(
-                      icon: Icons.medical_services,
-                      title: 'Online Doctor Bookings',
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        onMenuItemSelected(14); // new index
-                      },
-                    ),
+
                     const Divider(height: 20, thickness: 1),
                     _buildMenuItem(
                       icon: Icons.logout,

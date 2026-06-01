@@ -63,82 +63,90 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
               }
             },
             builder: (context, state) {
-              return Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'Select Delivery Address',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins',
-                        color: AppColors.black,
-                      ),                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: state is AddressLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : state is AddressLoaded
-                        ? ListView.builder(
-                      controller: scrollController,
-                      itemCount: state.addresses.length + 1, // +1 for current location option
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return _buildCurrentLocationTile();
-                        }
-                        final addr = state.addresses[index - 1];
-                        final isSelected = widget.currentAddress?.id == addr.id;
-                        return _buildAddressTile(addr, isSelected);
-                      },
-                    )
-                        : const Center(child: Text('No addresses found')),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.blue,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () async {
-                          final addressBloc = context.read<AddressBloc>();
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddAddressScreen(addressBloc: addressBloc),
-                            ),
-                          );
-                          if (result == true && mounted) {
-                            addressBloc.add(LoadAddresses());
-                          }
-                        },
-                        icon: const Icon(Icons.add, color: Colors.white),
-                        label: const Text('Add New Address', style: const TextStyle(
-                          fontSize: 12,
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'Select Delivery Address',
+                        style: const TextStyle(
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
-                          color: AppColors.whiteColor,
-                        ),
+                          color: AppColors.black,
+                        ),                    ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: state is AddressLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : state is AddressLoaded
+                          ? ListView.builder(
+                        controller: scrollController,
+                        itemCount: state.addresses.length + 1, // +1 for current location option
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return _buildCurrentLocationTile();
+                          }
+                          final addr = state.addresses[index - 1];
+                          final isSelected = widget.currentAddress?.id == addr.id;
+                          return _buildAddressTile(addr, isSelected);
+                        },
+                      )
+                          : const Center(child: Text('No addresses found')),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.blue,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () async {
+                            final addressBloc = context.read<AddressBloc>();
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AddAddressScreen(addressBloc: addressBloc),
+                              ),
+                            );
+                            if (result == true && mounted) {
+                              addressBloc.add(LoadAddresses());
+                            }
+                          },
+                          icon: const Icon(Icons.add, color: Colors.white),
+                          label: const Text('Add New Address', style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Poppins',
+                            color: AppColors.whiteColor,
+                          ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                    const SizedBox(height: 12),
+                  ],
+                ),
               );
             },
           );

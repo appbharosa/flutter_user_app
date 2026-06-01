@@ -6,7 +6,7 @@ class UserProfile extends Equatable {
   final String name;
   final String mobile;
   final String email;
-  final String gender;    // store as string from mapping
+  final String gender;
   final String dob;
   final String image;
   final String bloodGroup;
