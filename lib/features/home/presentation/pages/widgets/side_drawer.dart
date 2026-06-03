@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:user/core/utils/translations.dart';
 import '../../../../../core/theme/app_colors.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -55,6 +57,21 @@ class SideMenuDialog extends StatelessWidget {
               (route) => false,
         );
       }
+    }
+  }
+
+  void _shareApp(BuildContext context) async {
+    const String appUrl = 'https://play.google.com/store/apps/details?id=com.medrayder.user&pcampaignid=web_share';
+    try {
+      await Share.share(
+        'Check out MedRayder App: $appUrl',
+        subject: 'MedRayder Health App',
+      );
+    } catch (e) {
+      await Clipboard.setData(ClipboardData(text: appUrl));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Link copied to clipboard'), backgroundColor: Colors.green),
+      );
     }
   }
 
@@ -148,7 +165,7 @@ class SideMenuDialog extends StatelessWidget {
                     ),
                     _buildMenuItem(
                       icon: Icons.subscriptions,
-                      title: 'Subscription',
+                      title: 'Care Plans',
                       onTap: () => onMenuItemSelected(3),
                     ),
                     _buildMenuItem(
@@ -214,6 +231,14 @@ class SideMenuDialog extends StatelessWidget {
                       },
                     ),
 
+                    _buildMenuItem(
+                      icon: Icons.share,
+                      title: 'Share',
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _shareApp(context);
+                      },
+                    ),
                     const Divider(height: 20, thickness: 1),
                     _buildMenuItem(
                       icon: Icons.logout,
@@ -230,6 +255,8 @@ class SideMenuDialog extends StatelessWidget {
       ),
     );
   }
+  
+  
   Widget _buildSubMenuItem({
     required String title,
     required VoidCallback onTap,
@@ -272,4 +299,6 @@ class SideMenuDialog extends StatelessWidget {
       dense: true,
     );
   }
+
+
 }

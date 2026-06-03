@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cashfree_pg_sdk/utils/cfenums.dart';
 import '../../../../core/services/language_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/user_manager.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/family_member.dart';
 import '../../../home/presentation/pages/home_page.dart';
@@ -18,6 +19,7 @@ import '../bloc/free_lab_booking_bloc/free_lab_booking_state.dart';
 class FreeLabBookingConfirmScreen extends StatefulWidget {
   final int packageId;
   final String packageName;
+  final String packageDiscountPrice; // from API
   final ValueNotifier<Address?> addressNotifier;
   final int slotId;
   final String slotTime;
@@ -29,6 +31,7 @@ class FreeLabBookingConfirmScreen extends StatefulWidget {
     Key? key,
     required this.packageId,
     required this.packageName,
+    required this.packageDiscountPrice,
     required this.addressNotifier,
     required this.slotId,
     required this.slotTime,
@@ -45,10 +48,23 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
   late FreeLabBookingBloc _bloc;
   bool _isProcessing = false;
 
-  // Constants
+  // Fixed charges for free package
   final double hygienicKitCharges = 99.00;
   final double sampleCollectionCharges = 0.00;
-  final double totalAmount = 99.00;
+
+  // Dynamic total amount
+  double get totalAmount {
+    if (widget.packageId == 1) {
+      // Free Lab Package: only hygienic kit charges apply
+      return hygienicKitCharges;
+    } else if (widget.packageId == 14) {
+      // Medrayder Package: use discount price from API
+      final price = double.tryParse(widget.packageDiscountPrice) ?? 0.0;
+      return price;
+    }
+    // Fallback
+    return double.tryParse(widget.packageDiscountPrice) ?? 0.0;
+  }
 
   // Store order details
   String? _createdOrderId;
@@ -82,7 +98,7 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
     cashfreeService.startPayment(
       orderId: _createdOrderId!,
       paymentSessionId: _createdPaymentSessionId!,
-      environment: CFEnvironment.SANDBOX,
+      environment: CFEnvironment.PRODUCTION,
       onSuccess: (orderId) {
         debugPrint("✅ Payment success for order: $orderId");
         _confirmBooking();
@@ -133,6 +149,11 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
             _processOnlinePayment();
           } else if (state is FreeLabBookingSuccess) {
             setState(() => _isProcessing = false);
+
+            if (widget.packageId == 1) {
+              UserManager.setFreeLabUtilized(true);
+            }
+
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Booking successful!'),
@@ -175,7 +196,7 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Price Summary Card
+                    // Price Summary Card (dynamic)
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -188,16 +209,21 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                         children: [
                           const Text(
                             'Price Summary',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 12),
-                          _buildPriceRow('Hygienic Kit Charges', '₹${hygienicKitCharges.toStringAsFixed(2)}'),
-                          _buildPriceRow('Sample Collection Charges', '₹${sampleCollectionCharges.toStringAsFixed(2)}'),
-                          const Divider(height: 24),
-                          _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
+                          if (widget.packageId == 1) ...[
+                            _buildPriceRow('Hygienic Kit Charges', '₹${hygienicKitCharges.toStringAsFixed(2)}'),
+                            _buildPriceRow('Sample Collection Charges', '₹${sampleCollectionCharges.toStringAsFixed(2)}'),
+                            const Divider(height: 24),
+                            _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
+                          ] else if (widget.packageId == 14) ...[
+                            _buildPriceRow('Package Price', '₹${widget.packageDiscountPrice}'),
+                            const Divider(height: 24),
+                            _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
+                          ] else ...[
+                            _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
+                          ],
                         ],
                       ),
                     ),
@@ -205,12 +231,8 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
 
                     // Lab Package Section
                     const Text(
-                      'Free Lab Package',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.blue,
-                      ),
+                      'Lab Package',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blue),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -231,13 +253,7 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                       children: [
                         const Icon(Icons.location_on, size: 18, color: AppColors.blue),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Address',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        const Text('Address', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -262,23 +278,10 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                           children: [
                             const Icon(Icons.calendar_today, size: 16, color: AppColors.blue),
                             const SizedBox(width: 8),
-                            const Text(
-                              'Appointment Date',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            const Text('Appointment Date', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                           ],
                         ),
-                        Text(
-                          widget.formattedDate,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.blue,
-                          ),
-                        ),
+                        Text(widget.formattedDate, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.blue)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -289,23 +292,10 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                           children: [
                             const Icon(Icons.access_time, size: 16, color: AppColors.blue),
                             const SizedBox(width: 8),
-                            const Text(
-                              'Time Slot',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            const Text('Time Slot', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                           ],
                         ),
-                        Text(
-                          widget.slotTime,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.blue,
-                          ),
-                        ),
+                        Text(widget.slotTime, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.blue)),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -325,13 +315,7 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                             children: [
                               const Icon(Icons.person, size: 18, color: AppColors.blue),
                               const SizedBox(width: 8),
-                              const Text(
-                                'Patient Details',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              const Text('Patient Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -351,26 +335,13 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                         onPressed: _isProcessing ? null : _processBooking,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: _isProcessing
-                            ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                             : Text(
                           'Pay ₹${totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -380,9 +351,7 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
               if (_isProcessing)
                 Container(
                   color: Colors.black54,
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: const Center(child: CircularProgressIndicator()),
                 ),
             ],
           ),
@@ -425,22 +394,10 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
         children: [
           SizedBox(
             width: 90,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
+            child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
           ),
         ],
       ),

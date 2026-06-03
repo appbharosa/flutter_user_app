@@ -39,7 +39,12 @@ android {
         versionName = flutter.versionName
         multiDexEnabled = true
     }
-
+    packagingOptions {
+        pickFirst("lib/arm64-v8a/libc++_shared.so")
+        pickFirst("lib/armeabi-v7a/libc++_shared.so")
+        pickFirst("lib/x86/libc++_shared.so")
+        pickFirst("lib/x86_64/libc++_shared.so")
+    }
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as? String

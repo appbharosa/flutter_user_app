@@ -1,11 +1,9 @@
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
 import '../../data/models/otp_response_model.dart';
-
-
 class UserManager {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  static const String _freeLabUtilizedKey = 'free_lab_utilized';
+  static const String _subscriptionActiveKey = 'subscription_active';
   static const String _userDataKey = 'user_data';
   static const String _userNameKey = 'user_name';
   static const String _userEmailKey = 'user_email';
@@ -24,6 +22,13 @@ class UserManager {
     }
   }
 
+  static Future<void> setSubscriptionActive(bool active) async {
+    await _storage.write(key: _subscriptionActiveKey, value: active.toString());
+  }
+
+  static Future<void> setFreeLabUtilized(bool utilized) async {
+    await _storage.write(key: _freeLabUtilizedKey, value: utilized.toString());
+  }
   /// Returns the stored user name
   static Future<String?> getUserName() async {
     return await _storage.read(key: _userNameKey);
@@ -89,6 +94,16 @@ class UserManager {
         // Ignore parsing errors
       }
     }
+  }
+
+  static Future<bool> hasActiveSubscription() async {
+    final value = await _storage.read(key: _subscriptionActiveKey);
+    return value == 'true';
+  }
+
+  static Future<bool> isFreeLabUtilized() async {
+    final value = await _storage.read(key: _freeLabUtilizedKey);
+    return value == 'true';
   }
 
   /// Clears all user data (logout)

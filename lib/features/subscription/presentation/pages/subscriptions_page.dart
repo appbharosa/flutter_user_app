@@ -4,6 +4,7 @@ import '../../../../core/di/injection.dart' as sl;
 import '../../../../core/services/language_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/snackbar_utils.dart';
+import '../../../../core/utils/user_manager.dart';
 import '../../../../domain/entities/subscription_plan.dart';
 import '../../../../domain/entities/user_subscription.dart';
 import '../bloc/subscription_bloc.dart';
@@ -50,6 +51,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   Future<void> _loadSubscriptionStatus() async {
     final language = await LanguageService.getCurrentLanguage();
     _statusBloc.add(LoadUserSubscription(language));
+
+    final hasActive = await UserManager.hasActiveSubscription();
+    if (!hasActive) {
+      // Optionally, we could clear local flag here, but the API will tell us.
+      // We'
+    }
   }
 
   @override
@@ -81,8 +88,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         body: MultiBlocListener(
           listeners: [
             BlocListener<SubscriptionPaymentBloc, SubscriptionPaymentState>(
-              listener: (context, state) {
+              listener: (context, state) async {
                 if (state is SubscriptionPaymentSuccess) {
+                  await UserManager.setSubscriptionActive(true);
                   showSuccessSnackBar('Subscription successful!');
                   _loadSubscriptionStatus();
                 } else if (state is SubscriptionPaymentError) {
@@ -91,9 +99,18 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               },
             ),
             BlocListener<SubscriptionStatusBloc, SubscriptionStatusState>(
-              listener: (context, state) {
+              listener: (context, state) async {
                 if (state is SubscriptionStatusError) {
                   showErrorSnackBar(state.message);
+                  // If error indicates no active subscription, clear flag
+                  if (state.message.contains('no active subscription') ||
+                      state.message.contains('No subscription found')) {
+                    await UserManager.setSubscriptionActive(false);
+                  }
+                } else if (state is SubscriptionStatusLoaded) {
+                  // Sync local flag with actual API result
+                  final hasActive = (state.subscription != null && !state.subscription!.isExpired);
+                  await UserManager.setSubscriptionActive(hasActive);
                 }
               },
             ),
@@ -131,6 +148,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       return _buildActiveSubscription(subscription);
                     }
                   } else {
+                    UserManager.setSubscriptionActive(false);
                     return _buildPlansList(); // No active subscription → show plans
                   }
                 }
@@ -1201,7 +1219,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     cashfree.startPayment(
       orderId: order.orderId,
       paymentSessionId: order.paymentSessionId,
-      environment: CFEnvironment.SANDBOX,
+      environment: CFEnvironment.PRODUCTION,
       onSuccess: (orderId) => bloc.add(ConfirmSubscriptionPayment(orderId, subscriptionId)),
       onFailure: (error) => showErrorSnackBar(error),
     );

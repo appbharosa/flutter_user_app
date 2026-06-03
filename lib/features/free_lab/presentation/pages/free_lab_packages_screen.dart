@@ -14,7 +14,13 @@ import 'free_lab_slots_screen.dart';
 
 class FreeLabPackagesScreen extends StatefulWidget {
   final ValueNotifier<Address?> addressNotifier;
-  const FreeLabPackagesScreen({Key? key, required this.addressNotifier}) : super(key: key);
+  final int? packageId;
+
+  const FreeLabPackagesScreen({
+    Key? key,
+    required this.addressNotifier,
+    this.packageId,
+  }) : super(key: key);
 
   @override
   State<FreeLabPackagesScreen> createState() => _FreeLabPackagesScreenState();
@@ -42,12 +48,15 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
       child: Scaffold(
         backgroundColor: AppColors.whiteColor,
         appBar: AppBar(
-          title: const Text('Free Lab Package', style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
-            color: AppColors.whiteColor,
-          ),),
+          title: Text(
+            widget.packageId == 14 ? 'Medrayder Tests' : 'Free Lab Package',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Poppins',
+              color: AppColors.whiteColor,
+            ),
+          ),
           backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
         ),
@@ -68,7 +77,18 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
               if (packages.isEmpty) {
                 return const Center(child: Text('No packages available'));
               }
-              final package = packages.first; // Only Free Package
+
+              final targetId = widget.packageId ?? 1;
+              FreeLabPackage? selectedPackage;
+              for (var pkg in packages) {
+                if (pkg.id == targetId) {
+                  selectedPackage = pkg;
+                  break;
+                }
+              }
+              selectedPackage ??= packages.first;
+
+              // UI remains the same, using selectedPackage
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -84,7 +104,7 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: CachedNetworkImage(
-                          imageUrl: package.image,
+                          imageUrl: selectedPackage.image,
                           height: 180,
                           fit: BoxFit.cover,
                           placeholder: (_, __) => Container(color: Colors.grey.shade200),
@@ -96,8 +116,8 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
 
                     // Package Name
                     Text(
-                      package.name,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      selectedPackage.name,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
 
@@ -105,13 +125,13 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                     Row(
                       children: [
                         Text(
-                          '₹${package.price}',
-                          style: const TextStyle(fontSize: 16, decoration: TextDecoration.lineThrough, color: Colors.grey),
+                          '₹${selectedPackage.price}',
+                          style: const TextStyle(fontSize: 13, decoration: TextDecoration.lineThrough, color: Colors.grey),
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '₹${package.discountPrice}',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.blue),
+                          '₹${selectedPackage.discountPrice}',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.blue),
                         ),
                       ],
                     ),
@@ -122,33 +142,31 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _buildInfoChip(Icons.access_time, 'Report: ${package.reportIn}'),
-                        _buildInfoChip(Icons.fastfood, 'Fasting: ${package.fasting}'),
-                        _buildInfoChip(Icons.people, package.suitableFor),
+                        _buildInfoChip(Icons.access_time, 'Report: ${selectedPackage.reportIn}'),
+                        _buildInfoChip(Icons.fastfood, 'Fasting: ${selectedPackage.fasting}'),
+                        _buildInfoChip(Icons.people, selectedPackage.suitableFor),
                       ],
                     ),
                     const SizedBox(height: 24),
 
-                    // Tests Section Header
                     const Text(
                       'Tests Included',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
 
-                    // Expandable Tests List
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: package.packageTests.length,
+                      itemCount: selectedPackage.packageTests.length,
                       itemBuilder: (context, index) {
-                        final test = package.packageTests[index];
+                        final test = selectedPackage!.packageTests[index];
                         return _buildExpandableTestCard(test);
                       },
                     ),
                     const SizedBox(height: 24),
 
-                    // Book Now Button
+                    // Inside FreeLabPackagesScreen, when Book Now is pressed:
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -158,8 +176,9 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => FreeLabSlotsScreen(
-                                packageId: package.id,
-                                packageName: package.name,
+                                packageId: selectedPackage!.id,
+                                packageName: selectedPackage.name,
+                                packageDiscountPrice: selectedPackage.discountPrice,
                                 addressNotifier: widget.addressNotifier,
                               ),
                             ),
@@ -167,11 +186,20 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.blue,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        child: const Text('Book Now', style: TextStyle(color: Colors.white, fontSize: 17)),
+                        child: const Text(
+                          'Book Now',
+                          style: TextStyle(
+                            color: Colors.white, // white text for contrast
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
+                    )
                   ],
                 ),
               );
@@ -211,7 +239,7 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
         child: ExpansionTile(
           title: Text(
             test.name,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
           children: test.parameters.isEmpty
               ? [

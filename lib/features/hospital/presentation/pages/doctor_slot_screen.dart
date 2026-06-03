@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/services/language_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/user_manager.dart';
 import '../../../../domain/entities/hospital_doctor.dart';
+import '../../../subscription/presentation/pages/subscriptions_page.dart';
 import '../doctor_slots_bloc/doctor_slots_bloc.dart';
 import 'doctor_booking_family_selection_screen.dart';
 
@@ -45,7 +47,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
     _bloc.add(LoadDoctorSlots(
       doctorId: widget.doctor.id,
       language: language,
-      date: dateStr, // passes selected date (backend may or may not use it)
+      date: dateStr,
     ));
   }
 
@@ -61,6 +63,47 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
   String _formatDate(DateTime date) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  Future<void> _handleContinue() async {
+    if (_selectedSlotId == null) return;
+
+    // Check subscription status
+    final hasSubscription = await UserManager.hasActiveSubscription();
+    if (!hasSubscription) {
+      // No active subscription → redirect to subscription page
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please subscribe to book this appointment'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SubscriptionPage()),
+        );
+      }
+      return;
+    }
+
+    // Has subscription → proceed to family selection
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DoctorBookingFamilySelectionScreen(
+          doctor: widget.doctor,
+          hospitalId: widget.hospitalId,
+          addressId: widget.addressId,
+          slotId: _selectedSlotId!,
+          slotTime: _selectedSlotTime!,
+          date: _selectedDate.toIso8601String().split('T').first,
+          formattedDate: _selectedFormattedDate ?? _formatDate(_selectedDate),
+          consultationFee: widget.doctor.consultationFee,
+        ),
+      ),
+    );
   }
 
   @override
@@ -84,10 +127,8 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
         ),
         body: Column(
           children: [
-            // 1. Doctor header (on top)
             _buildDoctorHeader(),
-
-            // 2. Date picker card (directly below doctor header)
+            // Date picker card
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
@@ -107,7 +148,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 children: [
                   const Text(
                     'Select Date',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Poppins',
@@ -161,8 +202,6 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 ],
               ),
             ),
-
-            // 3. Slots section title
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Align(
@@ -172,14 +211,12 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                   style: TextStyle(
                     color: AppColors.black,
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,  // SemiBold
+                    fontWeight: FontWeight.w600,
                     fontFamily: 'Poppins',
                   ),
                 ),
               ),
             ),
-
-            // 4. Slots list (scrollable)
             Expanded(
               child: BlocBuilder<DoctorSlotsBloc, DoctorSlotsState>(
                 builder: (context, state) {
@@ -289,8 +326,6 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 },
               ),
             ),
-
-            // 5. Continue button
             Padding(
               padding: const EdgeInsets.all(16),
               child: SizedBox(
@@ -301,25 +336,7 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                     backgroundColor: AppColors.blue,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: _selectedSlotId == null
-                      ? null
-                      : () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DoctorBookingFamilySelectionScreen(
-                          doctor: widget.doctor,
-                          hospitalId: widget.hospitalId,
-                          addressId: widget.addressId,
-                          slotId: _selectedSlotId!,
-                          slotTime: _selectedSlotTime!,
-                          date: _selectedDate.toIso8601String().split('T').first,
-                          formattedDate: _selectedFormattedDate ?? _formatDate(_selectedDate),
-                          consultationFee: widget.doctor.consultationFee,
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: _selectedSlotId == null ? null : _handleContinue,
                   child: const Text(
                     'Continue',
                     style: TextStyle(
@@ -370,18 +387,22 @@ class _DoctorSlotScreenState extends State<DoctorSlotScreen> {
                 const SizedBox(height: 2),
                 Text(
                   widget.doctor.specialization,
-                  style: const TextStyle(fontSize: 12, color: Colors.black,  fontFamily: 'Poppins',       fontWeight: FontWeight.w600,),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black,
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                SizedBox(height: 4,),
+                const SizedBox(height: 4),
                 Text(
-                  'Qualification: ${ widget.doctor.qualificationNames} ',
-
-                  style: const TextStyle(fontSize: 12, color: Colors.black,  fontFamily: 'Poppins',),
+                  'Qualification: ${widget.doctor.qualificationNames}',
+                  style: const TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'Poppins'),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Experience: ${widget.doctor.experience} years',
-                  style: const TextStyle(fontSize: 13,),
+                  style: const TextStyle(fontSize: 13),
                 ),
                 Text(
                   'Fee: ₹${widget.doctor.consultationFee}',

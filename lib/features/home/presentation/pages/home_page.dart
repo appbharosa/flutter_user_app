@@ -3,12 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geocoding/geocoding.dart' hide Location;
 import 'package:geolocator/geolocator.dart' as loc;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:user/features/admission/pages/admin_support_screen.dart';
 import 'package:user/features/home/presentation/pages/widgets/address_bottom_sheet.dart';
 import 'package:user/features/home/presentation/pages/widgets/bottom_nav_bar.dart';
 import 'package:user/features/home/presentation/pages/widgets/side_drawer.dart';
 import 'package:user/features/subscription/presentation/pages/subscriptions_page.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/services/language_service.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../about/presentation/pages/about_page.dart';
 import '../../../contact_us/presentation/pages/contact_us_page.dart';
@@ -17,7 +20,6 @@ import '../../../ecard/presentation/pages/ecard_screen.dart';
 import '../../../hospital/presentation/pages/hospital_booking_history_screen.dart';
 import '../../../hospital/presentation/pages/hospital_doctor_booking_history_screen.dart';
 import '../../../hospital/presentation/pages/hospital_pharmacy_booking_history_screen.dart';
-import '../../../hospital/presentation/pages/widgets/doctor_single_list_screen.dart';
 import '../../../labtest/presentation/pages/lab_test_booking_fetch_list_page.dart';
 import '../../../medlocker/presentation/pages/med_locker_list_page.dart';
 import '../../../notifications/presentation/bloc/notification_bloc.dart';
@@ -50,6 +52,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late AddressBloc _addressBloc;
   late NotificationBloc _notificationBloc;
 
+
   int _unreadCount = 0;
   String _displayAddress = "Select Address";
   Address? _currentLocationAddress;
@@ -67,7 +70,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         });
       },
     ),
-    const DoctorBookingHistorySingleListScreen(),
+    const AdmissionSupportScreen(),
     const ECardScreen(isFromBottomNav: true),
     const MedLockerListPage(isFromBottomNav: true),
     const ProfilePage(),
@@ -301,11 +304,71 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               });
             },
           ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: _showContactOptions,
+            backgroundColor: AppColors.whiteColor,
+            child: Image.asset(
+              'assets/customer_support.png', // path to your PNG image
+              width: 50,
+              height: 50,
+              fit: BoxFit.contain,
+            ),
+          ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         ),
       ),
     );
   }
 
+  // Inside _HomePageState
+  void _showContactOptions() {
+    const String phoneNumber = '+919010492345'; // Replace with your support number
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.call, color: AppColors.blue),
+              title: const Text('Call'),
+              onTap: () async {
+                Navigator.pop(context);
+                final Uri telUri = Uri(scheme: 'tel', path: phoneNumber);
+                if (await canLaunchUrl(telUri)) {
+                  await launchUrl(telUri);
+                } else {
+                  _showSnackbar('Cannot make call');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.chat, color: Colors.green),
+              title: const Text('WhatsApp'),
+              onTap: () async {
+                Navigator.pop(context);
+                final whatsappUri = Uri.parse('https://wa.me/919010492345');
+                if (await canLaunchUrl(whatsappUri)) {
+                  await launchUrl(whatsappUri);
+                } else {
+                  _showSnackbar('WhatsApp not installed');
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
   Widget _buildHeader() {
     return AppBar(
       automaticallyImplyLeading: false,
@@ -508,11 +571,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       case 11: // Pharmacy Bookings (regular)
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PharmacyBookingHistoryScreen()));
                         break;
-                      case 12: // My eCard
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ECardScreen()));
-                        break;
-                      case 13: // Online Doctor Bookings
+                      case 12: // Online Doctor Bookings
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const OnlineDoctorBookingHistoryScreen()));
+                        break;
+                      case 13: // My eCard
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ECardScreen()));
                         break;
                     }
                   },

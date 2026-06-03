@@ -39,7 +39,7 @@ class BottomNavBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Changed from spaceAround
           children: [
             Expanded(child: _bottomItem(Icons.home_filled, "Home", 0, isSmallScreen: isSmallScreen)),
-            Expanded(child: _bottomItem(Icons.calendar_month, "Appointments", 1, isSmallScreen: isSmallScreen)),
+            Expanded(child: _bottomItem(Icons.calendar_month, "Admission", 1, isSmallScreen: isSmallScreen)),
             Expanded(
               child: _bottomItem(Icons.add, "ECard", 2,
                 isSpecial: true,

@@ -25,10 +25,8 @@ class FreeLabRemoteDataSourceImpl implements FreeLabRemoteDataSource {
         final resultList = response.data['result'] as List;
         if (resultList.isNotEmpty) {
           final dataList = resultList[0]['data'] as List;
-          // Filter only Free Package (id: 1) if needed, or return all
-          final packages = dataList.map((json) => FreeLabPackageModel.fromJson(json)).toList();
-          // Return only the Free Package (id: 1)
-          return packages.where((p) => p.id == 1).toList();
+          // ✅ Return ALL packages (including id:1 and id:14)
+          return dataList.map((json) => FreeLabPackageModel.fromJson(json)).toList();
         }
         return [];
       } else {

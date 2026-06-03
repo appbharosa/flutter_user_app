@@ -4,12 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:user/core/di/injection.dart' as di;
-import 'package:user/features/admin_support/admin_support_screen.dart';
+import 'package:user/core/di/injection.dart';
+import '../../../../../core/di/injection.dart' show sl;
+import '../../../../../core/services/language_service.dart';
 import '../../../../../core/utils/user_manager.dart';
 import '../../../../../data/models/otp_response_model.dart';
 import '../../../../../domain/entities/address.dart';
+import '../../../../../domain/repositories/subscription_repository.dart';
+import '../../../../../domain/use_cases/get_free_lab_reports.dart';
+import '../../../../admission/pages/admin_support_screen.dart';
 import '../../../../diagnostic/presentation/pages/diagnostics_tab.dart';
 import '../../../../free_lab/presentation/pages/free_lab_packages_screen.dart';
+import '../../../../free_lab/presentation/pages/free_lab_reports_screen.dart';
 import '../../../../hospital/presentation/pages/hospitals_tab.dart';
 import '../../../../labtest/presentation/pages/lab_tests_tab.dart';
 import '../../../../online_doctor/presentation/pages/online_doctors_screen.dart';
@@ -43,7 +49,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
   String _userName = "User";
   String _greeting = "Good Morning";
-
+  bool _isFreeLabUtilized = false;
+  bool _hasActiveSubscription = false;
+  bool _hasReports = false;
 
   late AnimationController _blinkController;
   late Animation<double> _blinkAnimation;
@@ -64,6 +72,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     _loadDashboard();
     _loadUserName();
     _updateGreeting();
+    _checkFreeLabUtilized();
+    _checkSubscriptionStatus();
+    _checkReports();
     _searchController.addListener(_onSearchChanged);
     widget.searchNotifier.addListener(_onExternalSearchChanged);
 
@@ -88,10 +99,42 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     );
   }
 
+  Future<void> _checkReports() async {
+    try {
+      final language = await LanguageService.getCurrentLanguage();
+      final reports = await sl<GetFreeLabReports>()(language); // returns Either
+      reports.fold(
+            (failure) => setState(() => _hasReports = false),
+            (reportList) => setState(() => _hasReports = reportList.isNotEmpty),
+      );
+    } catch (_) {
+      setState(() => _hasReports = false);
+    }
+  }
+
+
+  Future<void> _checkSubscriptionStatus() async {
+    final language = await LanguageService.getCurrentLanguage();
+    final repository = sl<SubscriptionRepository>();
+    final result = await repository.getUserSubscription(language); // returns Either
+
+    result.fold(
+          (failure) async {
+        // On error, fallback to stored flag
+        final stored = await UserManager.hasActiveSubscription();
+        if (mounted) setState(() => _hasActiveSubscription = stored);
+      },
+          (subscription) async {
+        final isActive = subscription != null && !subscription.isExpired;
+        await UserManager.setSubscriptionActive(isActive);
+        if (mounted) setState(() => _hasActiveSubscription = isActive);
+      },
+    );
+  }
+
   Future<void> _loadDashboard() async {
     _dashboardBloc.add(LoadDashboard("en"));
   }
-
 
   Future<void> _loadUserName() async {
     final userName = await UserManager.getUserName();
@@ -124,6 +167,15 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     });
   }
 
+  Future<void> _checkFreeLabUtilized() async {
+    final utilized = await UserManager.isFreeLabUtilized();
+    if (mounted) {
+      setState(() {
+        _isFreeLabUtilized = utilized;
+      });
+    }
+  }
+
   void _onSearchChanged() => widget.searchNotifier.value = _searchController.text;
   void _onExternalSearchChanged() => _searchController.text = widget.searchNotifier.value;
 
@@ -154,6 +206,13 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
         )));
         break;
     }
+  }
+
+  void _showReportsDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const FreeLabReportsScreen()),
+    );
   }
 
   @override
@@ -193,7 +252,6 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                             ],
                           ),
                         ),
-
                         AnimatedBuilder(
                           animation: _blinkController,
                           builder: (context, child) {
@@ -269,12 +327,70 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       ),
                     const SizedBox(height: 20),
 
+                    // 🆕 Free Lab Packages Banner (dynamic)
                     // Free Lab Packages Banner
+
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => FreeLabPackagesScreen(
-                          addressNotifier: widget.addressNotifier,
-                        )));
+                        if (!_hasActiveSubscription) {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionPage()));
+                        } else if (_hasReports) {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const FreeLabReportsScreen()));
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => FreeLabPackagesScreen(
+                                addressNotifier: widget.addressNotifier,
+                                packageId: 1,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xff0057FF), Color(0xff1F6BFF)]),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("🩺 Free Lab Packages", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                            const SizedBox(height: 4),
+                            const Text("Get free lab tests", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            const SizedBox(height: 12),
+                            Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(25)),
+                                child: Text(
+                                  !_hasActiveSubscription
+                                      ? "Subscribe"
+                                      : (_hasReports ? "View Reports" : "Book Now"),
+                                  style: const TextStyle(color: Color(0xff0057FF), fontWeight: FontWeight.w600, fontSize: 13),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // MedRayder Tests Banner (unchanged)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => FreeLabPackagesScreen(
+                              addressNotifier: widget.addressNotifier,
+                              packageId: 14,
+                            ),
+                          ),
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.all(16),
@@ -288,20 +404,24 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: const [
-                                Text("🩺 Free Lab Packages", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text("🩺 MedRayder Tests", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                                 SizedBox(height: 4),
-                                Text("Get free lab tests", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                Text("Get lab tests", style: TextStyle(color: Colors.white70, fontSize: 12)),
                               ],
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(25)),
-                              child: const Text("Book Now", style: TextStyle(color: Color(0xff0057FF), fontWeight: FontWeight.w600, fontSize: 13)),
+                              child: const Text(
+                                "Book Now",
+                                style: TextStyle(color: Color(0xff0057FF), fontWeight: FontWeight.w600, fontSize: 13),
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 20),
 
                     // Promotion Card
@@ -310,7 +430,6 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const AdmissionSupportScreen()),
-
                         );
                       },
                       child: Container(

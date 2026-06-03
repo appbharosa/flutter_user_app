@@ -2,7 +2,7 @@ name: user
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+4
+version: 1.0.0+8
 
 environment:
   sdk: ^3.11.4
@@ -26,6 +26,9 @@ dependencies:
   cached_network_image: ^3.3.0
   cupertino_icons: ^1.0.8
   carousel_slider: ^5.0.0
+  flutter_pdfview: ^1.4.4
+  share_plus: ^7.2.1
+  url_launcher: ^6.3.0
 
   # Location & Maps
   geolocator: ^14.0.2

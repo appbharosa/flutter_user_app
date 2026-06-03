@@ -143,7 +143,7 @@ class _LabTestConfirmBookingPageState extends State<LabTestConfirmBookingPage> {
         await cashfree.startPayment(
           orderId: order.orderId,
           paymentSessionId: order.paymentSessionId,
-          environment: CFEnvironment.SANDBOX, // or PRODUCTION
+          environment: CFEnvironment.PRODUCTION, // or PRODUCTION
           onSuccess: (orderId) {
             // 3. On success, book the lab test with paymentType 'online'
             _proceedToBooking('online', orderId);

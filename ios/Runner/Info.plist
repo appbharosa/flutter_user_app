@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>User</string>
+	<string>MEDRAYDER</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,6 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -35,6 +37,15 @@
 	<string>This app needs your location to fetch your current address for delivery.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs your location to fetch your current address for delivery.</string>
+
+	<!-- Privacy purpose strings required by Apple -->
+	<key>NSCameraUsageDescription</key>
+	<string>MedRayder needs camera access to enable video consultations with doctors and for profile photo uploads.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MedRayder needs microphone access for audio during video consultations with doctors.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>MedRayder needs photo library access to upload reports and profile pictures.</string>
+
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

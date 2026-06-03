@@ -72,9 +72,11 @@ class AppUrls{
   static const String readNotifications = "read-notification";
   static const String dashboard="dashboard?lang=en";
   static const String freeLab = "free-lab-test-package-list";
+  static const String getFreeLabReports="get-user-lab-report";
   static const String freeLabBooking = "free-lab-test-booking-slots";
   static const String freeLabPayment="free-lab-test-booking-with-payment";
   static const String subscriptionStatus="user-subscription";
+  static const String requestAdmission="request-admission";
 
   static const String banners = "banners";
   static const String disconnectCall = "disconnect-call";

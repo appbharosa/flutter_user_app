@@ -73,7 +73,7 @@ class OnlineDoctorBookingBloc extends Bloc<OnlineDoctorBookingEvent, OnlineDocto
       cashfreeService.startPayment(
         orderId: orderId,
         paymentSessionId: paymentSessionId,
-        environment: CFEnvironment.SANDBOX, // Change to PRODUCTION for live
+        environment: CFEnvironment.PRODUCTION, // Change to PRODUCTION for live
         onSuccess: (orderId) => completer.complete(true),
         onFailure: (error) => completer.complete(false),
       );

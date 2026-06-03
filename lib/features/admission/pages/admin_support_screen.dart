@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:user/features/admission/pages/admission_form_screen.dart';
 
 class AdmissionSupportScreen extends StatelessWidget {
   const AdmissionSupportScreen({super.key});
@@ -20,7 +21,9 @@ class AdmissionSupportScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
               ),
             ),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AdmissionFormScreen()));
+            },
 
             child: const Text(
               "Request Admission",
@@ -52,21 +55,6 @@ class AdmissionSupportScreen extends StatelessWidget {
                 Row(
                   children: [
 
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        height: 46,
-                        width: 46,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new,
-                          size: 18,
-                        ),
-                      ),
-                    ),
 
                     const Expanded(
                       child: Center(

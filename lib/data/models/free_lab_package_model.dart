@@ -1,4 +1,3 @@
-// lib/features/free_lab/data/models/free_lab_package_model.dart
 import '../../domain/entities/free_lab_package.dart';
 
 class FreeLabPackageModel extends FreeLabPackage {

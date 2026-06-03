@@ -1,4 +1,4 @@
-// lib/features/free_lab/domain/entities/free_lab_package.dart
+
 class FreeLabPackage {
   final int id;
   final String name;

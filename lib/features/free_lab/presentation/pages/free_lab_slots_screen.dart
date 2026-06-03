@@ -17,12 +17,14 @@ import 'free_lab_booking_confirm_screen.dart';
 class FreeLabSlotsScreen extends StatefulWidget {
   final int packageId;
   final String packageName;
+  final String packageDiscountPrice;
   final ValueNotifier<Address?> addressNotifier;
 
   const FreeLabSlotsScreen({
     Key? key,
     required this.packageId,
     required this.packageName,
+    required this.packageDiscountPrice, // required
     required this.addressNotifier,
   }) : super(key: key);
 
@@ -52,9 +54,7 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
   void _navigateToFamilySelection(FreeLabSlotResponse slotsResponse) async {
     final familyMember = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => FamilySelectionScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => FamilySelectionScreen()),
     );
 
     if (familyMember != null && familyMember is FamilyMember) {
@@ -64,6 +64,7 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
           builder: (context) => FreeLabBookingConfirmScreen(
             packageId: widget.packageId,
             packageName: widget.packageName,
+            packageDiscountPrice: widget.packageDiscountPrice, // pass it
             addressNotifier: widget.addressNotifier,
             slotId: _selectedSlotId!,
             slotTime: _selectedSlotTime!,
