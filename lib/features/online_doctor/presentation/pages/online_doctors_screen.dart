@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user/features/online_doctor/presentation/pages/online_doctor_detail_screen.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/online_doctor.dart';
 import '../../../language/bloc/language_bloc.dart';
 import '../../../language/bloc/language_state.dart';
@@ -14,7 +15,9 @@ import '../online_doctor_speciality_bloc/online_doctor_speciality_event.dart';
 import '../online_doctor_speciality_bloc/online_doctor_speciality_state.dart';
 
 class OnlineDoctorsScreen extends StatefulWidget {
-  const OnlineDoctorsScreen({super.key});
+  final ValueNotifier<Address?> addressNotifier;
+  const OnlineDoctorsScreen({super.key,required this.addressNotifier,});
+
 
   @override
   State<OnlineDoctorsScreen> createState() => _OnlineDoctorsScreenState();
@@ -63,10 +66,10 @@ class _OnlineDoctorsScreenState extends State<OnlineDoctorsScreen> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      debugPrint('➡️ Dispatching LoadMoreOnlineDoctors');
       _doctorBloc.add(LoadMoreOnlineDoctors());
     }
   }
-
   @override
   void dispose() {
     _scrollController.dispose();

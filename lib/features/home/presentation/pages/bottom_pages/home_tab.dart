@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:user/core/di/injection.dart' as di;
 import 'package:user/core/di/injection.dart';
+import 'package:user/features/lab/presentation/pages/lab_screen.dart';
 import '../../../../../core/di/injection.dart' show sl;
 import '../../../../../core/services/language_service.dart';
 import '../../../../../core/utils/user_manager.dart';
@@ -183,27 +184,58 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     final screen = action['screen'] as String;
     switch (screen) {
       case 'online_doctor':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const OnlineDoctorsScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OnlineDoctorsScreen(
+              addressNotifier: widget.addressNotifier,
+            ),
+          ),
+        );
         break;
       case 'hospitals':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => HospitalsTab(
-          searchNotifier: widget.searchNotifier, addressNotifier: widget.addressNotifier,
-        )));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => HospitalsTab(
+              searchNotifier: widget.searchNotifier,
+              addressNotifier: widget.addressNotifier,
+            ),
+          ),
+        );
         break;
       case 'lab_tests':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => LabTestsTab(
-          searchNotifier: widget.searchNotifier, addressNotifier: widget.addressNotifier,
-        )));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LabTestsTab(
+              searchNotifier: widget.searchNotifier,
+              addressNotifier: widget.addressNotifier,
+            ),
+          ),
+        );
         break;
       case 'pharmacy':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => PharmacyTab(
-          searchNotifier: widget.searchNotifier, addressNotifier: widget.addressNotifier,
-        )));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PharmacyTab(
+              searchNotifier: widget.searchNotifier,
+              addressNotifier: widget.addressNotifier,
+            ),
+          ),
+        );
         break;
       case 'diagnostics':
-        Navigator.push(context, MaterialPageRoute(builder: (_) => DiagnosticsTab(
-          searchNotifier: widget.searchNotifier, addressNotifier: widget.addressNotifier,
-        )));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DiagnosticsTab(
+              searchNotifier: widget.searchNotifier,
+              addressNotifier: widget.addressNotifier,
+            ),
+          ),
+        );
         break;
     }
   }
@@ -289,7 +321,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(20),
                                 child: Image.asset(
-                                  "assets/care.png",
+                                  "assets/care.jpeg",
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -426,10 +458,15 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
                     // Promotion Card
                     GestureDetector(
+                      // In the promotion card's onTap:
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AdmissionSupportScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => LabTestScreen(
+                              addressNotifier: widget.addressNotifier,
+                            ),
+                          ),
                         );
                       },
                       child: Container(

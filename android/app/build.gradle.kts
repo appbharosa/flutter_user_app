@@ -72,4 +72,5 @@ dependencies {
     // Firebase BOM
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-messaging")
+    implementation("com.facebook.android:facebook-android-sdk:18.2.3")
 }

@@ -9,6 +9,7 @@ import '../data_sources/online_doctor_remote_datasource.dart';
 class OnlineDoctorRepositoryImpl implements OnlineDoctorRepository {
   final OnlineDoctorRemoteDataSource remoteDataSource;
   final NetworkInfo networkInfo;
+
   OnlineDoctorRepositoryImpl({required this.remoteDataSource, required this.networkInfo});
 
   @override
@@ -44,5 +45,10 @@ class OnlineDoctorRepositoryImpl implements OnlineDoctorRepository {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  @override
+  void clearCache() {
+    remoteDataSource.clearTotalPagesCache();
   }
 }

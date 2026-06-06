@@ -6,4 +6,8 @@ import '../entities/free_lab_slot.dart';
 abstract class FreeLabRepository {
   Future<Either<Failure, List<FreeLabPackage>>> getFreeLabPackages(String language);
   Future<Either<Failure, FreeLabSlotResponse>> getFreeLabSlots(String language, int packageId);
+  Future<Either<Failure, List<FreeLabPackage>>> getPackagesByCategoryId({
+    required int categoryId,
+    required String language,
+  });
 }

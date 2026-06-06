@@ -13,6 +13,8 @@ import '../online_doctor_apply_coupon_bloc/online_doctor_apply_coupon_bloc.dart'
 import '../online_doctor_booking_bloc/online_doctor_booking_bloc.dart';
 import '../online_doctor_booking_bloc/online_doctor_booking_event.dart';
 import '../online_doctor_booking_bloc/online_doctor_booking_state.dart';
+import '../../../../core/di/injection.dart' as sl;
+
 
 class OnlineDoctorConfirmBookingScreen extends StatefulWidget {
   final OnlineDoctor doctor;
@@ -20,6 +22,7 @@ class OnlineDoctorConfirmBookingScreen extends StatefulWidget {
   final String formattedDate;
   final OnlineDoctorSlot slot;
   final FamilyMember familyMember;
+  final int bookingCount;
 
   const OnlineDoctorConfirmBookingScreen({
     super.key,
@@ -28,6 +31,7 @@ class OnlineDoctorConfirmBookingScreen extends StatefulWidget {
     required this.formattedDate,
     required this.slot,
     required this.familyMember,
+    required this.bookingCount,
   });
 
   @override
@@ -41,17 +45,19 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
   double _discount = 0;
   double _finalAmount = 0;
   String? _appliedCouponCode;
+  bool get isFree => widget.bookingCount <= 5;
 
   @override
   void initState() {
     super.initState();
-    _originalAmount = widget.doctor.fee.toDouble();
+    _originalAmount = isFree ? 0 : widget.doctor.fee.toDouble();
     _finalAmount = _originalAmount;
-    _applyCouponBloc = di.sl<OnlineDoctorApplyCouponBloc>();
-    _bookingBloc = di.sl<OnlineDoctorBookingBloc>();
+    _applyCouponBloc = sl.sl<OnlineDoctorApplyCouponBloc>();
+    _bookingBloc = sl.sl<OnlineDoctorBookingBloc>();
   }
 
   void _showCouponSheet() {
+    if (isFree) return; // No coupon for free booking
     final languageState = context.read<LanguageBloc>().state;
     final lang = languageState is LanguageChanged ? languageState.language.apiCode : 'en';
     showModalBottomSheet(
@@ -59,15 +65,40 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => OnlineDoctorCouponBottomSheet(
-        onCouponSelected: (couponCode) {
-          _applyCouponBloc.add(ApplyOnlineDoctorCoupon(couponCode, _originalAmount));
-        },
+        onCouponSelected: (couponCode) => _applyCouponBloc.add(ApplyOnlineDoctorCoupon(couponCode, _originalAmount)),
         lang: lang,
       ),
     );
   }
 
+  void _proceedWithPayment(String paymentType) {
+    final bookingParams = {
+      'speciality_id': widget.doctor.id,
+      'doctor_id': widget.doctor.specialityId,
+      'date': widget.selectedDate,
+      'slot_id': widget.slot.slotId,
+      'time': widget.slot.time,
+      'family_member_id': widget.familyMember.id,
+      'fee': isFree ? 0 : widget.doctor.fee,
+      'consultation_fee': isFree ? 0 : widget.doctor.fee,
+    };
+
+    // 🔍 Debug log
+    debugPrint("🟢 Booking Params: $bookingParams");
+    debugPrint("🟢 Payment Type: $paymentType");
+    debugPrint("🟢 Is Free Booking: $isFree");
+    _bookingBloc.add(ProcessOnlineDoctorBooking(bookingParams: bookingParams, paymentType: paymentType));
+  }
+
+  void _bookNow() {
+    _proceedWithPayment('free'); // For free booking, payment type can be 'free' or just 'wallet'
+  }
+
   void _showPaymentOptions() {
+    if (isFree) {
+      _bookNow();
+      return;
+    }
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -76,10 +107,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Select Payment Method',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
-            ),
+            const Text('Select Payment Method', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Poppins')),
             const SizedBox(height: 20),
             ListTile(
               leading: const Icon(Icons.account_balance_wallet, color: AppColors.blue),
@@ -103,18 +131,21 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
     );
   }
 
-  void _proceedWithPayment(String paymentType) {
-    final bookingParams = {
-      'speciality_id': widget.doctor.id,
-      'doctor_id': widget.doctor.specialityId,
-      'date': widget.selectedDate,
-      'slot_id': widget.slot.slotId,
-      'time': widget.slot.time,
-      'family_member_id': widget.familyMember.id,
-      'fee': widget.doctor.fee,
-      'consultation_fee': widget.doctor.fee,
-    };
-    _bookingBloc.add(ProcessOnlineDoctorBooking(bookingParams: bookingParams, paymentType: paymentType));
+  Widget _buildDetailRow(String label, String value, {bool isDiscount = false, bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, fontSize: isTotal ? 14 : 13)),
+          Text(value, style: TextStyle(
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isDiscount ? Colors.green : (isTotal ? AppColors.blue : null),
+            fontSize: isTotal ? 14 : 13,
+          )),
+        ],
+      ),
+    );
   }
 
   @override
@@ -134,13 +165,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
             });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text('Coupon applied! You saved ₹${state.discountAmount.toStringAsFixed(2)}')),
-                  ],
-                ),
+                content: const Row(children: [Icon(Icons.check_circle, color: Colors.white, size: 20), SizedBox(width: 12), Expanded(child: Text('Coupon applied!'))]),
                 backgroundColor: Colors.green.shade700,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -148,12 +173,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
             );
           } else if (state is OnlineDoctorApplyCouponError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red.shade700,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+              SnackBar(content: Text(state.message), backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             );
           }
         },
@@ -161,32 +181,17 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
           listener: (context, state) {
             if (state is OnlineDoctorBookingSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: const [
-                      Icon(Icons.check_circle, color: Colors.white, size: 20),
-                      SizedBox(width: 12),
-                      Expanded(child: Text('Booking successful!')),
-                    ],
-                  ),
+                 SnackBar(
+                  content: Row(children: [Icon(Icons.check_circle, color: Colors.white, size: 20), SizedBox(width: 12), Expanded(child: Text('Booking successful!'))]),
                   backgroundColor: Colors.green.shade700,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               );
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const HomePage()),
-                    (route) => false,
-              );
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomePage()), (route) => false);
             } else if (state is OnlineDoctorBookingFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.error),
-                  backgroundColor: Colors.red,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                SnackBar(content: Text(state.error), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               );
             }
           },
@@ -194,12 +199,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
             final isProcessing = state is OnlineDoctorBookingLoading;
             return Scaffold(
               appBar: AppBar(
-                title: const Text('Confirm Booking', style: TextStyle(
-                  color: AppColors.whiteColor,
-                  fontSize: 16.5,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: 'Poppins',
-                )),
+                title: const Text('Confirm Booking', style: TextStyle(color: AppColors.whiteColor, fontSize: 16.5, fontWeight: FontWeight.w500, fontFamily: 'Poppins')),
                 backgroundColor: AppColors.blue,
                 foregroundColor: Colors.white,
               ),
@@ -210,7 +210,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Doctor details card
+                        // Doctor details
                         Card(
                           elevation: 2,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -220,33 +220,18 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    widget.doctor.image,
-                                    width: 70,
-                                    height: 70,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 70),
-                                  ),
+                                  child: Image.network(widget.doctor.image, width: 70, height: 70, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 70)),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        widget.doctor.name,
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
-                                      ),
+                                      Text(widget.doctor.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'Poppins')),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        widget.doctor.specialization,
-                                        style: const TextStyle(fontSize: 12, color: Colors.black),
-                                      ),
+                                      Text(widget.doctor.specialization, style: const TextStyle(fontSize: 12, color: Colors.black)),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        'Fee: ${widget.doctor.fee}',
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.black),
-                                      ),
+                                      Text('Fee: ${widget.doctor.fee}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                                     ],
                                   ),
                                 ),
@@ -304,96 +289,62 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                             padding: const EdgeInsets.all(16),
                             child: Column(
                               children: [
-                                _buildDetailRow('Consultation Fee', '₹${_originalAmount.toStringAsFixed(2)}'),
-                                if (_appliedCouponCode != null) ...[
+                                isFree
+                                    ? _buildDetailRow('Consultation Fee', 'FREE')
+                                    : _buildDetailRow('Consultation Fee', '₹${_originalAmount.toStringAsFixed(2)}'),
+                                if (_appliedCouponCode != null && !isFree) ...[
                                   const Divider(),
                                   _buildDetailRow('Coupon Discount ($_appliedCouponCode)', '- ₹${_discount.toStringAsFixed(2)}', isDiscount: true),
-                                  const Divider(),
-                                  _buildDetailRow('Total Amount', '₹${_finalAmount.toStringAsFixed(2)}', isTotal: true),
-                                ] else ...[
-                                  const Divider(),
-                                  _buildDetailRow('Total Amount', '₹${_finalAmount.toStringAsFixed(2)}', isTotal: true),
                                 ],
+                                const Divider(),
+                                isFree
+                                    ? _buildDetailRow('Total Amount', 'FREE', isTotal: true)
+                                    : _buildDetailRow('Total Amount', '₹${_finalAmount.toStringAsFixed(2)}', isTotal: true),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(height: 16),
 
-                        // Apply coupon button
-                        Center(
-                          child: OutlinedButton.icon(
-                            onPressed: _showCouponSheet,
-                            icon: const Icon(Icons.local_offer),
-                            label: const Text('Apply Coupon'),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: AppColors.blue),
-                              foregroundColor: AppColors.blue,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        // Apply coupon button (only if not free)
+                        if (!isFree)
+                          Center(
+                            child: OutlinedButton.icon(
+                              onPressed: _showCouponSheet,
+                              icon: const Icon(Icons.local_offer),
+                              label: const Text('Apply Coupon'),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: AppColors.blue),
+                                foregroundColor: AppColors.blue,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              ),
                             ),
                           ),
-                        ),
                         const SizedBox(height: 32),
 
-                        // Confirm & Pay button
+                        // Confirm button
                         SizedBox(
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
                             onPressed: isProcessing ? null : _showPaymentOptions,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.blue,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                             child: isProcessing
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text(
-                              'Confirm & Pay',
-                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                            ),
+                                : Text(isFree ? 'Book Now' : 'Confirm & Pay', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                           ),
                         ),
                         const SizedBox(height: 16),
                       ],
                     ),
                   ),
-                  if (isProcessing)
-                    Container(
-                      color: Colors.black54,
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
+                  if (isProcessing) Container(color: Colors.black54, child: const Center(child: CircularProgressIndicator())),
                 ],
               ),
             );
           },
         ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value, {bool isDiscount = false, bool isTotal = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              fontSize: isTotal ? 14 : 13,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isDiscount ? Colors.green : (isTotal ? AppColors.blue : null),
-              fontSize: isTotal ? 14 : 13,
-            ),
-          ),
-        ],
       ),
     );
   }

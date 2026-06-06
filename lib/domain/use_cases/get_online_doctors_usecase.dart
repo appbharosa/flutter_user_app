@@ -29,3 +29,15 @@ class GetOnlineDoctorsUseCase {
     );
   }
 }
+
+class GetTotalPagesUseCase {
+  final OnlineDoctorRepository repository;
+  GetTotalPagesUseCase(this.repository);
+  Future<Either<Failure, int>> call() => repository.getTotalPages();
+}
+
+class ClearDoctorCacheUseCase {
+  final OnlineDoctorRepository repository;
+  ClearDoctorCacheUseCase(this.repository);
+  void call() => repository.clearCache();
+}

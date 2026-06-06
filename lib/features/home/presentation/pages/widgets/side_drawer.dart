@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:user/core/utils/translations.dart';
 import '../../../../../core/theme/app_colors.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -143,94 +144,128 @@ class SideMenuDialog extends StatelessWidget {
             ),
 
             // Menu items
+
+            // Menu items (reordered)
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Column(
                   children: [
+                    // 1. Profile
                     _buildMenuItem(
                       icon: Icons.person,
                       title: 'profile'.tr(),
                       onTap: () => onMenuItemSelected(0),
                     ),
+                    // 2. Med Locker
                     _buildMenuItem(
                       icon: Icons.lock,
                       title: 'Med Locker',
                       onTap: () => onMenuItemSelected(1),
                     ),
+                    // 3. Wallet
                     _buildMenuItem(
                       icon: Icons.wallet,
                       title: 'Wallet',
                       onTap: () => onMenuItemSelected(2),
                     ),
+                    // 4. Care Plans
                     _buildMenuItem(
                       icon: Icons.subscriptions,
                       title: 'Care Plans',
                       onTap: () => onMenuItemSelected(3),
                     ),
-                    _buildMenuItem(
-                      icon: Icons.info,
-                      title: 'about'.tr(),
-                      onTap: () => onMenuItemSelected(4),
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.contact_page,
-                      title: 'contact_us'.tr(),
-                      onTap: () => onMenuItemSelected(5),
-                    ),
-
-                    // --- Expandable Hospital Bookings (New) ---
-                    Theme(
-                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                      child: ExpansionTile(
-                        leading: const Icon(Icons.local_hospital, color: Colors.black87),
-                        title: const Text(
-                          ' Bookings',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                        ),
-                        children: [
-                          _buildSubMenuItem(
-                            title: 'Diagnostic Bookings',
-                            onTap: () => onMenuItemSelected(6), // Index 7
-                          ),
-                          _buildSubMenuItem(
-                            title: 'Hospital Diagnostic Bookings',
-                            onTap: () => onMenuItemSelected(7), // Index 7
-                          ),
-                          _buildSubMenuItem(
-                            title: 'Hospital Pharmacy Bookings',
-                            onTap: () => onMenuItemSelected(8), // Index 8
-                          ),
-                          _buildSubMenuItem(
-                            title: 'Hospital Doctor Bookings',
-                            onTap: () => onMenuItemSelected(9), // Index 9
-                          ),
-
-                          _buildSubMenuItem(
-                            title: 'LabTest Bookings',
-                            onTap: () => onMenuItemSelected(10), // Index 9
-                          ),
-                          _buildSubMenuItem(
-                            title: 'Pharmacy Bookings',
-                            onTap: () => onMenuItemSelected(11), // Index 9
-                          ),
-                          _buildSubMenuItem(
-                            title: 'Online Doctor Bookings',
-                            onTap: () => onMenuItemSelected(12), // Index 9
-                          ),
-                        ],
-                      ),
-                    ),
-
+                    // 5. My eCard
                     _buildMenuItem(
                       icon: Icons.credit_card,
                       title: 'My eCard',
                       onTap: () {
                         Navigator.of(context).pop();
-                        onMenuItemSelected(13); // new index
+                        onMenuItemSelected(13);
                       },
                     ),
-
+                    // 6. Acko Insurance (custom tile, not using index)
+                    ListTile(
+                      leading: Image.asset(
+                        'assets/acko.png',
+                        width: 28,
+                        height: 28,
+                      ),
+                      title: const Text(
+                        'Acko Insurance',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      onTap: () async {
+                        const url = 'https://www.acko.com/authn/v1/signin?next%2Fmyaccount=&client_id=acko_webapp&redirect_uri=https%3A%2F%2Fwww.acko.com%2Fplatform%2Fauth%2Ftoken%2Facko_webapp&response_type=code&identity_type=d2c&scope=offline_access&realm=acko';
+                        final uri = Uri.parse(url);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Could not open the link.')),
+                          );
+                        }
+                      },
+                    ),
+                    // 7. Bookings (Expandable)
+                    Theme(
+                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        leading: const Icon(Icons.local_hospital, color: Colors.black87),
+                        title: const Text(
+                          'Bookings',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                        ),
+                        children: [
+                          _buildSubMenuItem(
+                            title: 'Diagnostic Bookings',
+                            onTap: () => onMenuItemSelected(6),
+                          ),
+                          _buildSubMenuItem(
+                            title: 'Hospital Diagnostic Bookings',
+                            onTap: () => onMenuItemSelected(7),
+                          ),
+                          _buildSubMenuItem(
+                            title: 'Hospital Pharmacy Bookings',
+                            onTap: () => onMenuItemSelected(8),
+                          ),
+                          _buildSubMenuItem(
+                            title: 'Hospital Doctor Bookings',
+                            onTap: () => onMenuItemSelected(9),
+                          ),
+                          _buildSubMenuItem(
+                            title: 'LabTest Bookings',
+                            onTap: () => onMenuItemSelected(10),
+                          ),
+                          _buildSubMenuItem(
+                            title: 'Pharmacy Bookings',
+                            onTap: () => onMenuItemSelected(11),
+                          ),
+                          _buildSubMenuItem(
+                            title: 'Online Doctor Bookings',
+                            onTap: () => onMenuItemSelected(12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 8. Contact Us
+                    _buildMenuItem(
+                      icon: Icons.contact_page,
+                      title: 'contact_us'.tr(),
+                      onTap: () => onMenuItemSelected(5),
+                    ),
+                    // 9. About
+                    _buildMenuItem(
+                      icon: Icons.info,
+                      title: 'about'.tr(),
+                      onTap: () => onMenuItemSelected(4),
+                    ),
+                    // 10. Share
                     _buildMenuItem(
                       icon: Icons.share,
                       title: 'Share',
@@ -240,6 +275,7 @@ class SideMenuDialog extends StatelessWidget {
                       },
                     ),
                     const Divider(height: 20, thickness: 1),
+                    // 11. Logout
                     _buildMenuItem(
                       icon: Icons.logout,
                       title: 'logout'.tr(),

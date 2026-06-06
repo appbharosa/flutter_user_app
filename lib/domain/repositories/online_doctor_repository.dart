@@ -10,4 +10,5 @@ abstract class OnlineDoctorRepository {
     int? specialityId,
   });
   Future<Either<Failure, int>> getTotalPages();
+  void clearCache(); // new
 }

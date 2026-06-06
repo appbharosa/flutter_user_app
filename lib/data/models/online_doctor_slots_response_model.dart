@@ -8,6 +8,7 @@ class OnlineDoctorSlotsResponseModel extends OnlineDoctorSlotsResponse {
     required super.formattedDate,
     required super.totalSessions,
     required super.totalSlots,
+    required super.bookingCount,
     required super.sessions,
   });
 
@@ -21,6 +22,7 @@ class OnlineDoctorSlotsResponseModel extends OnlineDoctorSlotsResponse {
       formattedDate: result['formatted_date'],
       totalSessions: result['total_sessions'],
       totalSlots: result['total_slots'],
+      bookingCount: result['booking_count'] ?? 0,
       sessions: sessions,
     );
   }

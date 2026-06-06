@@ -12,11 +12,12 @@ abstract class OnlineDoctorRemoteDataSource {
     int? specialityId,
   });
   Future<int> getTotalPages();
+  void clearTotalPagesCache(); // 👈 new method to reset cache
 }
 
 class OnlineDoctorRemoteDataSourceImpl implements OnlineDoctorRemoteDataSource {
   final DioClient dioClient;
-  int? _totalPages;
+  int? _cachedTotalPages;
 
   OnlineDoctorRemoteDataSourceImpl(this.dioClient);
 
@@ -41,15 +42,18 @@ class OnlineDoctorRemoteDataSourceImpl implements OnlineDoctorRemoteDataSource {
         queryParameters: queryParams,
       );
       if (response.data['status'] == 200) {
-        // result is a List with one element (the pagination object)
         final resultList = response.data['result'] as List;
         if (resultList.isEmpty) {
-          _totalPages = 1;
+          // No data – ensure cache is set to 1 if still null
+          _cachedTotalPages ??= 1;
           return [];
         }
         final paginationMap = resultList[0] as Map<String, dynamic>;
         final dataList = paginationMap['data'] as List;
-        _totalPages = paginationMap['last_page'];
+        // Only cache total pages on the first request (page == 1)
+        if (page == 1) {
+          _cachedTotalPages = paginationMap['last_page'] as int;
+        }
         return dataList.map((json) => OnlineDoctorModel.fromJson(json)).toList();
       } else {
         throw ServerException(response.data['message'] ?? 'Failed to load online doctors');
@@ -61,8 +65,15 @@ class OnlineDoctorRemoteDataSourceImpl implements OnlineDoctorRemoteDataSource {
 
   @override
   Future<int> getTotalPages() async {
-    if (_totalPages == null) throw ServerException('No data loaded yet');
-    return _totalPages!;
+    if (_cachedTotalPages == null) {
+      throw ServerException('No data loaded yet. Call getDoctors first.');
+    }
+    return _cachedTotalPages!;
+  }
+
+  @override
+  void clearTotalPagesCache() {
+    _cachedTotalPages = null;
   }
 
   Exception _handleDioError(DioException e) {
@@ -76,3 +87,4 @@ class OnlineDoctorRemoteDataSourceImpl implements OnlineDoctorRemoteDataSource {
     return ServerException(message);
   }
 }
+

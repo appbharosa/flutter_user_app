@@ -45,4 +45,25 @@ class FreeLabRepositoryImpl implements FreeLabRepository {
       return Left(ServerFailure('Unexpected error: $e'));
     }
   }
+
+  @override
+  Future<Either<Failure, List<FreeLabPackage>>> getPackagesByCategoryId({
+    required int categoryId,
+    required String language,
+  }) async {
+    if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
+    try {
+      final packages = await remoteDataSource.getPackagesByCategoryId(
+        categoryId: categoryId,
+        language: language,
+      );
+      return Right(packages);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException {
+      return Left(NetworkFailure());
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
 }

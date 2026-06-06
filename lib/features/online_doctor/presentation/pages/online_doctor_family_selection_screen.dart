@@ -16,6 +16,7 @@ class OnlineDoctorFamilySelectionScreen extends StatefulWidget {
   final String selectedDate;
   final String formattedDate;
   final OnlineDoctorSlot slot;
+  final int bookingCount;
 
   const OnlineDoctorFamilySelectionScreen({
     super.key,
@@ -23,6 +24,8 @@ class OnlineDoctorFamilySelectionScreen extends StatefulWidget {
     required this.selectedDate,
     required this.formattedDate,
     required this.slot,
+    required this.bookingCount,
+
   });
 
   @override
@@ -95,6 +98,7 @@ class _OnlineDoctorFamilySelectionScreenState extends State<OnlineDoctorFamilySe
                                 formattedDate: widget.formattedDate,
                                 slot: widget.slot,
                                 familyMember: _selectedMember!,
+                                bookingCount: widget.bookingCount,
                               ),
                             ),
                           );

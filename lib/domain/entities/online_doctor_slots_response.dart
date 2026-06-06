@@ -7,6 +7,7 @@ class OnlineDoctorSlotsResponse extends Equatable {
   final String formattedDate;
   final int totalSessions;
   final int totalSlots;
+  final int bookingCount;
   final List<OnlineDoctorSession> sessions;
 
   const OnlineDoctorSlotsResponse({
@@ -15,6 +16,7 @@ class OnlineDoctorSlotsResponse extends Equatable {
     required this.formattedDate,
     required this.totalSessions,
     required this.totalSlots,
+    required this.bookingCount,
     required this.sessions,
   });
 

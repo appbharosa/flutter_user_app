@@ -78,6 +78,9 @@ class AppUrls{
   static const String subscriptionStatus="user-subscription";
   static const String requestAdmission="request-admission";
 
+  static const String freeLabCategory ="category-lab-test-package-list";
+  static const String freeLabSubCategory = "get-package-by-cat-id";
+
   static const String banners = "banners";
   static const String disconnectCall = "disconnect-call";
 }
