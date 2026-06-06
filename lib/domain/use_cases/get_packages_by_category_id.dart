@@ -1,4 +1,3 @@
-
 import 'package:dartz/dartz.dart';
 import '../../core/errors/failures.dart';
 import '../entities/free_lab_package.dart';

@@ -1,4 +1,3 @@
-
 import 'package:equatable/equatable.dart';
 import '../../../../domain/entities/free_lab_package.dart';
 

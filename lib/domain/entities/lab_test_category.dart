@@ -1,6 +1,4 @@
-
 import 'package:equatable/equatable.dart';
-
 class LabTestCategory extends Equatable {
   final int id;
   final String name;

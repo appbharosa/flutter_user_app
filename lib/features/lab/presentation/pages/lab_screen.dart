@@ -13,8 +13,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../domain/entities/lab_test_category.dart';
 import '../../../free_lab/presentation/pages/lab_test_subcategory_screen.dart';
 
-
-
 class LabTestScreen extends StatefulWidget {
   final ValueNotifier<Address?> addressNotifier;
 
