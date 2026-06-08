@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 import '../../domain/entities/free_lab_package.dart';
 
 class FreeLabPackageModel extends FreeLabPackage {
@@ -10,11 +12,20 @@ class FreeLabPackageModel extends FreeLabPackage {
     required super.reportIn,
     required super.fasting,
     required super.suitableFor,
+    required super.hygienicKitCharges,
     required super.packageTests,
   });
 
   factory FreeLabPackageModel.fromJson(Map<String, dynamic> json) {
     final packageTestsList = json['package_tests'] as List? ?? [];
+
+    // Debug: Print the raw JSON for this package
+    debugPrint("📦 Parsing package: ${json['name']}");
+    debugPrint("   raw hygienic_kit_charges: ${json['hygienic_kit_charges']} (type: ${json['hygienic_kit_charges'].runtimeType})");
+
+    final parsedKitCharge = (json['hygienic_kit_charges'] as num?)?.toDouble() ?? 99.0;
+    debugPrint("   parsed hygienicKitCharges: $parsedKitCharge");
+
     return FreeLabPackageModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
@@ -24,6 +35,7 @@ class FreeLabPackageModel extends FreeLabPackage {
       reportIn: json['report_in'] ?? '',
       fasting: json['fasting'] ?? '',
       suitableFor: json['suitable_for'] ?? '',
+      hygienicKitCharges: parsedKitCharge,
       packageTests: packageTestsList.map((test) => PackageTestModel.fromJson(test)).toList(),
     );
   }

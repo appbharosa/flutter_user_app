@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection.dart' as di;
+import '../../../../core/services/language_service.dart';
+import '../../../../core/utils/user_manager.dart';
 import '../../../../data/data_sources/free_lab_remote_datasource.dart';
 import '../../../../data/models/free_lab_package_model.dart';
 import '../../../../domain/entities/address.dart';
+import '../../../../domain/repositories/subscription_repository.dart';
+import '../../../../domain/use_cases/get_free_lab_reports.dart';
 import '../../../free_lab/presentation/lab_test_category_bloc/lab_test_category_bloc.dart';
 import '../../../free_lab/presentation/lab_test_category_bloc/lab_test_category_event.dart';
 import '../../../free_lab/presentation/lab_test_category_bloc/lab_test_category_state.dart';
@@ -11,7 +15,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../domain/entities/lab_test_category.dart';
+import '../../../free_lab/presentation/pages/free_lab_reports_screen.dart';
 import '../../../free_lab/presentation/pages/lab_test_subcategory_screen.dart';
+import '../../../subscription/presentation/pages/subscriptions_page.dart';
 
 class LabTestScreen extends StatefulWidget {
   final ValueNotifier<Address?> addressNotifier;
@@ -25,14 +31,62 @@ class LabTestScreen extends StatefulWidget {
 class _LabTestScreenState extends State<LabTestScreen> {
   late Future<List<FreeLabPackageModel>> _packagesFuture;
   late FreeLabRemoteDataSource _dataSource;
-  bool _showAllCategories = false; // toggle for category expansion
+  bool _showAllCategories = false;
+  bool _hasActiveSubscription = false;
+  bool _hasReports = false;
+  bool _isFreeLabUtilized = false;
 
   @override
   void initState() {
     super.initState();
     _dataSource = di.sl<FreeLabRemoteDataSource>();
     _packagesFuture = _fetchPackages();
+    _checkFreeLabUtilized();
+    _checkSubscriptionStatus();
+    _checkReports();
   }
+
+  Future<void> _checkFreeLabUtilized() async {
+    final utilized = await UserManager.isFreeLabUtilized();
+    if (mounted) {
+      setState(() {
+        _isFreeLabUtilized = utilized;
+      });
+    }
+  }
+
+
+  Future<void> _checkSubscriptionStatus() async {
+    final language = await LanguageService.getCurrentLanguage();
+    final repository = di.sl<SubscriptionRepository>();
+    final result = await repository.getUserSubscription(language); // returns Either
+
+    result.fold(
+          (failure) async {
+        // On error, fallback to stored flag
+        final stored = await UserManager.hasActiveSubscription();
+        if (mounted) setState(() => _hasActiveSubscription = stored);
+      },
+          (subscription) async {
+        final isActive = subscription != null && !subscription.isExpired;
+        await UserManager.setSubscriptionActive(isActive);
+        if (mounted) setState(() => _hasActiveSubscription = isActive);
+      },
+    );
+  }
+  Future<void> _checkReports() async {
+    try {
+      final language = await LanguageService.getCurrentLanguage();
+      final reports = await di.sl<GetFreeLabReports>()(language); // returns Either
+      reports.fold(
+            (failure) => setState(() => _hasReports = false),
+            (reportList) => setState(() => _hasReports = reportList.isNotEmpty),
+      );
+    } catch (_) {
+      setState(() => _hasReports = false);
+    }
+  }
+
 
   Future<List<FreeLabPackageModel>> _fetchPackages() async {
     try {
@@ -64,7 +118,7 @@ class _LabTestScreenState extends State<LabTestScreen> {
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
-                  "Lab & Diagnostics",
+                  "Book Lab Test",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
                 ),
@@ -108,39 +162,7 @@ class _LabTestScreenState extends State<LabTestScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Search + top buttons (static)
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 52,
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.grey),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: "Search tests, packages or health checkups...",
-                                  border: InputBorder.none,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    _topButton(Icons.upload, "Upload\nPrescription"),
-                    const SizedBox(width: 10),
-                    _topButton(Icons.home_outlined, "Book Home\nVisit"),
-                  ],
-                ),
+
                 const SizedBox(height: 16),
 
                 // Banner image (static PNG)
@@ -155,7 +177,6 @@ class _LabTestScreenState extends State<LabTestScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // 🟢 CATEGORIES GRID (first 10 + optional "View All")
                 BlocProvider(
                   create: (context) => di.sl<LabTestCategoryBloc>()..add(LoadLabTestCategories(language: language)),
                   child: BlocBuilder<LabTestCategoryBloc, LabTestCategoryState>(
@@ -208,6 +229,187 @@ class _LabTestScreenState extends State<LabTestScreen> {
                 ),
                 const SizedBox(height: 20),
 
+                GestureDetector(
+                  onTap: () {
+                    if (!_hasActiveSubscription) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SubscriptionPage(),
+                        ),
+                      );
+                    } else if (_hasReports) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FreeLabReportsScreen(),
+                        ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FreeLabPackagesScreen(
+                            addressNotifier: widget.addressNotifier,
+                            packageId: 1,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+
+                    decoration: BoxDecoration(
+
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xff0057FF),
+                          Color(0xff3B82F6),
+                        ],
+                      ),
+
+                      borderRadius: BorderRadius.circular(24),
+
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xff0057FF)
+                              .withOpacity(0.20),
+                          blurRadius: 18,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+
+                    child: Row(
+                      children: [
+
+                        /// LEFT CONTENT
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
+
+                            children: [
+
+                              const Text(
+                                " Free Lab Packages",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.3,
+                                ),
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              const Text(
+                                "🏠 Home Collection\n      Available",
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height:4),
+                              const Text(
+                                "📱 Instant Digital Reports",
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  height: 1.5,
+                                ),
+                              ),
+
+                              const SizedBox(height:4),
+                              const Text(
+                                "❤️ Early Detection, Better\n      Protection",
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 12,
+                                ),
+
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius:
+                                  BorderRadius.circular(40),
+                                ),
+
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+
+                                    Text(
+                                      !_hasActiveSubscription
+                                          ? "Subscribe Now"
+                                          : (_hasReports
+                                          ? "View Reports"
+                                          : "Book Now"),
+
+                                      style: const TextStyle(
+                                        color: Color(0xff0057FF),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 8),
+
+                                    const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      color: Color(0xff0057FF),
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        /// RIGHT IMAGE
+                        Container(
+                          width: 110,
+                          height: 130,
+
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+
+                            child: Image.asset(
+                              "assets/blood.jpeg",
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
                 // Offer cards (static)
                 Row(
                   children: [
@@ -218,53 +420,6 @@ class _LabTestScreenState extends State<LabTestScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Popular Tests & Packages (dynamic)
-                const Text(
-                  "Popular Tests & Packages",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  height: 250,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: popularPackages.length,
-                    itemBuilder: (context, index) => _dynamicPackageCard(popularPackages[index]),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // All Lab Packages (dynamic list)
-                const Text(
-                  "All Lab Packages",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 12),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: packages.length,
-                  itemBuilder: (context, index) => _allPackageTile(packages[index]),
-                ),
-                const SizedBox(height: 24),
-
-                // Why choose section (static)
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _WhyItem(icon: Icons.verified, title: "100%\nAccurate"),
-                      _WhyItem(icon: Icons.currency_rupee, title: "Best\nPrices"),
-                      _WhyItem(icon: Icons.access_time, title: "Quick\nReports"),
-                      _WhyItem(icon: Icons.lock, title: "Secure"),
-                    ],
-                  ),
-                ),
               ],
             ),
           );

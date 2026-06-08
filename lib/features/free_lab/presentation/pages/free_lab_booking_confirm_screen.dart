@@ -22,6 +22,7 @@ class FreeLabBookingConfirmScreen extends StatefulWidget {
   final String packageDiscountPrice; // from API
   final ValueNotifier<Address?> addressNotifier;
   final int slotId;
+  final double hygienicKitCharges;
   final String slotTime;
   final String date;
   final String formattedDate;
@@ -34,6 +35,7 @@ class FreeLabBookingConfirmScreen extends StatefulWidget {
     required this.packageDiscountPrice,
     required this.addressNotifier,
     required this.slotId,
+    required this.hygienicKitCharges,
     required this.slotTime,
     required this.date,
     required this.formattedDate,
@@ -48,31 +50,22 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
   late FreeLabBookingBloc _bloc;
   bool _isProcessing = false;
 
-  // Fixed charges for free package
-  final double hygienicKitCharges = 99.00;
   final double sampleCollectionCharges = 0.00;
 
-  // Dynamic total amount
+  // Dynamic total amount = discount price + hygienic kit charges
   double get totalAmount {
-    if (widget.packageId == 1) {
-      // Free Lab Package: only hygienic kit charges apply
-      return hygienicKitCharges;
-    } else if (widget.packageId == 14) {
-      // Medrayder Package: use discount price from API
-      final price = double.tryParse(widget.packageDiscountPrice) ?? 0.0;
-      return price;
-    }
-    // Fallback
-    return double.tryParse(widget.packageDiscountPrice) ?? 0.0;
+    final discount = double.tryParse(widget.packageDiscountPrice) ?? 0.0;
+    final kitCharge = widget.hygienicKitCharges > 0 ? widget.hygienicKitCharges : 99.0; // fallback
+    return discount + kitCharge;
   }
 
-  // Store order details
   String? _createdOrderId;
   String? _createdPaymentSessionId;
 
   @override
   void initState() {
     super.initState();
+    debugPrint("🔍 FreeLabBookingConfirmScreen initState: packageId=${widget.packageId}, hygienicKitCharges=${widget.hygienicKitCharges}, packageDiscountPrice=${widget.packageDiscountPrice}");
     _bloc = di.sl<FreeLabBookingBloc>();
   }
 
@@ -115,7 +108,6 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
 
   Future<void> _confirmBooking() async {
     final language = await LanguageService.getCurrentLanguage();
-    final address = widget.addressNotifier.value;
 
     final bookingData = {
       'package_id': widget.packageId,
@@ -124,7 +116,7 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
       'date': widget.date,
       'time': widget.slotTime,
       'price': totalAmount.toStringAsFixed(2),
-      'hygienic_kit_charges': hygienicKitCharges.toStringAsFixed(2),
+      'hygienic_kit_charges': widget.hygienicKitCharges.toStringAsFixed(2),
       'sample_collection_charges': sampleCollectionCharges.toStringAsFixed(2),
       'total_amount': totalAmount.toStringAsFixed(2),
     };
@@ -196,7 +188,7 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Price Summary Card (dynamic)
+                    // Price Summary Card
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -212,18 +204,14 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 12),
-                          if (widget.packageId == 1) ...[
-                            _buildPriceRow('Hygienic Kit Charges', '₹${hygienicKitCharges.toStringAsFixed(2)}'),
-                            _buildPriceRow('Sample Collection Charges', '₹${sampleCollectionCharges.toStringAsFixed(2)}'),
-                            const Divider(height: 24),
-                            _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
-                          ] else if (widget.packageId == 14) ...[
+                          if ((double.tryParse(widget.packageDiscountPrice) ?? 0) > 0)
                             _buildPriceRow('Package Price', '₹${widget.packageDiscountPrice}'),
-                            const Divider(height: 24),
-                            _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
-                          ] else ...[
-                            _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
-                          ],
+                          _buildPriceRow('Hygienic Kit Charges', '₹${widget.hygienicKitCharges.toStringAsFixed(2)}'),
+                          if (sampleCollectionCharges > 0)
+                            _buildPriceRow('Sample Collection Charges', '₹${sampleCollectionCharges.toStringAsFixed(2)}'),
+                          _buildPriceRows('Home Sample Collection Charges\nFree', '₹99', isStrikethrough: true),
+                          const Divider(height: 24),
+                          _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
                         ],
                       ),
                     ),
@@ -270,7 +258,7 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                     ),
                     const SizedBox(height: 20),
 
-                    // Appointment Details Section
+                    // Appointment Details
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -300,7 +288,7 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
                     ),
                     const SizedBox(height: 20),
 
-                    // Patient Details Section
+                    // Patient Details
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -359,7 +347,32 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
       ),
     );
   }
-
+  Widget _buildPriceRows(String label, String value, {bool isTotal = false, bool isStrikethrough = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 14 : 13,
+              fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isTotal ? 14 : 13,
+              fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
+              color: isTotal ? AppColors.blue : Colors.black,
+              decoration: isStrikethrough ? TextDecoration.lineThrough : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildPriceRow(String label, String value, {bool isTotal = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),

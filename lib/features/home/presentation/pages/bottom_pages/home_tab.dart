@@ -3,6 +3,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:user/core/di/injection.dart' as di;
 import 'package:user/core/di/injection.dart';
 import 'package:user/features/lab/presentation/pages/lab_screen.dart';
@@ -59,11 +60,12 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   late Animation<double> _scaleAnimation;
 
   final List<Map<String, dynamic>> _quickActions = [
-    {"icon": Icons.video_call, "title": "Online\nDoctor", "color": const Color(0xff0057FF), "screen": "online_doctor"},
-    {"icon": Icons.local_hospital, "title": "Find\nHospitals", "color": const Color(0xff2D7DFF), "screen": "hospitals"},
-    {"icon": Icons.science, "title": "Book Lab\nTest", "color": const Color(0xff8A5BFF), "screen": "lab_tests"},
-    {"icon": Icons.medical_services_rounded, "title": "Order\nMedicine", "color": const Color(0xff00B894), "screen": "pharmacy"},
-    {"icon": Icons.biotech_rounded, "title": "Diagnostics", "color": const Color(0xffFF5A5F), "screen": "diagnostics"},
+    {"svgPath": "assets/online-doctor.svg", "title": "Online\nDoctor","screen": "online_doctor"},
+    {"svgPath": "assets/blood-test.svg", "title": "Book Lab\nTest", "screen": "med_tests"},
+    {"svgPath": "assets/drugs.svg", "title": "Order\nMedicine","screen": "pharmacy"},
+    {"svgPath": "assets/hospital.svg", "title": "Find\nHospitals", "screen": "hospitals"},
+    {"svgPath": "assets/observation.svg", "title": "Find Labs", "screen": "lab_tests"},
+    {"svgPath": "assets/ct-scan.svg", "title": "Find\nDiagnostics", "screen": "diagnostics"},
   ];
 
   @override
@@ -193,6 +195,28 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           ),
         );
         break;
+
+      case 'med_tests':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LabTestScreen(
+              addressNotifier: widget.addressNotifier,
+            ),
+          ),
+        );
+        break;
+      case 'pharmacy':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PharmacyTab(
+              searchNotifier: widget.searchNotifier,
+              addressNotifier: widget.addressNotifier,
+            ),
+          ),
+        );
+        break;
       case 'hospitals':
         Navigator.push(
           context,
@@ -215,17 +239,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           ),
         );
         break;
-      case 'pharmacy':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PharmacyTab(
-              searchNotifier: widget.searchNotifier,
-              addressNotifier: widget.addressNotifier,
-            ),
-          ),
-        );
-        break;
+
       case 'diagnostics':
         Navigator.push(
           context,
@@ -339,10 +353,13 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: _quickActions.map((action) => Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: _quickAction(action["icon"], action["title"], action["color"], () => _handleQuickActionTap(action)),
-                          )).toList(),
+                          children: _quickActions.map((action) {
+                            final iconOrPath = action['svgPath'] ?? action['icon']; // use svgPath, fallback to icon
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: _quickAction(iconOrPath, action["title"], () => _handleQuickActionTap(action)),
+                            );
+                          }).toList(),
                         ),
                       ),
                     ),
@@ -359,15 +376,23 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                       ),
                     const SizedBox(height: 20),
 
-                    // 🆕 Free Lab Packages Banner (dynamic)
-                    // Free Lab Packages Banner
 
                     GestureDetector(
                       onTap: () {
                         if (!_hasActiveSubscription) {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionPage()));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SubscriptionPage(),
+                            ),
+                          );
                         } else if (_hasReports) {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const FreeLabReportsScreen()));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const FreeLabReportsScreen(),
+                            ),
+                          );
                         } else {
                           Navigator.push(
                             context,
@@ -380,80 +405,157 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                           );
                         }
                       },
+
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xff0057FF), Color(0xff1F6BFF)]),
-                          borderRadius: BorderRadius.circular(20),
+
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xff0057FF),
+                              Color(0xff3B82F6),
+                            ],
+                          ),
+
+                          borderRadius: BorderRadius.circular(24),
+
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xff0057FF)
+                                  .withOpacity(0.20),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                        child: Row(
                           children: [
-                            const Text("🩺 Free Lab Packages", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                            const SizedBox(height: 4),
-                            const Text("Get free lab tests", style: TextStyle(color: Colors.white70, fontSize: 12)),
-                            const SizedBox(height: 12),
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(25)),
-                                child: Text(
-                                  !_hasActiveSubscription
-                                      ? "Subscribe"
-                                      : (_hasReports ? "View Reports" : "Book Now"),
-                                  style: const TextStyle(color: Color(0xff0057FF), fontWeight: FontWeight.w600, fontSize: 13),
+
+                            /// LEFT CONTENT
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
+
+                                children: [
+
+                                  const Text(
+                                    " Free Lab Packages",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.3,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 10),
+
+                                  const Text(
+                                    "🏠 Home Collection\n      Available",
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height:4),
+                                  const Text(
+                                    "📱 Instant Digital Reports",
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                      height: 1.5,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height:4),
+                                  const Text(
+                                    "❤️ Early Detection, Better\n      Protection",
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 12,
+                                    ),
+
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius:
+                                      BorderRadius.circular(40),
+                                    ),
+
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+
+                                        Text(
+                                          !_hasActiveSubscription
+                                              ? "Subscribe Now"
+                                              : (_hasReports
+                                              ? "View Reports"
+                                              : "Book Now"),
+
+                                          style: const TextStyle(
+                                            color: Color(0xff0057FF),
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 8),
+
+                                        const Icon(
+                                          Icons.arrow_forward_rounded,
+                                          color: Color(0xff0057FF),
+                                          size: 18,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(width: 14),
+
+                            /// RIGHT IMAGE
+                            Container(
+                              width: 110,
+                              height: 130,
+
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+
+                                child: Image.asset(
+                                  "assets/blood.jpeg",
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
                                 ),
                               ),
-                            ),
+                            )
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // MedRayder Tests Banner (unchanged)
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FreeLabPackagesScreen(
-                              addressNotifier: widget.addressNotifier,
-                              packageId: 14,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xff0057FF), Color(0xff1F6BFF)]),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text("🩺 MedRayder Tests", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                SizedBox(height: 4),
-                                Text("Get lab tests", style: TextStyle(color: Colors.white70, fontSize: 12)),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(25)),
-                              child: const Text(
-                                "Book Now",
-                                style: TextStyle(color: Color(0xff0057FF), fontWeight: FontWeight.w600, fontSize: 13),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
                     const SizedBox(height: 20),
 
                     // Promotion Card
@@ -518,13 +620,27 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
     );
   }
 
-  Widget _quickAction(IconData icon, String title, Color color, VoidCallback onTap) {
+  Widget _quickAction(dynamic iconOrPath, String title, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          Container(width: 55, height: 55, decoration: BoxDecoration(shape: BoxShape.circle, color: color.withOpacity(0.1)),
-            child: Icon(icon, color: color, size: 28),
+          Container(
+            width: 75,
+            height: 75,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFFF0F0F0), // light gray circle
+            ),
+            child: Center(
+              child: iconOrPath is String
+                  ? SvgPicture.asset(
+                iconOrPath,
+                width: 45,
+                height: 45,
+              )
+                  : Icon(iconOrPath as IconData, size: 28),
+            ),
           ),
           const SizedBox(height: 6),
           Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),

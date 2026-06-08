@@ -8,6 +8,7 @@ class FreeLabPackage {
   final String reportIn;
   final String fasting;
   final String suitableFor;
+  final double hygienicKitCharges;
   final List<PackageTest> packageTests;
 
   FreeLabPackage({
@@ -19,6 +20,7 @@ class FreeLabPackage {
     required this.reportIn,
     required this.fasting,
     required this.suitableFor,
+    required this.hygienicKitCharges,
     required this.packageTests,
   });
 }

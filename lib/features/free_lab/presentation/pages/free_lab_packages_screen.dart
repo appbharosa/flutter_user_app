@@ -178,6 +178,7 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                               builder: (_) => FreeLabSlotsScreen(
                                 packageId: selectedPackage!.id,
                                 packageName: selectedPackage.name,
+                                hygienicKitCharges: selectedPackage.hygienicKitCharges,
                                 packageDiscountPrice: selectedPackage.discountPrice,
                                 addressNotifier: widget.addressNotifier,
                               ),

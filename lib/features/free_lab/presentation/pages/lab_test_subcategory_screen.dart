@@ -140,6 +140,7 @@ class _LabTestSubcategoryScreenState extends State<LabTestSubcategoryScreen> {
 
   Widget _buildPackageCard(FreeLabPackage package) {
     return Card(
+      color: AppColors.whiteColor,
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

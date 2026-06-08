@@ -18,6 +18,7 @@ class FreeLabSlotsScreen extends StatefulWidget {
   final int packageId;
   final String packageName;
   final String packageDiscountPrice;
+  final double hygienicKitCharges;
   final ValueNotifier<Address?> addressNotifier;
 
   const FreeLabSlotsScreen({
@@ -25,6 +26,7 @@ class FreeLabSlotsScreen extends StatefulWidget {
     required this.packageId,
     required this.packageName,
     required this.packageDiscountPrice, // required
+    required this.hygienicKitCharges,
     required this.addressNotifier,
   }) : super(key: key);
 
@@ -66,6 +68,7 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
             packageName: widget.packageName,
             packageDiscountPrice: widget.packageDiscountPrice, // pass it
             addressNotifier: widget.addressNotifier,
+            hygienicKitCharges: widget.hygienicKitCharges,
             slotId: _selectedSlotId!,
             slotTime: _selectedSlotTime!,
             date: slotsResponse.date,

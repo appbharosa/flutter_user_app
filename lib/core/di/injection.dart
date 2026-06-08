@@ -338,14 +338,11 @@ Future<void> init() async {
   sl.registerLazySingleton<OnlineDoctorBookingHistoryRemoteDataSource>(() => OnlineDoctorBookingHistoryRemoteDataSourceImpl(dioClient: sl()),);
   sl.registerLazySingleton<DoctorSlotsRemoteDataSource>(() => DoctorSlotsRemoteDataSourceImpl(dioClient: sl()),);
   sl.registerLazySingleton<DoctorCouponRemoteDataSource>(() => DoctorCouponRemoteDataSourceImpl(dioClient: sl()),);
-  sl.registerLazySingleton<NotificationRemoteDataSource>(() => NotificationRemoteDataSourceImpl(sl()),
-  );
+  sl.registerLazySingleton<NotificationRemoteDataSource>(() => NotificationRemoteDataSourceImpl(sl()),);
   sl.registerLazySingleton<FamilyRemoteDataSource>(() => FamilyRemoteDataSourceImpl(sl()));
   sl.registerLazySingleton<CoverageCategoryRemoteDataSource>(() => CoverageCategoryRemoteDataSourceImpl(sl()),);
-  sl.registerLazySingleton<DashboardRemoteDataSource>(() => DashboardRemoteDataSourceImpl( sl()),
-  );
-  sl.registerLazySingleton<FreeLabRemoteDataSource>(() => FreeLabRemoteDataSourceImpl( sl()),
-  );
+  sl.registerLazySingleton<DashboardRemoteDataSource>(() => DashboardRemoteDataSourceImpl( sl()),);
+  sl.registerLazySingleton<FreeLabRemoteDataSource>(() => FreeLabRemoteDataSourceImpl( sl()),);
   sl.registerLazySingleton<FreeLabReportRemoteDataSource>(() => FreeLabReportRemoteDataSourceImpl(sl<DioClient>()),);
   sl.registerLazySingleton<AdmissionRemoteDataSource>(() => AdmissionRemoteDataSourceImpl(sl<DioClient>()),);
   sl.registerLazySingleton<LabTestCategoryRemoteDataSource>(() => LabTestCategoryRemoteDataSourceImpl(sl<DioClient>()),
