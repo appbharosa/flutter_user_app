@@ -144,7 +144,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 34),
                   ],
                 ),
               );

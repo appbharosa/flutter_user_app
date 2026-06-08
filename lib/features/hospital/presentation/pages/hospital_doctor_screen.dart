@@ -45,158 +45,162 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => di.sl<HospitalMainDataBloc>()..add(LoadHospitalMainData(widget.mainDataId)),
-      child: Scaffold(
-        backgroundColor: AppColors.whiteColor,
-        appBar: AppBar(
-          title: const Text('Hospital Details', style: TextStyle(
-            color: AppColors.whiteColor,
-            fontSize: 16.5,
-            fontWeight: FontWeight.w500,
-            fontFamily: 'Poppins',
-          )),
-          backgroundColor: AppColors.blue,
-          foregroundColor: Colors.white,
-        ),
-        body: BlocBuilder<HospitalMainDataBloc, HospitalMainDataState>(
-          builder: (context, state) {
-            if (state is HospitalMainDataLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state is HospitalMainDataError) {
-              return Center(child: Text(state.message));
-            }
-            if (state is HospitalMainDataLoaded) {
-              final hospital = state.hospital;
-              final doctors = state.doctors;
-              return Column(
-                children: [
-                  // Hospital header
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    color: Colors.white,
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            hospital.logo,
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.local_hospital, size: 60),
+      child: SafeArea(
+        top: false,
+        bottom: true,
+        child: Scaffold(
+          backgroundColor: AppColors.whiteColor,
+          appBar: AppBar(
+            title: const Text('Hospital Details', style: TextStyle(
+              color: AppColors.whiteColor,
+              fontSize: 16.5,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+            )),
+            backgroundColor: AppColors.blue,
+            foregroundColor: Colors.white,
+          ),
+          body: BlocBuilder<HospitalMainDataBloc, HospitalMainDataState>(
+            builder: (context, state) {
+              if (state is HospitalMainDataLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state is HospitalMainDataError) {
+                return Center(child: Text(state.message));
+              }
+              if (state is HospitalMainDataLoaded) {
+                final hospital = state.hospital;
+                final doctors = state.doctors;
+                return Column(
+                  children: [
+                    // Hospital header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: Colors.white,
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              hospital.logo,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.local_hospital, size: 60),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 18),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          const SizedBox(width: 18),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  hospital.name,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Poppins',
+                                    color: AppColors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  hospital.tagline,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                    fontFamily: 'Poppins',
+                                    color: AppColors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 34),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TabBar(
+                      controller: _tabController,
+                      tabs: const [
+                        Tab(text: 'Doctors'),
+                        Tab(text: 'Medicines'),
+                        Tab(text: 'Diagnostics'),
+                      ],
+                      indicatorColor: AppColors.blue,
+                      labelColor: AppColors.blue,
+                      unselectedLabelColor: Colors.grey,
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // Doctors Tab (with Admit button at the bottom)
+                          Column(
                             children: [
-                              Text(
-                                hospital.name,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'Poppins',
-                                  color: AppColors.black,
+                              Expanded(
+                                child: doctors.isEmpty
+                                    ? const Center(child: Text('No doctors found'))
+                                    : ListView.builder(
+                                  itemCount: doctors.length,
+                                  itemBuilder: (context, index) {
+                                    final doctor = doctors[index];
+                                    return InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => DoctorSlotScreen(
+                                              doctor: doctor,
+                                              hospitalId: widget.mainDataId,
+                                              addressId: widget.addressId,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: _buildDoctorCard(doctor),
+                                    );
+                                  },
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                hospital.tagline,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
-                                  fontFamily: 'Poppins',
-                                  color: AppColors.black,
+                              // Admit button only on Doctors tab
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: ElevatedButton(
+                                    onPressed: () => _showAmbulanceBottomSheet(context),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    child: const Text('Admit', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 34),
+                              const SizedBox(height: 20),
                             ],
                           ),
-                        ),
-                      ],
+                          // Medicines Tab
+                          HospitalMedicineTab(
+                            hospital: hospital,
+                            addressId: widget.addressId,
+                          ),
+                          // Diagnostics Tab
+                          HospitalDiagnosticTab(
+                            hospital: hospital,
+                            addressId: widget.addressId,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  TabBar(
-                    controller: _tabController,
-                    tabs: const [
-                      Tab(text: 'Doctors'),
-                      Tab(text: 'Medicines'),
-                      Tab(text: 'Diagnostics'),
-                    ],
-                    indicatorColor: AppColors.blue,
-                    labelColor: AppColors.blue,
-                    unselectedLabelColor: Colors.grey,
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        // Doctors Tab (with Admit button at the bottom)
-                        Column(
-                          children: [
-                            Expanded(
-                              child: doctors.isEmpty
-                                  ? const Center(child: Text('No doctors found'))
-                                  : ListView.builder(
-                                itemCount: doctors.length,
-                                itemBuilder: (context, index) {
-                                  final doctor = doctors[index];
-                                  return InkWell(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => DoctorSlotScreen(
-                                            doctor: doctor,
-                                            hospitalId: widget.mainDataId,
-                                            addressId: widget.addressId,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: _buildDoctorCard(doctor),
-                                  );
-                                },
-                              ),
-                            ),
-                            // Admit button only on Doctors tab
-                            Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: SizedBox(
-                                width: double.infinity,
-                                height: 50,
-                                child: ElevatedButton(
-                                  onPressed: () => _showAmbulanceBottomSheet(context),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  child: const Text('Admit', style: TextStyle(color: Colors.white, fontSize: 14)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
-                        ),
-                        // Medicines Tab
-                        HospitalMedicineTab(
-                          hospital: hospital,
-                          addressId: widget.addressId,
-                        ),
-                        // Diagnostics Tab
-                        HospitalDiagnosticTab(
-                          hospital: hospital,
-                          addressId: widget.addressId,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            }
-            return const SizedBox();
-          },
+                  ],
+                );
+              }
+              return const SizedBox();
+            },
+          ),
         ),
       ),
     );
@@ -374,7 +378,7 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                 child: const Text('Book', style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 40),
           ],
         ),
       ),

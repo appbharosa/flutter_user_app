@@ -442,26 +442,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           listener: (context, state) {
             if (state is NotificationsLoaded) setState(() => _unreadCount = state.unreadCount);
           },
-          child: Scaffold(
-            backgroundColor: const Color(0xffF5F7FB),
-            appBar: hideHeader ? null : PreferredSize(
-              preferredSize: const Size.fromHeight(78),
-              child: _buildHeader(),
+          child: SafeArea(
+            bottom: true,
+            top: false,
+            child: Scaffold(
+              backgroundColor: const Color(0xffF5F7FB),
+              appBar: hideHeader ? null : PreferredSize(
+                preferredSize: const Size.fromHeight(78),
+                child: _buildHeader(),
+              ),
+              body: IndexedStack(
+                index: _selectedIndex,
+                children: getTabs(searchNotifier),
+              ),
+              bottomNavigationBar: BottomNavBar(
+                currentIndex: _selectedIndex,
+                onTap: (index) => setState(() => _selectedIndex = index),
+              ),
+              floatingActionButton: FloatingActionButton(
+                onPressed: _showContactOptions,
+                backgroundColor: AppColors.whiteColor,
+                child: Image.asset('assets/customer_support.jpeg', width: 45, height: 45, fit: BoxFit.contain),
+              ),
+              floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             ),
-            body: IndexedStack(
-              index: _selectedIndex,
-              children: getTabs(searchNotifier),
-            ),
-            bottomNavigationBar: BottomNavBar(
-              currentIndex: _selectedIndex,
-              onTap: (index) => setState(() => _selectedIndex = index),
-            ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: _showContactOptions,
-              backgroundColor: AppColors.whiteColor,
-              child: Image.asset('assets/customer_support.jpeg', width: 45, height: 45, fit: BoxFit.contain),
-            ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           ),
         ),
       ),

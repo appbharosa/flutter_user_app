@@ -26,7 +26,7 @@ class LabTestBookingPage extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Book Lab Test',style: TextStyle(
             color: AppColors.whiteColor,
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: FontWeight.w600,  // SemiBold
             fontFamily: 'Poppins',
           )),
@@ -320,7 +320,7 @@ class _LabTestBookingContentState extends State<_LabTestBookingContent> {
           const SizedBox(height: 24),
 
           // Prescription Upload Section
-          const Text('Upload Prescription', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text('Upload Prescription', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           Row(
             children: [

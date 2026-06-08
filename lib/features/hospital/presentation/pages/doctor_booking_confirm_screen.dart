@@ -289,205 +289,209 @@ class _DoctorBookingConfirmScreenState extends State<DoctorBookingConfirmScreen>
           },
           builder: (context, state) {
             final isProcessing = state is DoctorBookingLoading;
-            return Scaffold(
-              backgroundColor: AppColors.whiteColor,
-              appBar: AppBar(
-                title: const Text(
-                  'Confirm Booking',
-                  style: TextStyle(
-                    color: AppColors.whiteColor,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: 'Poppins',
+            return SafeArea(
+              top: false,
+              bottom: true,
+              child: Scaffold(
+                backgroundColor: AppColors.whiteColor,
+                appBar: AppBar(
+                  title: const Text(
+                    'Confirm Booking',
+                    style: TextStyle(
+                      color: AppColors.whiteColor,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
+                  backgroundColor: AppColors.blue,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
                 ),
-                backgroundColor: AppColors.blue,
-                foregroundColor: Colors.white,
-                elevation: 0,
-              ),
-              body: Stack(
-                children: [
-                  Column(
-                    children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Doctor card
-                              Card(
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Row(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.network(
-                                          widget.doctor.image,
-                                          width: 70,
-                                          height: 70,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 70),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              widget.doctor.name,
-                                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(widget.doctor.specialization, style: const TextStyle(fontSize: 12, color: Colors.black)),
-                                            Text('Qual: ${widget.doctor.qualificationNames}', style: const TextStyle(fontSize: 12, color: Colors.black)),
-                                            const SizedBox(height: 4),
-                                            Text('Exp: ${widget.doctor.experience} yrs', style: const TextStyle(fontSize: 13)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              // Slot & Fee card
-                              Card(
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.calendar_today, size: 14, color: AppColors.blue),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            '${widget.formattedDate} at ${widget.slotTime}',
-                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                body: Stack(
+                  children: [
+                    Column(
+                      children: [
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Doctor card
+                                Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Image.network(
+                                            widget.doctor.image,
+                                            width: 70,
+                                            height: 70,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 70),
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.person, size: 16, color: AppColors.blue),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'Patient: ${widget.familyMemberName}',
-                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                widget.doctor.name,
+                                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(widget.doctor.specialization, style: const TextStyle(fontSize: 12, color: Colors.black)),
+                                              Text('Qual: ${widget.doctor.qualificationNames}', style: const TextStyle(fontSize: 12, color: Colors.black)),
+                                              const SizedBox(height: 4),
+                                              Text('Exp: ${widget.doctor.experience} yrs', style: const TextStyle(fontSize: 13)),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                      const Divider(height: 24),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          const Text('Consultation Fee', style: TextStyle(fontSize: 14)),
-                                          Text('₹${widget.consultationFee}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                                        ],
-                                      ),
-                                      if (_appliedCouponCode != null) ...[
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              'Coupon Discount ($_appliedCouponCode)',
-                                              style: const TextStyle(color: Colors.green, fontSize: 12.5),
-                                            ),
-                                            Text(
-                                              '- ₹${_originalFee - _discountedFee}',
-                                              style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w600),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        const Divider(),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text(
-                                              'Total',
-                                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                            ),
-                                            Text(
-                                              '₹$_discountedFee',
-                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blue),
-                                            ),
-                                          ],
-                                        ),
-                                      ] else ...[
-                                        const SizedBox(height: 8),
-                                        const Divider(),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text(
-                                              'Total',
-                                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                            ),
-                                            Text(
-                                              '₹$_discountedFee',
-                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blue),
-                                            ),
-                                          ],
                                         ),
                                       ],
-                                      const SizedBox(height: 16),
-                                      OutlinedButton.icon(
-                                        onPressed: _showCouponBottomSheet,
-                                        icon: const Icon(Icons.local_offer, size: 18),
-                                        label: const Text('Apply Coupon'),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: AppColors.blue,
-                                          side: const BorderSide(color: AppColors.blue),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(height: 16),
+                                // Slot & Fee card
+                                Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.calendar_today, size: 14, color: AppColors.blue),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '${widget.formattedDate} at ${widget.slotTime}',
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.person, size: 16, color: AppColors.blue),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'Patient: ${widget.familyMemberName}',
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                            ),
+                                          ],
+                                        ),
+                                        const Divider(height: 24),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Consultation Fee', style: TextStyle(fontSize: 14)),
+                                            Text('₹${widget.consultationFee}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                        if (_appliedCouponCode != null) ...[
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Coupon Discount ($_appliedCouponCode)',
+                                                style: const TextStyle(color: Colors.green, fontSize: 12.5),
+                                              ),
+                                              Text(
+                                                '- ₹${_originalFee - _discountedFee}',
+                                                style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w600),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Divider(),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                'Total',
+                                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                              ),
+                                              Text(
+                                                '₹$_discountedFee',
+                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blue),
+                                              ),
+                                            ],
+                                          ),
+                                        ] else ...[
+                                          const SizedBox(height: 8),
+                                          const Divider(),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                'Total',
+                                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                              ),
+                                              Text(
+                                                '₹$_discountedFee',
+                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blue),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                        const SizedBox(height: 16),
+                                        OutlinedButton.icon(
+                                          onPressed: _showCouponBottomSheet,
+                                          icon: const Icon(Icons.local_offer, size: 18),
+                                          label: const Text('Apply Coupon'),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: AppColors.blue,
+                                            side: const BorderSide(color: AppColors.blue),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: isProcessing ? null : _showPaymentOptions,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.blue,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                              const SizedBox(height: 32),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: isProcessing ? null : _showPaymentOptions,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.blue,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: isProcessing
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text(
-                              'Confirm Booking',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              child: isProcessing
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text(
+                                'Confirm Booking',
+                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  if (isProcessing)
-                    Container(
-                      color: Colors.black54,
-                      child: const Center(child: CircularProgressIndicator()),
+                      ],
                     ),
-                ],
+                    if (isProcessing)
+                      Container(
+                        color: Colors.black54,
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                  ],
+                ),
               ),
             );
           },

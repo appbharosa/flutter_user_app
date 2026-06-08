@@ -120,66 +120,70 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
         BlocProvider.value(value: _addFamilyBloc),
         BlocProvider.value(value: _coverageBloc),
       ],
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Add Family Member',
-            style: TextStyle(
-              color: AppColors.whiteColor,
-              fontSize: 17,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          backgroundColor: AppColors.blue,
-          foregroundColor: Colors.white,
-        ),
-        body: BlocConsumer<AddFamilyBloc, AddFamilyState>(
-          listener: (context, state) {
-            if (state is AddFamilySuccess) {
-              _showCustomSnackBar(state.message);
-              Navigator.pop(context);
-            } else if (state is AddFamilyError) {
-              _showCustomSnackBar(state.message, isError: true);
-            }
-          },
-          builder: (context, state) {
-            if (state is AddFamilyLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _buildTextField(_nameController, 'Name', Icons.person),
-                    _buildTextField(_emailController, 'Email', Icons.email),
-                    _buildTextField(_mobileController, 'Mobile', Icons.phone, keyboardType: TextInputType.phone),
-                    _buildDateField(),
-                    _buildDropdown('Gender', _selectedGender, ['male', 'female'],
-                            (value) => setState(() => _selectedGender = value!)),
-                    _buildDropdown('Blood Group', _selectedBloodGroup,
-                        ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'],
-                            (value) => setState(() => _selectedBloodGroup = value!)),
-                    _buildCoverageDropdown(),
-                    _buildDropdown('Relationship', _selectedRelationship, _relationshipOptions,
-                            (value) => setState(() => _selectedRelationship = value!)),
-                    const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.blue,
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      child: const Text('Add Member',
-                          style: TextStyle(color: Colors.white, fontSize: 16)),
-                    ),
-                  ],
-                ),
+      child: SafeArea(
+        top: false,
+        bottom: true,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Add Family Member',
+              style: TextStyle(
+                color: AppColors.whiteColor,
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Poppins',
               ),
-            );
-          },
+            ),
+            backgroundColor: AppColors.blue,
+            foregroundColor: Colors.white,
+          ),
+          body: BlocConsumer<AddFamilyBloc, AddFamilyState>(
+            listener: (context, state) {
+              if (state is AddFamilySuccess) {
+                _showCustomSnackBar(state.message);
+                Navigator.pop(context);
+              } else if (state is AddFamilyError) {
+                _showCustomSnackBar(state.message, isError: true);
+              }
+            },
+            builder: (context, state) {
+              if (state is AddFamilyLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      _buildTextField(_nameController, 'Name', Icons.person),
+                      _buildTextField(_emailController, 'Email', Icons.email),
+                      _buildTextField(_mobileController, 'Mobile', Icons.phone, keyboardType: TextInputType.phone),
+                      _buildDateField(),
+                      _buildDropdown('Gender', _selectedGender, ['male', 'female'],
+                              (value) => setState(() => _selectedGender = value!)),
+                      _buildDropdown('Blood Group', _selectedBloodGroup,
+                          ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'],
+                              (value) => setState(() => _selectedBloodGroup = value!)),
+                      _buildCoverageDropdown(),
+                      _buildDropdown('Relationship', _selectedRelationship, _relationshipOptions,
+                              (value) => setState(() => _selectedRelationship = value!)),
+                      const SizedBox(height: 30),
+                      ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                        child: const Text('Add Member',
+                            style: TextStyle(color: Colors.white, fontSize: 16)),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

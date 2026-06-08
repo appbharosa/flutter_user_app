@@ -26,118 +26,122 @@ class MedLockerListPage extends StatelessWidget {
       create: (context) => sl.sl<MedLockerBloc>()..add(LoadMedLockers()),
       child: Builder(
         builder: (context) {
-          return Scaffold(
-            appBar: AppBar(
-              // Conditionally show leading back button
-              leading: isFromBottomNav
-                  ? null // No back button when from bottom navigation
-                  : IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HomePage()),
-                        (route) => false,
-                  );
-                },
+          return SafeArea(
+            top: false,
+            bottom: true,
+            child: Scaffold(
+              appBar: AppBar(
+                // Conditionally show leading back button
+                leading: isFromBottomNav
+                    ? null // No back button when from bottom navigation
+                    : IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomePage()),
+                          (route) => false,
+                    );
+                  },
+                ),
+                title: const Text(
+                  'Med Locker',
+                  style: TextStyle(
+                    color: AppColors.whiteColor,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+                centerTitle: isFromBottomNav, // Center title when no back button
+                backgroundColor: AppColors.blue,
+                foregroundColor: Colors.white,
               ),
-              title: const Text(
-                'Med Locker',
-                style: TextStyle(
-                  color: AppColors.whiteColor,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: 'Poppins',
+              body: BlocListener<MedLockerBloc, MedLockerState>(
+                listener: (context, state) {
+                  if (state is MedLockerAddSuccess) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Med locker added successfully!'),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    context.read<MedLockerBloc>().add(LoadMedLockers());
+                  } else if (state is MedLockerError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.message),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+                child: BlocBuilder<MedLockerBloc, MedLockerState>(
+                  builder: (context, state) {
+                    if (state is MedLockerLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (state is MedLockerListLoaded) {
+                      if (state.lockers.isEmpty) {
+                        return const Center(child: Text('No med lockers yet. Tap + to add.'));
+                      }
+                      return ListView.builder(
+                        itemCount: state.lockers.length,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemBuilder: (context, index) {
+                          final locker = state.lockers[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: ListTile(
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: locker.images.isNotEmpty
+                                    ? Image.network(
+                                  locker.images.first.imageUrl,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 40),
+                                )
+                                    : Container(
+                                  width: 50,
+                                  height: 50,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(Icons.medication, size: 30),
+                                ),
+                              ),
+                              title: Text(
+                                locker.name,
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: Text('${locker.images.length} image(s)'),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => MedLockerDetailPage(lockerId: locker.id),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    } else if (state is MedLockerError) {
+                      return Center(child: Text(state.message));
+                    }
+                    return const SizedBox();
+                  },
                 ),
               ),
-              centerTitle: isFromBottomNav, // Center title when no back button
-              backgroundColor: AppColors.blue,
-              foregroundColor: Colors.white,
-            ),
-            body: BlocListener<MedLockerBloc, MedLockerState>(
-              listener: (context, state) {
-                if (state is MedLockerAddSuccess) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Med locker added successfully!'),
-                      backgroundColor: Colors.green,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  context.read<MedLockerBloc>().add(LoadMedLockers());
-                } else if (state is MedLockerError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.red,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              child: BlocBuilder<MedLockerBloc, MedLockerState>(
-                builder: (context, state) {
-                  if (state is MedLockerLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (state is MedLockerListLoaded) {
-                    if (state.lockers.isEmpty) {
-                      return const Center(child: Text('No med lockers yet. Tap + to add.'));
-                    }
-                    return ListView.builder(
-                      itemCount: state.lockers.length,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemBuilder: (context, index) {
-                        final locker = state.lockers[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            leading: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: locker.images.isNotEmpty
-                                  ? Image.network(
-                                locker.images.first.imageUrl,
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 40),
-                              )
-                                  : Container(
-                                width: 50,
-                                height: 50,
-                                color: Colors.grey.shade200,
-                                child: const Icon(Icons.medication, size: 30),
-                              ),
-                            ),
-                            title: Text(
-                              locker.name,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Text('${locker.images.length} image(s)'),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => MedLockerDetailPage(lockerId: locker.id),
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    );
-                  } else if (state is MedLockerError) {
-                    return Center(child: Text(state.message));
-                  }
-                  return const SizedBox();
-                },
+              floatingActionButton: FloatingActionButton(
+                backgroundColor: AppColors.blue,
+                onPressed: () => _showAddBottomSheet(context),
+                child: const Icon(Icons.add, color: Colors.white),
               ),
-            ),
-            floatingActionButton: FloatingActionButton(
-              backgroundColor: AppColors.blue,
-              onPressed: () => _showAddBottomSheet(context),
-              child: const Icon(Icons.add, color: Colors.white),
             ),
           );
         },
@@ -172,7 +176,7 @@ class MedLockerListPage extends StatelessWidget {
                 children: [
                   const Text(
                     'Add New Med Locker',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -281,7 +285,7 @@ class MedLockerListPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 46),
                 ],
               ),
             );

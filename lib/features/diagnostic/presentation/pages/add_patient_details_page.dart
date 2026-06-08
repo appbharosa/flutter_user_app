@@ -29,70 +29,74 @@ class _AddPatientDetailsPageState extends State<AddPatientDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Add Patient Details',style: TextStyle(
-        color: AppColors.whiteColor,
-        fontSize: 18,
-        fontWeight: FontWeight.w600,  // SemiBold
-        fontFamily: 'Poppins',
-      ),), backgroundColor: AppColors.blue, foregroundColor: Colors.white),
-      body: BlocBuilder<FamilyMembersBloc, FamilyMembersState>(
-        builder: (context, state) {
-          if (state is FamilyMembersLoading) return const Center(child: CircularProgressIndicator());
-          if (state is FamilyMembersError) return Center(child: Text(state.message));
-          if (state is FamilyMembersLoaded && state.members.isEmpty) return const Center(child: Text('No family members found'));
-          if (state is FamilyMembersLoaded) {
-            return Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Choose family member', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: state.members.length,
-                    itemBuilder: (context, index) {
-                      final member = state.members[index];
-                      final isSelected = selectedMember?.id == member.id;
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        child: ListTile(
-                          leading: Radio(
-                            value: member.id,
-                            groupValue: selectedMember?.id,
-                            onChanged: (_) => setState(() => selectedMember = member),
-                          ),
-                          title: Text(member.name),
-                          subtitle: Text('${member.mobile}'),
-                        ),
-                      );
-                    },
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Add Patient Details',style: TextStyle(
+          color: AppColors.whiteColor,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,  // SemiBold
+          fontFamily: 'Poppins',
+        ),), backgroundColor: AppColors.blue, foregroundColor: Colors.white),
+        body: BlocBuilder<FamilyMembersBloc, FamilyMembersState>(
+          builder: (context, state) {
+            if (state is FamilyMembersLoading) return const Center(child: CircularProgressIndicator());
+            if (state is FamilyMembersError) return Center(child: Text(state.message));
+            if (state is FamilyMembersLoaded && state.members.isEmpty) return const Center(child: Text('No family members found'));
+            if (state is FamilyMembersLoaded) {
+              return Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('Choose family member', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                      onPressed: selectedMember == null ? null : () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => ConfirmBookingPage(
-                          diagnosticId: widget.diagnosticId,
-                          diagnosticAddress : widget.diagnosticAddress,
-                          prescriptionPaths: widget.prescriptionPaths,
-                          familyMember: selectedMember!,
-                        )));
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: state.members.length,
+                      itemBuilder: (context, index) {
+                        final member = state.members[index];
+                        final isSelected = selectedMember?.id == member.id;
+                        return Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          child: ListTile(
+                            leading: Radio(
+                              value: member.id,
+                              groupValue: selectedMember?.id,
+                              onChanged: (_) => setState(() => selectedMember = member),
+                            ),
+                            title: Text(member.name),
+                            subtitle: Text('${member.mobile}'),
+                          ),
+                        );
                       },
-                      child: const Text('Confirm', style: TextStyle(color: Colors.white, fontSize: 16)),
                     ),
                   ),
-                ),
-              ],
-            );
-          }
-          return const SizedBox();
-        },
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                        onPressed: selectedMember == null ? null : () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => ConfirmBookingPage(
+                            diagnosticId: widget.diagnosticId,
+                            diagnosticAddress : widget.diagnosticAddress,
+                            prescriptionPaths: widget.prescriptionPaths,
+                            familyMember: selectedMember!,
+                          )));
+                        },
+                        child: const Text('Confirm', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+            return const SizedBox();
+          },
+        ),
       ),
     );
   }

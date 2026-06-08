@@ -165,183 +165,187 @@ class _FreeLabBookingConfirmScreenState extends State<FreeLabBookingConfirmScree
             );
           }
         },
-        child: Scaffold(
-          backgroundColor: AppColors.whiteColor,
-          appBar: AppBar(
-            title: const Text(
-              'Confirm Booking',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Poppins',
-                color: AppColors.whiteColor,
+        child: SafeArea(
+          bottom: true,
+          top: false,
+          child: Scaffold(
+            backgroundColor: AppColors.whiteColor,
+            appBar: AppBar(
+              title: const Text(
+                'Confirm Booking',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                  color: AppColors.whiteColor,
+                ),
               ),
+              backgroundColor: AppColors.blue,
+              foregroundColor: Colors.white,
+              elevation: 0,
             ),
-            backgroundColor: AppColors.blue,
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ),
-          body: Stack(
-            children: [
-              SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Price Summary Card
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.blue.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.blue.withOpacity(0.2)),
+            body: Stack(
+              children: [
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Price Summary Card
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.blue.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.blue.withOpacity(0.2)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Price Summary',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 12),
+                            if ((double.tryParse(widget.packageDiscountPrice) ?? 0) > 0)
+                              _buildPriceRow('Package Price', '₹${widget.packageDiscountPrice}'),
+                            _buildPriceRow('Hygienic Kit Charges', '₹${widget.hygienicKitCharges.toStringAsFixed(2)}'),
+                            if (sampleCollectionCharges > 0)
+                              _buildPriceRow('Sample Collection Charges', '₹${sampleCollectionCharges.toStringAsFixed(2)}'),
+                            _buildPriceRows('Home Sample Collection Charges\nFree', '₹99', isStrikethrough: true),
+                            const Divider(height: 24),
+                            _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
+                          ],
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: 20),
+
+                      // Lab Package Section
+                      const Text(
+                        'Lab Package',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blue),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          widget.packageName,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Address Section
+                      Row(
                         children: [
-                          const Text(
-                            'Price Summary',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          if ((double.tryParse(widget.packageDiscountPrice) ?? 0) > 0)
-                            _buildPriceRow('Package Price', '₹${widget.packageDiscountPrice}'),
-                          _buildPriceRow('Hygienic Kit Charges', '₹${widget.hygienicKitCharges.toStringAsFixed(2)}'),
-                          if (sampleCollectionCharges > 0)
-                            _buildPriceRow('Sample Collection Charges', '₹${sampleCollectionCharges.toStringAsFixed(2)}'),
-                          _buildPriceRows('Home Sample Collection Charges\nFree', '₹99', isStrikethrough: true),
-                          const Divider(height: 24),
-                          _buildPriceRow('Total Amount', '₹${totalAmount.toStringAsFixed(2)}', isTotal: true),
+                          const Icon(Icons.location_on, size: 18, color: AppColors.blue),
+                          const SizedBox(width: 8),
+                          const Text('Address', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Lab Package Section
-                    const Text(
-                      'Lab Package',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.blue),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        widget.packageName,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Address Section
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, size: 18, color: AppColors.blue),
-                        const SizedBox(width: 8),
-                        const Text('Address', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        widget.addressNotifier.value?.address ?? 'No address selected',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Appointment Details
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, size: 16, color: AppColors.blue),
-                            const SizedBox(width: 8),
-                            const Text('Appointment Date', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                          ],
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        Text(widget.formattedDate, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.blue)),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.access_time, size: 16, color: AppColors.blue),
-                            const SizedBox(width: 8),
-                            const Text('Time Slot', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                          ],
+                        child: Text(
+                          widget.addressNotifier.value?.address ?? 'No address selected',
+                          style: const TextStyle(fontSize: 13),
                         ),
-                        Text(widget.slotTime, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.blue)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Patient Details
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.blue.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.blue.withOpacity(0.2)),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: 20),
+
+                      // Appointment Details
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.person, size: 18, color: AppColors.blue),
+                              const Icon(Icons.calendar_today, size: 16, color: AppColors.blue),
                               const SizedBox(width: 8),
-                              const Text('Patient Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                              const Text('Appointment Date', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          _buildDetailRow('Name', widget.familyMember.name),
-                          _buildDetailRow('Relationship', widget.familyMember.relationship),
-                          _buildDetailRow('Mobile', widget.familyMember.mobile),
+                          Text(widget.formattedDate, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.blue)),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 32),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 16, color: AppColors.blue),
+                              const SizedBox(width: 8),
+                              const Text('Time Slot', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                          Text(widget.slotTime, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.blue)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
 
-                    // Pay Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: _isProcessing ? null : _processBooking,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.blue,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      // Patient Details
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.blue.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.blue.withOpacity(0.2)),
                         ),
-                        child: _isProcessing
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Text(
-                          'Pay ₹${totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.person, size: 18, color: AppColors.blue),
+                                const SizedBox(width: 8),
+                                const Text('Patient Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _buildDetailRow('Name', widget.familyMember.name),
+                            _buildDetailRow('Relationship', widget.familyMember.relationship),
+                            _buildDetailRow('Mobile', widget.familyMember.mobile),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 32),
+
+                      // Pay Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _isProcessing ? null : _processBooking,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.blue,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: _isProcessing
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : Text(
+                            'Pay ₹${totalAmount.toStringAsFixed(2)}',
+                            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              if (_isProcessing)
-                Container(
-                  color: Colors.black54,
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-            ],
+                if (_isProcessing)
+                  Container(
+                    color: Colors.black54,
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

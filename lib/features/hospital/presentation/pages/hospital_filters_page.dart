@@ -78,132 +78,136 @@ class _HospitalFiltersPageState extends State<HospitalFiltersPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.whiteColor,
-      appBar: AppBar(
-        title: const Text('Filter Hospitals',style: TextStyle(
-          color: AppColors.whiteColor,
-          fontSize: 18,
-          fontWeight: FontWeight.w500,  // SemiBold
-          fontFamily: 'Poppins',
-        ),),
-        backgroundColor: AppColors.blue,
-        foregroundColor: Colors.white,
-      ),
-      body: BlocBuilder<HospitalFiltersBloc, HospitalFiltersState>(
-        builder: (context, state) {
-          if (state is HospitalFiltersLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state is HospitalFiltersError) {
-            return Center(child: Text(state.message));
-          }
-          if (state is HospitalFiltersLoaded) {
-            final categories = state.categories;
-            if (categories.isEmpty) {
-              return const Center(child: Text('No filters available'));
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Scaffold(
+        backgroundColor: AppColors.whiteColor,
+        appBar: AppBar(
+          title: const Text('Filter Hospitals',style: TextStyle(
+            color: AppColors.whiteColor,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,  // SemiBold
+            fontFamily: 'Poppins',
+          ),),
+          backgroundColor: AppColors.blue,
+          foregroundColor: Colors.white,
+        ),
+        body: BlocBuilder<HospitalFiltersBloc, HospitalFiltersState>(
+          builder: (context, state) {
+            if (state is HospitalFiltersLoading) {
+              return const Center(child: CircularProgressIndicator());
             }
-            // Ensure selected category is valid
-            if (_selectedCategoryId == null || !categories.any((c) => c.id == _selectedCategoryId)) {
-              _selectedCategoryId = categories.first.id;
+            if (state is HospitalFiltersError) {
+              return Center(child: Text(state.message));
             }
-            // Find the selected category safely
-            HospitalFilterCategory? selectedCategory;
-            for (var cat in categories) {
-              if (cat.id == _selectedCategoryId) {
-                selectedCategory = cat;
-                break;
+            if (state is HospitalFiltersLoaded) {
+              final categories = state.categories;
+              if (categories.isEmpty) {
+                return const Center(child: Text('No filters available'));
               }
-            }
-            if (selectedCategory == null && categories.isNotEmpty) {
-              selectedCategory = categories.first;
-            }
-            return Row(
-              children: [
-                // Left: Categories list
-                Container(
-                  width: 150,
-                  color: Colors.grey.shade100,
-                  child: ListView.builder(
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      final isSelected = _selectedCategoryId == category.id;
-                      return Container(
-                        color: isSelected ? Colors.blue.shade50 : null,
-                        child: ListTile(
-                          title: Text(category.name,style: TextStyle(
+              // Ensure selected category is valid
+              if (_selectedCategoryId == null || !categories.any((c) => c.id == _selectedCategoryId)) {
+                _selectedCategoryId = categories.first.id;
+              }
+              // Find the selected category safely
+              HospitalFilterCategory? selectedCategory;
+              for (var cat in categories) {
+                if (cat.id == _selectedCategoryId) {
+                  selectedCategory = cat;
+                  break;
+                }
+              }
+              if (selectedCategory == null && categories.isNotEmpty) {
+                selectedCategory = categories.first;
+              }
+              return Row(
+                children: [
+                  // Left: Categories list
+                  Container(
+                    width: 150,
+                    color: Colors.grey.shade100,
+                    child: ListView.builder(
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        final isSelected = _selectedCategoryId == category.id;
+                        return Container(
+                          color: isSelected ? Colors.blue.shade50 : null,
+                          child: ListTile(
+                            title: Text(category.name,style: TextStyle(
+                              color: AppColors.black,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,  // SemiBold
+                              fontFamily: 'Poppins',
+                            ),),
+                            onTap: () {
+                              setState(() {
+                                _selectedCategoryId = category.id;
+                              });
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  // Right: Specialities of selected category
+                  Expanded(
+                    child: selectedCategory!.specialities.isEmpty
+                        ? const Center(child: Text('No specialities for this category',style: TextStyle(
+                      color: AppColors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,  // SemiBold
+                      fontFamily: 'Poppins',
+                    )))
+                        : ListView.builder(
+                      itemCount: selectedCategory.specialities.length,
+                      itemBuilder: (context, index) {
+                        final spec = selectedCategory!.specialities[index];
+                        return CheckboxListTile(
+                          value: _selectedSpecialityIds.contains(spec.id),
+                          onChanged: (_) => _toggleSpeciality(spec.id),
+                          title: Text(spec.name,style: TextStyle(
                             color: AppColors.black,
                             fontSize: 13,
                             fontWeight: FontWeight.w400,  // SemiBold
                             fontFamily: 'Poppins',
-                          ),),
-                          onTap: () {
-                            setState(() {
-                              _selectedCategoryId = category.id;
-                            });
-                          },
-                        ),
-                      );
-                    },
+                          )),
+                          controlAffinity: ListTileControlAffinity.leading,
+                        );
+                      },
+                    ),
                   ),
-                ),
-                // Right: Specialities of selected category
-                Expanded(
-                  child: selectedCategory!.specialities.isEmpty
-                      ? const Center(child: Text('No specialities for this category',style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,  // SemiBold
-                    fontFamily: 'Poppins',
-                  )))
-                      : ListView.builder(
-                    itemCount: selectedCategory.specialities.length,
-                    itemBuilder: (context, index) {
-                      final spec = selectedCategory!.specialities[index];
-                      return CheckboxListTile(
-                        value: _selectedSpecialityIds.contains(spec.id),
-                        onChanged: (_) => _toggleSpeciality(spec.id),
-                        title: Text(spec.name,style: TextStyle(
-                          color: AppColors.black,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,  // SemiBold
-                          fontFamily: 'Poppins',
-                        )),
-                        controlAffinity: ListTileControlAffinity.leading,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          }
-          return const SizedBox();
-        },
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                ],
+              );
+            }
+            return const SizedBox();
+          },
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _reset,
-                child: const Text('Reset'),
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _reset,
+                  child: const Text('Reset'),
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _apply,
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue),
-                child: const Text('Apply', style: TextStyle(color: Colors.white)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _apply,
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue),
+                  child: const Text('Apply', style: TextStyle(color: Colors.white)),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

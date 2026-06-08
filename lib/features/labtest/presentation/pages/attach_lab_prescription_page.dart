@@ -40,153 +40,157 @@ class _AttachLabPrescriptionPageState extends State<AttachLabPrescriptionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Attach Prescription',style: TextStyle(
-        color: AppColors.whiteColor,
-        fontSize: 18,
-        fontWeight: FontWeight.w600,  // SemiBold
-        fontFamily: 'Poppins',
-      ),), backgroundColor: AppColors.blue, foregroundColor: Colors.white),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Upload Prescription',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.red, size: 20),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          widget.labTestAddress,
-                          style: const TextStyle(fontSize: 14, fontFamily: 'Poppins'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _pickImage(ImageSource.gallery),
-                          icon: const Icon(Icons.photo_library, size: 20),
-                          label: const Text('Gallery'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.blue,
-                            side: const BorderSide(color: Colors.blue),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _pickImage(ImageSource.camera),
-                          icon: const Icon(Icons.camera_alt, size: 20),
-                          label: const Text('Camera'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.blue,
-                            side: const BorderSide(color: Colors.blue),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _pickPDF,
-                          icon: const Icon(Icons.picture_as_pdf, size: 20),
-                          label: const Text('PDF'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.blue,
-                            side: const BorderSide(color: Colors.blue),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (_prescriptionFiles.isNotEmpty) ...[
-                    const Text('Selected files:', style: TextStyle(fontWeight: FontWeight.bold)),
+    return SafeArea(
+      bottom: true,
+      top: false,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Attach Prescription',style: TextStyle(
+          color: AppColors.whiteColor,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,  // SemiBold
+          fontFamily: 'Poppins',
+        ),), backgroundColor: AppColors.blue, foregroundColor: Colors.white),
+        body: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Upload Prescription',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
+                    ),
                     const SizedBox(height: 8),
-                    SizedBox(
-                      height: 100,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _prescriptionFiles.length,
-                        itemBuilder: (context, index) => Stack(
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: Colors.grey.shade200,
-                                image: _prescriptionFiles[index].path.endsWith('.pdf') ? null : DecorationImage(image: FileImage(_prescriptionFiles[index]), fit: BoxFit.cover),
-                              ),
-                              child: _prescriptionFiles[index].path.endsWith('.pdf') ? const Center(child: Icon(Icons.picture_as_pdf, size: 40)) : null,
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.red, size: 20),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            widget.labTestAddress,
+                            style: const TextStyle(fontSize: 13, fontFamily: 'Poppins'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _pickImage(ImageSource.gallery),
+                            icon: const Icon(Icons.photo_library, size: 20),
+                            label: const Text('Gallery'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blue,
+                              side: const BorderSide(color: Colors.blue),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
-                            Positioned(
-                              top: 0,
-                              right: 4,
-                              child: GestureDetector(
-                                onTap: () => _removeFile(index),
-                                child: const CircleAvatar(radius: 12, backgroundColor: Colors.red, child: Icon(Icons.close, size: 14, color: Colors.white)),
-                              ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _pickImage(ImageSource.camera),
+                            icon: const Icon(Icons.camera_alt, size: 20),
+                            label: const Text('Camera'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blue,
+                              side: const BorderSide(color: Colors.blue),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
-                          ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _pickPDF,
+                            icon: const Icon(Icons.picture_as_pdf, size: 20),
+                            label: const Text('PDF'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blue,
+                              side: const BorderSide(color: Colors.blue),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (_prescriptionFiles.isNotEmpty) ...[
+                      const Text('Selected files:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 100,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _prescriptionFiles.length,
+                          itemBuilder: (context, index) => Stack(
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: Colors.grey.shade200,
+                                  image: _prescriptionFiles[index].path.endsWith('.pdf') ? null : DecorationImage(image: FileImage(_prescriptionFiles[index]), fit: BoxFit.cover),
+                                ),
+                                child: _prescriptionFiles[index].path.endsWith('.pdf') ? const Center(child: Icon(Icons.picture_as_pdf, size: 40)) : null,
+                              ),
+                              Positioned(
+                                top: 0,
+                                right: 4,
+                                child: GestureDetector(
+                                  onTap: () => _removeFile(index),
+                                  child: const CircleAvatar(radius: 12, backgroundColor: Colors.red, child: Icon(Icons.close, size: 14, color: Colors.white)),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                onPressed: _prescriptionFiles.isEmpty
-                    ? null
-                    : () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider(
-                        create: (context) => sl<FamilyMembersBloc>(),
-                        child: SelectLabPatientPage(
-                          labTestId: widget.labTestId,
-                          labTestAddress: widget.labTestAddress,
-                          prescriptionPaths: _prescriptionFiles.map((f) => f.path).toList(),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  onPressed: _prescriptionFiles.isEmpty
+                      ? null
+                      : () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider(
+                          create: (context) => sl<FamilyMembersBloc>(),
+                          child: SelectLabPatientPage(
+                            labTestId: widget.labTestId,
+                            labTestAddress: widget.labTestAddress,
+                            prescriptionPaths: _prescriptionFiles.map((f) => f.path).toList(),
 
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-                child: const Text('Continue', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    );
+                  },
+                  child: const Text('Continue', style: TextStyle(color: Colors.white, fontSize: 16)),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

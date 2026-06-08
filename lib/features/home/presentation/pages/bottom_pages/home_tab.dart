@@ -276,6 +276,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       child: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
           return SafeArea(
+            top: false,
+            bottom: true,
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Padding(

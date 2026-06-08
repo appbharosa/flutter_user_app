@@ -15,11 +15,13 @@ import 'free_lab_slots_screen.dart';
 class FreeLabPackagesScreen extends StatefulWidget {
   final ValueNotifier<Address?> addressNotifier;
   final int? packageId;
+  final String? packageImageUrl;
 
   const FreeLabPackagesScreen({
     Key? key,
     required this.addressNotifier,
     this.packageId,
+    this.packageImageUrl,
   }) : super(key: key);
 
   @override
@@ -87,14 +89,11 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                 }
               }
               selectedPackage ??= packages.first;
-
-              // UI remains the same, using selectedPackage
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Package Image
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -103,10 +102,11 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: CachedNetworkImage(
-                          imageUrl: selectedPackage.image,
+                        child:
+                        CachedNetworkImage(
+                          imageUrl: widget.packageImageUrl ?? selectedPackage.image, // Use the passed image URL
                           height: 180,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                           placeholder: (_, __) => Container(color: Colors.grey.shade200),
                           errorWidget: (_, __, ___) => const Icon(Icons.medical_services, size: 50),
                         ),
@@ -114,14 +114,12 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Package Name
                     Text(
                       selectedPackage.name,
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
 
-                    // Price Row
                     Row(
                       children: [
                         Text(
@@ -166,7 +164,6 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Inside FreeLabPackagesScreen, when Book Now is pressed:
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -232,6 +229,7 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
 
   Widget _buildExpandableTestCard(PackageTest test) {
     return Card(
+      color: AppColors.whiteColor,
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

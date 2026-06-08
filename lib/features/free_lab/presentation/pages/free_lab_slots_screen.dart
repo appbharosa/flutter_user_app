@@ -84,155 +84,170 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _bloc,
-      child: Scaffold(
-        backgroundColor: AppColors.whiteColor,
-        appBar: AppBar(
-          title: const Text(
-            'Select Time Slot',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-              color: AppColors.whiteColor,
+      child: SafeArea(
+        bottom: true,
+        top: false,
+        child: Scaffold(
+          backgroundColor: AppColors.whiteColor,
+          appBar: AppBar(
+            title: const Text(
+              'Select Time Slot',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+                color: AppColors.whiteColor,
+              ),
             ),
+            backgroundColor: AppColors.blue,
+            foregroundColor: Colors.white,
           ),
-          backgroundColor: AppColors.blue,
-          foregroundColor: Colors.white,
-        ),
-        body: BlocConsumer<FreeLabSlotsBloc, FreeLabSlotsState>(
-          listener: (context, state) {
-            if (state is FreeLabSlotsError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-              );
-            }
-          },
-          builder: (context, state) {
-            if (state is FreeLabSlotsLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state is FreeLabSlotsLoaded) {
-              final slotsResponse = state.slots;
-              _selectedFormattedDate = slotsResponse.formattedDate;
-              _selectedDate = slotsResponse.date;
+          body: BlocConsumer<FreeLabSlotsBloc, FreeLabSlotsState>(
+            listener: (context, state) {
+              if (state is FreeLabSlotsError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                );
+              }
+            },
+            builder: (context, state) {
+              if (state is FreeLabSlotsLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              // Inside the `builder` of `BlocConsumer<FreeLabSlotsBloc, FreeLabSlotsState>`
+              if (state is FreeLabSlotsLoaded) {
+                final slotsResponse = state.slots;
+                _selectedFormattedDate = slotsResponse.formattedDate;
+                _selectedDate = slotsResponse.date;
 
-              return Column(
-                children: [
-                  // Address Card
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.blue.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.blue.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.location_on, color: AppColors.blue, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            widget.addressNotifier.value?.address ?? 'Select Address',
-                            style: const TextStyle(fontSize: 12),
+                return Column(
+                  children: [
+                    // Address Card
+                    Container(
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.blue.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.blue.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on, color: AppColors.blue, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              widget.addressNotifier.value?.address ?? 'Select Address',
+                              style: const TextStyle(fontSize: 14, color: Colors.black87),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Date info
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.calendar_today, color: AppColors.blue, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${slotsResponse.formattedDate} (${slotsResponse.day})',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Available Time Slots',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: slotsResponse.sessions.length,
-                      itemBuilder: (context, index) {
-                        final session = slotsResponse.sessions[index];
-                        final availableSlots = session.slots.where((s) => s.isAvailable && !s.isBooked).toList();
-                        if (availableSlots.isEmpty) return const SizedBox();
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 20),
-                          child: Column(
+
+                    // Date Info
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.calendar_today, color: AppColors.blue, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            '${slotsResponse.formattedDate} (${slotsResponse.day})',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Available Time Slots Header
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Available Time Slots',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // Slots Grid
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: slotsResponse.sessions.length,
+                        itemBuilder: (context, index) {
+                          final session = slotsResponse.sessions[index];
+                          final availableSlots = session.slots.where((s) => s.isAvailable && !s.isBooked).toList();
+                          if (availableSlots.isEmpty) return const SizedBox();
+
+                          return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    session.sessionIcon,
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    session.session,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
+                              // Session Header
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      session.sessionIcon,
+                                      style: const TextStyle(fontSize: 20),
                                     ),
-                                  ),
-                                  const Spacer(),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.shade50,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '${session.availableSlots} slots',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.green.shade700,
-                                        fontWeight: FontWeight.w500,
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      session.session,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade50,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${session.availableSlots} slots',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.green.shade700,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
+                            SizedBox(height: 10,),
+                              // Slots Grid (4 slots per row)
+                              GridView.count(
+                                crossAxisCount: 4,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                childAspectRatio: 2.0, // Adjust to control slot width/height
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
                                 children: availableSlots.map((slot) {
                                   final isSelected = _selectedSlotId == slot.slotId;
                                   return GestureDetector(
                                     onTap: () {
                                       setState(() {
-                                        if (_selectedSlotId == slot.slotId) {
-                                          _selectedSlotId = null;
-                                          _selectedSlotTime = null;
-                                        } else {
-                                          _selectedSlotId = slot.slotId;
-                                          _selectedSlotTime = slot.startTime;
-                                        }
+                                        _selectedSlotId = slot.slotId;
+                                        _selectedSlotTime = slot.startTime;
                                       });
                                     },
                                     child: Container(
@@ -241,15 +256,27 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
                                         color: isSelected ? AppColors.blue : Colors.white,
                                         border: Border.all(
                                           color: isSelected ? AppColors.blue : Colors.grey.shade300,
+                                          width: 1.5,
                                         ),
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: isSelected
+                                            ? [
+                                          BoxShadow(
+                                            color: AppColors.blue.withOpacity(0.2),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                            : null,
                                       ),
-                                      child: Text(
-                                        slot.startTime,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: isSelected ? Colors.white : AppColors.black,
+                                      child: Center(
+                                        child: Text(
+                                          slot.startTime,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: isSelected ? Colors.white : Colors.black87,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -257,38 +284,44 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
                                 }).toList(),
                               ),
                             ],
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 45,
-                      child: ElevatedButton(
-                        onPressed: _selectedSlotId == null
-                            ? null
-                            : () => _navigateToFamilySelection(slotsResponse),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.blue,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: const Text(
-                          'Continue',
-                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+
+                    // Continue Button
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _selectedSlotId == null
+                              ? null
+                              : () => _navigateToFamilySelection(slotsResponse),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 3,
+                          ),
+                          child: const Text(
+                            'Continue',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            }
-            return const SizedBox();
-          },
+                  ],
+                );
+              }
+              return const SizedBox();
+            },
+          ),
         ),
       ),
     );
   }
+
 }

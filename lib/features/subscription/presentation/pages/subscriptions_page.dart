@@ -67,93 +67,97 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         BlocProvider.value(value: _subscriptionBloc),
         BlocProvider.value(value: _paymentBloc),
       ],
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: const Text(
-            'Care Plan',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-              color: AppColors.whiteColor,
+      child: SafeArea(
+        top: false,
+        bottom: true,
+        child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
             ),
-          ),
-          backgroundColor: AppColors.blue,
-          foregroundColor: Colors.white,
-        ),
-        body: MultiBlocListener(
-          listeners: [
-            BlocListener<SubscriptionPaymentBloc, SubscriptionPaymentState>(
-              listener: (context, state) async {
-                if (state is SubscriptionPaymentSuccess) {
-                  await UserManager.setSubscriptionActive(true);
-                  showSuccessSnackBar('Subscription successful!');
-                  _loadSubscriptionStatus();
-                } else if (state is SubscriptionPaymentError) {
-                  showErrorSnackBar(state.message);
-                }
-              },
+            title: const Text(
+              'Care Plan',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+                color: AppColors.whiteColor,
+              ),
             ),
-            BlocListener<SubscriptionStatusBloc, SubscriptionStatusState>(
-              listener: (context, state) async {
-                if (state is SubscriptionStatusError) {
-                  showErrorSnackBar(state.message);
-                  // If error indicates no active subscription, clear flag
-                  if (state.message.contains('no active subscription') ||
-                      state.message.contains('No subscription found')) {
-                    await UserManager.setSubscriptionActive(false);
+            backgroundColor: AppColors.blue,
+            foregroundColor: Colors.white,
+          ),
+          body: MultiBlocListener(
+            listeners: [
+              BlocListener<SubscriptionPaymentBloc, SubscriptionPaymentState>(
+                listener: (context, state) async {
+                  if (state is SubscriptionPaymentSuccess) {
+                    await UserManager.setSubscriptionActive(true);
+                    showSuccessSnackBar('Subscription successful!');
+                    _loadSubscriptionStatus();
+                  } else if (state is SubscriptionPaymentError) {
+                    showErrorSnackBar(state.message);
                   }
-                } else if (state is SubscriptionStatusLoaded) {
-                  // Sync local flag with actual API result
-                  final hasActive = (state.subscription != null && !state.subscription!.isExpired);
-                  await UserManager.setSubscriptionActive(hasActive);
-                }
-              },
-            ),
-          ],
-          child: RefreshIndicator(
-            onRefresh: _loadSubscriptionStatus,
-            child: BlocBuilder<SubscriptionStatusBloc, SubscriptionStatusState>(
-              builder: (context, state) {
-                if (state is SubscriptionStatusLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (state is SubscriptionStatusError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text(state.message),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadSubscriptionStatus,
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                if (state is SubscriptionStatusLoaded) {
-                  final subscription = state.subscription;
-                  if (subscription != null) {
-                    if (subscription.isExpired) {
-                      return _buildExpiredSubscription(subscription);
-                    } else {
-                      return _buildActiveSubscription(subscription);
+                },
+              ),
+              BlocListener<SubscriptionStatusBloc, SubscriptionStatusState>(
+                listener: (context, state) async {
+                  if (state is SubscriptionStatusError) {
+                    showErrorSnackBar(state.message);
+                    // If error indicates no active subscription, clear flag
+                    if (state.message.contains('no active subscription') ||
+                        state.message.contains('No subscription found')) {
+                      await UserManager.setSubscriptionActive(false);
                     }
-                  } else {
-                    UserManager.setSubscriptionActive(false);
-                    return _buildPlansList(); // No active subscription → show plans
+                  } else if (state is SubscriptionStatusLoaded) {
+                    // Sync local flag with actual API result
+                    final hasActive = (state.subscription != null && !state.subscription!.isExpired);
+                    await UserManager.setSubscriptionActive(hasActive);
                   }
-                }
-                return const SizedBox();
-              },
+                },
+              ),
+            ],
+            child: RefreshIndicator(
+              onRefresh: _loadSubscriptionStatus,
+              child: BlocBuilder<SubscriptionStatusBloc, SubscriptionStatusState>(
+                builder: (context, state) {
+                  if (state is SubscriptionStatusLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state is SubscriptionStatusError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text(state.message),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadSubscriptionStatus,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  if (state is SubscriptionStatusLoaded) {
+                    final subscription = state.subscription;
+                    if (subscription != null) {
+                      if (subscription.isExpired) {
+                        return _buildExpiredSubscription(subscription);
+                      } else {
+                        return _buildActiveSubscription(subscription);
+                      }
+                    } else {
+                      UserManager.setSubscriptionActive(false);
+                      return _buildPlansList(); // No active subscription → show plans
+                    }
+                  }
+                  return const SizedBox();
+                },
+              ),
             ),
           ),
         ),
