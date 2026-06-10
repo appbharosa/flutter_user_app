@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:user/features/pharmacy/presentation/pharmacy_category_bloc/pharmacy_category_bloc.dart';
 import '../../data/data_sources/about_remote_datasource.dart';
 import '../../data/data_sources/address_remote_datasource.dart';
 import '../../data/data_sources/admission_remote_datasource.dart';
@@ -206,6 +207,8 @@ import '../../domain/use_cases/get_online_doctors_usecase.dart';
 import '../../domain/use_cases/get_packages_by_category_id.dart';
 import '../../domain/use_cases/get_pharmacies_usecase.dart';
 import '../../domain/use_cases/get_pharmacy_bookings.dart';
+import '../../domain/use_cases/get_pharmacy_categories.dart';
+import '../../domain/use_cases/get_pharmacy_products.dart';
 import '../../domain/use_cases/get_profile_usecase.dart';
 import '../../domain/use_cases/get_subscription_plans_usecase.dart';
 import '../../domain/use_cases/get_unread_count.dart';
@@ -529,6 +532,7 @@ Future<void> init() async {
     ),
   );
 
+
   // ========== Use Cases ==========
   sl.registerLazySingleton(() => SendOtpUseCase(sl()));
   sl.registerLazySingleton(() => VerifyOtpUseCase(sl()));
@@ -602,6 +606,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SubmitAdmission(sl<AdmissionRepository>()));
   sl.registerLazySingleton(() => GetLabTestCategories(sl<LabTestCategoryRepository>()));
   sl.registerLazySingleton(() => GetPackagesByCategoryId(sl<FreeLabRepository>()));
+  sl.registerLazySingleton(() => GetPharmacyCategories(sl<PharmacyRepository>()));
+  sl.registerLazySingleton(() => GetPharmacyProducts(sl<PharmacyRepository>()));
 
 
   // ========== BLoCs ==========
@@ -666,6 +672,7 @@ Future<void> init() async {
   sl.registerFactory(() => AdmissionBloc(submitAdmission: sl<SubmitAdmission>()));
   sl.registerFactory(() => LabTestCategoryBloc(getCategories: sl<GetLabTestCategories>()));
   sl.registerFactory(() => LabTestSubcategoryBloc(getPackages: sl<GetPackagesByCategoryId>()));
-
+  sl.registerFactory(() => PharmacyCategoryBloc(getCategories: sl(), getProducts: sl(),
+  ));
 
 }

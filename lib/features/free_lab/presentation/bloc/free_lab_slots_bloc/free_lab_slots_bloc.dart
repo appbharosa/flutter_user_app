@@ -17,7 +17,11 @@ class FreeLabSlotsBloc extends Bloc<FreeLabSlotsEvent, FreeLabSlotsState> {
 
   Future<void> _onLoadSlots(LoadFreeLabSlots event, Emitter<FreeLabSlotsState> emit) async {
     emit(FreeLabSlotsLoading());
-    final result = await getFreeLabSlotsUseCase(event.language, event.packageId);
+    final result = await getFreeLabSlotsUseCase(
+      event.language,
+      event.packageId,
+      date: event.date, // pass the date
+    );
     result.fold(
           (failure) => emit(FreeLabSlotsError(_mapFailureToMessage(failure))),
           (slots) => emit(FreeLabSlotsLoaded(slots)),

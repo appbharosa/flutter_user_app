@@ -6,7 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:user/core/di/injection.dart' as di;
 import 'package:user/core/di/injection.dart';
-import 'package:user/features/lab/presentation/pages/lab_screen.dart';
+import 'package:user/features/free_lab/presentation/pages/lab_screen.dart';
+import 'package:user/features/pharmacy/presentation/pages/pharmacy_categoty_page.dart';
 import '../../../../../core/di/injection.dart' show sl;
 import '../../../../../core/services/language_service.dart';
 import '../../../../../core/utils/user_manager.dart';
@@ -62,7 +63,8 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   final List<Map<String, dynamic>> _quickActions = [
     {"svgPath": "assets/online-doctor.svg", "title": "Online\nDoctor","screen": "online_doctor"},
     {"svgPath": "assets/blood-test.svg", "title": "Book Lab\nTest", "screen": "med_tests"},
-    {"svgPath": "assets/drugs.svg", "title": "Order\nMedicine","screen": "pharmacy"},
+    {"svgPath": "assets/pharmacy.svg", "title": "Order\nMedicine","screen": "order_pharmacy"},
+    {"svgPath": "assets/drugs.svg", "title": "find\nMedicine","screen": "pharmacy"},
     {"svgPath": "assets/hospital.svg", "title": "Find\nHospitals", "screen": "hospitals"},
     {"svgPath": "assets/observation.svg", "title": "Find Labs", "screen": "lab_tests"},
     {"svgPath": "assets/ct-scan.svg", "title": "Find\nDiagnostics", "screen": "diagnostics"},
@@ -206,6 +208,18 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           ),
         );
         break;
+      case 'order_pharmacy':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PharmacyCategoryPage(
+              searchNotifier: widget.searchNotifier,
+              addressNotifier: widget.addressNotifier,
+            ),
+          ),
+        );
+        break;
+
       case 'pharmacy':
         Navigator.push(
           context,

@@ -10,7 +10,10 @@ abstract class FreeLabSlotsEvent extends Equatable {
 class LoadFreeLabSlots extends FreeLabSlotsEvent {
   final String language;
   final int packageId;
-  const LoadFreeLabSlots(this.language, this.packageId);
+  final String? date; // optional – format "YYYY-MM-DD"
+
+  const LoadFreeLabSlots(this.language, this.packageId, {this.date});
+
   @override
-  List<Object?> get props => [language, packageId];
+  List<Object?> get props => [language, packageId, date];
 }

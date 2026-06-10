@@ -7,16 +7,16 @@ import '../../../../data/models/free_lab_package_model.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/repositories/subscription_repository.dart';
 import '../../../../domain/use_cases/get_free_lab_reports.dart';
-import '../../../free_lab/presentation/lab_test_category_bloc/lab_test_category_bloc.dart';
-import '../../../free_lab/presentation/lab_test_category_bloc/lab_test_category_event.dart';
-import '../../../free_lab/presentation/lab_test_category_bloc/lab_test_category_state.dart';
-import '../../../free_lab/presentation/pages/free_lab_packages_screen.dart';
+import '../lab_test_category_bloc/lab_test_category_bloc.dart';
+import '../lab_test_category_bloc/lab_test_category_event.dart';
+import '../lab_test_category_bloc/lab_test_category_state.dart';
+import 'free_lab_packages_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../domain/entities/lab_test_category.dart';
-import '../../../free_lab/presentation/pages/free_lab_reports_screen.dart';
-import '../../../free_lab/presentation/pages/lab_test_subcategory_screen.dart';
+import 'free_lab_reports_screen.dart';
+import 'lab_test_subcategory_screen.dart';
 import '../../../subscription/presentation/pages/subscriptions_page.dart';
 
 class LabTestScreen extends StatefulWidget {

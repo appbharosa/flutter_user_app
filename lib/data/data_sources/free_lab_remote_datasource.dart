@@ -7,7 +7,13 @@ import '../models/free_lab_slot_model.dart';
 
 abstract class FreeLabRemoteDataSource {
   Future<List<FreeLabPackageModel>> getFreeLabPackages(String language);
-  Future<FreeLabSlotResponseModel> getFreeLabSlots(String language, int packageId);
+
+  Future<FreeLabSlotResponseModel> getFreeLabSlots(
+      String language,
+      int packageId, {
+        String? date, // optional named parameter
+      });
+
   Future<List<FreeLabPackageModel>> getPackagesByCategoryId({
     required int categoryId,
     required String language,
@@ -42,14 +48,24 @@ class FreeLabRemoteDataSourceImpl implements FreeLabRemoteDataSource {
   }
 
   @override
-  Future<FreeLabSlotResponseModel> getFreeLabSlots(String language, int packageId) async {
+  Future<FreeLabSlotResponseModel> getFreeLabSlots(
+      String language,
+      int packageId, {
+        String? date,
+      }) async {
     try {
+      final queryParams = {
+        'lang': language,
+        'package_id': packageId,
+      };
+      // Add date only if provided
+      if (date != null && date.isNotEmpty) {
+        queryParams['date'] = date;
+      }
+
       final response = await dioClient.dio.get(
         AppUrls.freeLabBooking,
-        queryParameters: {
-          'lang': language,
-          'package_id': packageId,
-        },
+        queryParameters: queryParams,
       );
       if (response.data['status'] == 200) {
         return FreeLabSlotResponseModel.fromJson(response.data);

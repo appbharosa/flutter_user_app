@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/services/language_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -25,7 +25,7 @@ class FreeLabSlotsScreen extends StatefulWidget {
     Key? key,
     required this.packageId,
     required this.packageName,
-    required this.packageDiscountPrice, // required
+    required this.packageDiscountPrice,
     required this.hygienicKitCharges,
     required this.addressNotifier,
   }) : super(key: key);
@@ -36,10 +36,11 @@ class FreeLabSlotsScreen extends StatefulWidget {
 
 class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
   late FreeLabSlotsBloc _bloc;
+  DateTime _selectedDate = DateTime.now();
   int? _selectedSlotId;
   String? _selectedSlotTime;
   String? _selectedFormattedDate;
-  String? _selectedDate;
+  String? _selectedDateStr;
 
   @override
   void initState() {
@@ -50,7 +51,22 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
 
   Future<void> _loadSlots() async {
     final language = await LanguageService.getCurrentLanguage();
-    _bloc.add(LoadFreeLabSlots(language, widget.packageId));
+    final dateStr = _selectedDate.toIso8601String().split('T').first;
+    _bloc.add(LoadFreeLabSlots(language, widget.packageId, date: dateStr));
+  }
+
+  void _onDateSelected(DateTime date) {
+    setState(() {
+      _selectedDate = date;
+      _selectedSlotId = null;
+      _selectedSlotTime = null;
+    });
+    _loadSlots();
+  }
+
+  String _formatDate(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   void _navigateToFamilySelection(FreeLabSlotResponse slotsResponse) async {
@@ -66,7 +82,7 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
           builder: (context) => FreeLabBookingConfirmScreen(
             packageId: widget.packageId,
             packageName: widget.packageName,
-            packageDiscountPrice: widget.packageDiscountPrice, // pass it
+            packageDiscountPrice: widget.packageDiscountPrice,
             addressNotifier: widget.addressNotifier,
             hygienicKitCharges: widget.hygienicKitCharges,
             slotId: _selectedSlotId!,
@@ -114,11 +130,10 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
               if (state is FreeLabSlotsLoading) {
                 return const Center(child: CircularProgressIndicator());
               }
-              // Inside the `builder` of `BlocConsumer<FreeLabSlotsBloc, FreeLabSlotsState>`
               if (state is FreeLabSlotsLoaded) {
                 final slotsResponse = state.slots;
                 _selectedFormattedDate = slotsResponse.formattedDate;
-                _selectedDate = slotsResponse.date;
+                _selectedDateStr = slotsResponse.date;
 
                 return Column(
                   children: [
@@ -145,28 +160,82 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
                       ),
                     ),
 
-                    // Date Info
+                    // Date Picker Card
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.calendar_today, color: AppColors.blue, size: 20),
-                          const SizedBox(width: 12),
-                          Text(
-                            '${slotsResponse.formattedDate} (${slotsResponse.day})',
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          const Text(
+                            'Select Date',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
+                              color: AppColors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: _selectedDate,
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime.now().add(const Duration(days: 30)),
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: Theme.of(context).copyWith(
+                                      colorScheme: const ColorScheme.light(primary: AppColors.blue),
+                                    ),
+                                    child: child!,
+                                  );
+                                },
+                              );
+                              if (date != null) _onDateSelected(date);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.grey.shade50,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.calendar_today, color: AppColors.blue, size: 20),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        _formatDate(_selectedDate),
+                                        style: const TextStyle(fontSize: 14, fontFamily: 'Poppins'),
+                                      ),
+                                    ],
+                                  ),
+                                  const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 8),
 
                     // Available Time Slots Header
                     const Padding(
@@ -232,13 +301,13 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
                                   ],
                                 ),
                               ),
-                            SizedBox(height: 10,),
+                              const SizedBox(height: 10),
                               // Slots Grid (4 slots per row)
                               GridView.count(
                                 crossAxisCount: 4,
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                childAspectRatio: 2.0, // Adjust to control slot width/height
+                                childAspectRatio: 2.0,
                                 mainAxisSpacing: 10,
                                 crossAxisSpacing: 10,
                                 children: availableSlots.map((slot) {
@@ -323,5 +392,4 @@ class _FreeLabSlotsScreenState extends State<FreeLabSlotsScreen> {
       ),
     );
   }
-
 }

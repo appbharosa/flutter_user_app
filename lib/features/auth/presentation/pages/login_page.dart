@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user/core/theme/app_colors.dart';
@@ -9,13 +8,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/utils/translations.dart';
 import '../../../otp/presentation/pages/otp_verification_page.dart';
 import '../bloc/auth_event.dart';
-
-
 import 'package:lottie/lottie.dart';
-
-
-
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -224,6 +217,29 @@ class _LoginPageState extends State<LoginPage> {
                               return null;
                             },
                           ),
+                          // const SizedBox(height: 20),
+                          // Text(
+                          //   "Referral Code",
+                          //   style: TextStyle(
+                          //     fontSize: 16,
+                          //     fontWeight: FontWeight.bold,
+                          //     fontFamily: 'Poppins',
+                          //   ),
+                          // ),
+                          // SizedBox(height: 5,),
+                          // TextFormField(
+                          //   controller: phoneController,
+                          //   keyboardType: TextInputType.phone,
+                          //   maxLength: 10,
+                          //   decoration: InputDecoration(
+                          //     hintText: 'Enter referral code',
+                          //     counterText: "",
+                          //     border: OutlineInputBorder(
+                          //       borderRadius: BorderRadius.circular(10),
+                          //     ),
+                          //   ),
+                          //
+                          // ),
                         ],
                       ),
                     ),

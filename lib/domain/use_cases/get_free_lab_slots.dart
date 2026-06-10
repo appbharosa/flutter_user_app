@@ -7,7 +7,11 @@ class GetFreeLabSlotsUseCase {
   final FreeLabRepository repository;
   GetFreeLabSlotsUseCase(this.repository);
 
-  Future<Either<Failure, FreeLabSlotResponse>> call(String language, int packageId) async {
-    return await repository.getFreeLabSlots(language, packageId);
+  Future<Either<Failure, FreeLabSlotResponse>> call(
+      String language,
+      int packageId, {
+        String? date,
+      }) async {
+    return await repository.getFreeLabSlots(language, packageId, date: date);
   }
 }

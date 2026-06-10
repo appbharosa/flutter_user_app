@@ -32,10 +32,14 @@ class FreeLabRepositoryImpl implements FreeLabRepository {
   }
 
   @override
-  Future<Either<Failure, FreeLabSlotResponse>> getFreeLabSlots(String language, int packageId) async {
+  Future<Either<Failure, FreeLabSlotResponse>> getFreeLabSlots(
+      String language,
+      int packageId, {
+        String? date,
+      }) async {
     if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
     try {
-      final slots = await remoteDataSource.getFreeLabSlots(language, packageId);
+      final slots = await remoteDataSource.getFreeLabSlots(language, packageId, date: date);
       return Right(slots);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

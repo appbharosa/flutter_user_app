@@ -2,9 +2,9 @@ import 'package:dio/dio.dart';
 import '../../core/appurls/app_urls.dart';
 import '../../core/errors/exceptions.dart';
 import '../../core/network/dio_client.dart';
+import '../models/pharmacy_category_model.dart';
 import '../models/pharmacy_model.dart';
-
-
+import '../models/pharmacy_product_model.dart';
 
 abstract class PharmacyRemoteDataSource {
   Future<List<PharmacyModel>> getPharmacies({
@@ -16,6 +16,8 @@ abstract class PharmacyRemoteDataSource {
   });
 
   Future<int> getTotalPages();
+  Future<List<PharmacyCategoryModel>> getCategories(String language);
+  Future<List<PharmacyProductModel>> getProducts(int categoryId, String language);
 }
 
 class PharmacyRemoteDataSourceImpl implements PharmacyRemoteDataSource {
@@ -69,6 +71,44 @@ class PharmacyRemoteDataSourceImpl implements PharmacyRemoteDataSource {
     return _totalPages!;
   }
 
+  @override
+  Future<List<PharmacyCategoryModel>> getCategories(String language) async {
+    try {
+      final response = await dioClient.dio.get(
+        AppUrls.medRayDerPharmacy,
+        queryParameters: {'lang': language},
+      );
+      if (response.data['status'] == 200) {
+        final List<dynamic> result = response.data['result'];
+        return result.map((json) => PharmacyCategoryModel.fromJson(json)).toList();
+      } else {
+        throw ServerException(response.data['message'] ?? 'Failed to load categories');
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<List<PharmacyProductModel>> getProducts(int categoryId, String language) async {
+    try {
+      final response = await dioClient.dio.get(
+        AppUrls.medRayDerPharmacyCategory,
+        queryParameters: {
+          'lang': language,
+          'category_id': categoryId,
+        },
+      );
+      if (response.data['status'] == 200) {
+        final List<dynamic> result = response.data['result'];
+        return result.map((json) => PharmacyProductModel.fromJson(json)).toList();
+      } else {
+        throw ServerException(response.data['message'] ?? 'Failed to load products');
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
   Exception _handleDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||

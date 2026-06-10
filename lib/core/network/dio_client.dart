@@ -47,10 +47,24 @@ class AuthInterceptor extends Interceptor {
     handler.next(options);
   }
 
+  // @override
+  // void onError(DioException err, ErrorInterceptorHandler handler) {
+  //   if (err.response?.statusCode == 401) {
+  //     _handleLogout();
+  //   }
+  //   handler.next(err);
+  // }
+
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
-      _handleLogout();
+      await _handleLogout();
+      // Return a dummy response so the error doesn't propagate
+      return handler.resolve(Response(
+        requestOptions: err.requestOptions,
+        statusCode: 200,
+        data: {'status': 401, 'message': 'Unauthorized, redirecting'},
+      ));
     }
     handler.next(err);
   }

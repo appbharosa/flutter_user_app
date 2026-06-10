@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:user/features/splash/presentation/splash_page.dart';
 import 'core/di/injection.dart' as di;
 import 'core/utils/push_notification_service.dart';
-import 'core/utils/firebase_notification_service.dart'; // Add this import
+import 'core/utils/firebase_notification_service.dart';
 import 'core/utils/snackbar_utils.dart';
 import 'core/utils/translations.dart';
 import 'core/utils/pending_call.dart';
@@ -25,7 +25,7 @@ Future<void> main() async {
   await PushNotificationService.initialize();
   await FirebaseNotificationService.initialize();
   await di.init();
-  await _initOneSignal();
+  await initOneSignal();
 
   final facebookAppEvents = FacebookAppEvents();
 
@@ -63,14 +63,24 @@ Future<void> main() async {
   runApp(MyApp());
 }
 
-Future<void> _initOneSignal() async {
-  const String oneSignalAppId = "cebaa375-de95-4fb8-9403-71089f304ffe";
+Future<void> initOneSignal() async {
+  const String oneSignalAppId = "c1fa84ce-ef13-43a6-829c-61143b9f113c";
+
+  OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
   await OneSignal.initialize(oneSignalAppId);
   await OneSignal.Notifications.requestPermission(true);
-  await OneSignal.User.addTags({"user_type": "MEDRAYDER"});
+  await OneSignal.User.addTags({"user_type": "user"});
+
+  //  Corrected: Use bool for subscription status
+  bool? isSubscribed = await OneSignal.User.pushSubscription.optedIn;
+  print("Device is subscribed: $isSubscribed");
+
+  //  Corrected: Access the 'id' property directly
+  String? playerId = OneSignal.User.pushSubscription.id;
+  print("Player ID: $playerId");
 
   OneSignal.Notifications.addClickListener((event) {
-    _handleCallData(event.notification.additionalData);
+    print("Notification clicked: ${event.notification.additionalData}");
   });
 }
 

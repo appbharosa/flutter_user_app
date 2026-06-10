@@ -85,7 +85,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'Select Delivery Address',
-                        style: const TextStyle(
+                        style:  TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
@@ -134,7 +134,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                             }
                           },
                           icon: const Icon(Icons.add, color: Colors.white),
-                          label: const Text('Add New Address', style: const TextStyle(
+                          label: const Text('Add New Address', style:  TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Poppins',

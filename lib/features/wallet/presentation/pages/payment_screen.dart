@@ -49,7 +49,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   void _startCashfreeCheckout(CashfreeOrder order) async {
-    final environment = CFEnvironment.SANDBOX;
+    final environment = CFEnvironment.PRODUCTION;
 
     await _cashfree.startPayment(
       orderId: order.orderId,
