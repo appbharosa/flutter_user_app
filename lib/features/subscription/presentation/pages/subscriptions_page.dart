@@ -22,8 +22,6 @@ import '../subscription_status_bloc/subscription_status_state.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
 
-
-
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key});
 
@@ -461,7 +459,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       gstAmount: (subscription.discountPrice * 0.18),
       totalAmount: (subscription.discountPrice * 1.18),
       savings: (subscription.price - subscription.discountPrice).toDouble(),
-      personsCovered: 2,
+      personsCovered: subscription.name.contains('Family') ? 2 : 1,
       coverageType: 'Family',
     );
     _showPriceBottomSheet(context, plan);
@@ -660,7 +658,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   gstAmount: (selectedPlan.discountPrice * 0.18),
                                   totalAmount: (selectedPlan.discountPrice * 1.18),
                                   savings: (selectedPlan.price - selectedPlan.discountPrice).toDouble(),
-                                  personsCovered: 2,
+                                  personsCovered: selectedPlan.name.contains('Family') ? 2 : 1,
                                   coverageType: selectedPlan.name.contains('Family') ? 'Family' : 'Single',
                                 );
                                 _showPriceBottomSheet(context, paymentPlan);

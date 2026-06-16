@@ -69,6 +69,9 @@
             android:name="android.webkit.WebView.EnableSafeBrowsing"
             android:value="true"
             tools:replace="android:value" />
+        <meta-data
+            android:name="onesignal_app_id"
+            android:value="c1fa84ce-ef13-43a6-829c-61143b9f113c" />
     </application>
     <uses-feature
         android:name="android.hardware.location"

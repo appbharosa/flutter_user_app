@@ -16,51 +16,45 @@ import 'features/language/bloc/language_bloc.dart';
 import 'features/language/bloc/language_state.dart';
 import 'core/utils/navigation.dart';
 import 'features/video_call_screen.dart';
+import 'package:upgrader/upgrader.dart';
+
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+Map<String, dynamic>? pendingCallData;
+
+// ValueNotifier to expose OneSignal player ID
+final ValueNotifier<String?> oneSignalPlayerIdNotifier = ValueNotifier(null);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Firebase
   await Firebase.initializeApp();
 
+  // Your custom services
   await PushNotificationService.initialize();
   await FirebaseNotificationService.initialize();
   await di.init();
+
+  // OneSignal initialisation (waits for ID)
   await initOneSignal();
 
+  // Facebook events
   final facebookAppEvents = FacebookAppEvents();
-
   await facebookAppEvents.setAutoLogAppEventsEnabled(true);
-
-  await facebookAppEvents.logEvent(
-    name: "medrayder_test_event",
-  );
-  await facebookAppEvents.setAutoLogAppEventsEnabled(true);
-
-  await facebookAppEvents.logEvent(
-    name: "fb_mobile_activate_app",
-  );
-
+  await facebookAppEvents.logEvent(name: "medrayder_test_event");
+  await facebookAppEvents.logEvent(name: "fb_mobile_activate_app");
   facebookAppEvents.logCompletedRegistration();
-  facebookAppEvents.logPurchase(
-    amount: 99.0,
-    currency: "INR",
-  );
+  facebookAppEvents.logPurchase(amount: 99.0, currency: "INR");
   facebookAppEvents.logEvent(
     name: "medrayder_care_plan_purchase",
-    parameters: {
-      "plan_name": "singlecare plan",
-      "amount": 1199,
-    },
+    parameters: {"plan_name": "singlecare plan", "amount": 1199},
   );
-  facebookAppEvents.logEvent(
-    name: "doctor_appointment_booked",
-  );
-  facebookAppEvents.logEvent(
-    name: 'medrayder_test_event',
-  );
+  facebookAppEvents.logEvent(name: "doctor_appointment_booked");
   await facebookAppEvents.setAutoLogAppEventsEnabled(true);
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 Future<void> initOneSignal() async {
@@ -69,19 +63,48 @@ Future<void> initOneSignal() async {
   OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
   await OneSignal.initialize(oneSignalAppId);
   await OneSignal.Notifications.requestPermission(true);
-  await OneSignal.User.addTags({"user_type": "user"});
+  await OneSignal.User.addTags({"user_type": "MEDRAYDER"});
 
-  //  Corrected: Use bool for subscription status
-  bool? isSubscribed = await OneSignal.User.pushSubscription.optedIn;
-  print("Device is subscribed: $isSubscribed");
+  // Listen to subscription changes
+  OneSignal.User.pushSubscription.addObserver((state) {
+    final id = state.current.id;
+    if (id != null && id.isNotEmpty) {
+      oneSignalPlayerIdNotifier.value = id;
+      debugPrint("OneSignal player ID updated: $id");
+    }
+  });
 
-  //  Corrected: Access the 'id' property directly
+  // Try to get ID immediately, otherwise poll for a short time
   String? playerId = OneSignal.User.pushSubscription.id;
-  print("Player ID: $playerId");
+  if (playerId != null && playerId.isNotEmpty) {
+    oneSignalPlayerIdNotifier.value = playerId;
+    debugPrint("OneSignal player ID: $playerId");
+  } else {
+    debugPrint("Waiting for OneSignal player ID...");
+    await _waitForOneSignalId(timeout: const Duration(seconds: 3));
+  }
+
+  bool? isSubscribed = await OneSignal.User.pushSubscription.optedIn;
+  debugPrint("Device subscribed: $isSubscribed");
 
   OneSignal.Notifications.addClickListener((event) {
-    print("Notification clicked: ${event.notification.additionalData}");
+    debugPrint("Notification clicked: ${event.notification.additionalData}");
+    _handleCallData(event.notification.additionalData);
   });
+}
+
+Future<void> _waitForOneSignalId({required Duration timeout}) async {
+  final stopwatch = Stopwatch()..start();
+  while (stopwatch.elapsed < timeout) {
+    final id = OneSignal.User.pushSubscription.id;
+    if (id != null && id.isNotEmpty) {
+      oneSignalPlayerIdNotifier.value = id;
+      debugPrint("Player ID obtained after ${stopwatch.elapsedMilliseconds}ms: $id");
+      return;
+    }
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
+  debugPrint("Player ID not available within $timeout – continuing without it");
 }
 
 void _handleCallData(Map<String, dynamic>? data) {
@@ -113,33 +136,44 @@ void _navigateToVideoCall(BuildContext context, Map<String, dynamic> data) {
   );
 }
 
-
 class MyApp extends StatelessWidget {
-  // Create notifiers (they will be stable as the widget is built once)
-  final ValueNotifier<String> searchNotifier = ValueNotifier('');
-  final ValueNotifier<Address?> addressNotifier = ValueNotifier(null);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Create notifiers (stable because MyApp is built once)
+    final searchNotifier = ValueNotifier<String>('');
+    final addressNotifier = ValueNotifier<Address?>(null);
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: searchNotifier),
         ChangeNotifierProvider.value(value: addressNotifier),
+        ChangeNotifierProvider.value(value: oneSignalPlayerIdNotifier),
       ],
       child: BlocProvider(
         create: (context) => di.sl<LanguageBloc>(),
         child: BlocBuilder<LanguageBloc, LanguageState>(
           builder: (context, state) {
-            return MaterialApp(
-              scaffoldMessengerKey: scaffoldMessengerKey,
-              title: AppTranslations.get('app_name'),
-              theme: ThemeData(
-                primarySwatch: Colors.blue,
-                fontFamily: 'Poppins',
+            // Wrap MaterialApp with UpgradeAlert to show update prompt
+            return UpgradeAlert(
+              showIgnore: false,
+              showLater: true,
+              upgrader: Upgrader(
+                debugLogging: true,
+                durationUntilAlertAgain: const Duration(days: 1),
               ),
-              navigatorKey: navigatorKey,
-              home: const SplashPage(),
-              debugShowCheckedModeBanner: false,
+              child: MaterialApp(
+                scaffoldMessengerKey: scaffoldMessengerKey,
+                title: AppTranslations.get('MEDRAYDER'),
+                theme: ThemeData(
+                  primarySwatch: Colors.blue,
+                  fontFamily: 'Poppins',
+                ),
+                navigatorKey: navigatorKey,
+                home: const SplashPage(),
+                debugShowCheckedModeBanner: false,
+              ),
             );
           },
         ),

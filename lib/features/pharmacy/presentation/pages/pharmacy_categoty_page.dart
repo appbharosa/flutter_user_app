@@ -11,8 +11,7 @@ import '../../../../domain/entities/pharmacy_category.dart';
 import '../../../../domain/entities/pharmacy_product.dart';
 import '../bloc/pharmacy_state.dart';
 import '../pharmacy_category_bloc/pharmacy_category_event.dart';
-
-
+import 'dart:async';
 
 class PharmacyCategoryPage extends StatefulWidget {
   final ValueNotifier<String> searchNotifier;
@@ -34,15 +33,36 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
   bool _showAllCategories = false;
   List<PharmacyCategory> _allCategories = [];
   String _searchQuery = "";
+  int _currentImageIndex = 0;
+  late Timer _autoScrollTimer;
+  final List<String> _promoImages = [
+    'assets/med_offer.png',
+    'assets/scooter.png',
+  ];
 
   @override
   void initState() {
     super.initState();
     _bloc = di.sl<PharmacyCategoryBloc>();
     _bloc.add(LoadPharmacyCategories());
+
+    // Start auto‑scrolling timer (every 3 seconds)
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentImageIndex = (_currentImageIndex + 1) % _promoImages.length;
+        });
+      }
+    });
   }
 
-  // Filter categories by name (case-insensitive)
+  @override
+  void dispose() {
+    _autoScrollTimer.cancel();
+    super.dispose();
+  }
+
+  // Filter categories by name (case‑insensitive)
   List<PharmacyCategory> get _filteredCategories {
     if (_searchQuery.isEmpty) return _allCategories;
     return _allCategories.where((cat) =>
@@ -86,7 +106,7 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
                     onChanged: (value) {
                       setState(() {
                         _searchQuery = value;
-                        _showAllCategories = false; // Reset "View All" when searching
+                        _showAllCategories = false;
                       });
                     },
                     decoration: const InputDecoration(
@@ -98,7 +118,10 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Categories Grid (dynamic) - persists after load
+                _buildAutoScrollImages(),
+                const SizedBox(height: 20),
+
+                // Categories Grid
                 BlocBuilder<PharmacyCategoryBloc, PharmacyCategoryState>(
                   builder: (context, state) {
                     if (state is PharmacyCategoriesLoaded) {
@@ -108,11 +131,9 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
                     if (state is PharmacyCategoryError) {
                       return Center(child: Text(state.message));
                     }
-                    // Show loading only on first load
                     if (_allCategories.isEmpty && state is PharmacyLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    // If categories already loaded, show them even during product loading
                     if (_allCategories.isNotEmpty) {
                       return _buildCategoriesGrid();
                     }
@@ -121,7 +142,7 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Offer Banner (static)
+                // Offer Banner
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -150,14 +171,14 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // Popular Medicines Heading (static)
+                // Popular Medicines Heading
                 const Text(
                   "Popular Medicines",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
 
-                // Products List (dynamic)
+                // Products List
                 BlocBuilder<PharmacyCategoryBloc, PharmacyCategoryState>(
                   builder: (context, state) {
                     if (state is PharmacyProductsLoaded) {
@@ -180,7 +201,7 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
                 ),
                 const SizedBox(height: 30),
 
-                // Footer Icons (static)
+                // Footer Icons
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -205,13 +226,44 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
     );
   }
 
+  Widget _buildAutoScrollImages() {
+    return SizedBox(
+      height: 180, // Adjust height as needed
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 600),
+          transitionBuilder: (child, animation) {
+            final offset = Tween<Offset>(
+              begin: const Offset(0, 1.0),  // start from bottom
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut));
+            return SlideTransition(position: offset, child: child);
+          },
+          child: Image.asset(
+            _promoImages[_currentImageIndex],
+            key: ValueKey<int>(_currentImageIndex),
+            height: double.infinity,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              color: Colors.grey.shade200,
+              child: const Center(
+                child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCategoriesGrid() {
     final filtered = _filteredCategories;
     if (filtered.isEmpty) {
       return const Center(child: Text("No categories match your search"));
     }
 
-    // Determine which categories to display
     List<PharmacyCategory> displayCategories;
     if (_showAllCategories) {
       displayCategories = filtered;
@@ -240,7 +292,6 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
               ? displayCategories.length
               : (displayCategories.length + (filtered.length > 6 ? 1 : 0)),
           itemBuilder: (context, index) {
-            // "View All" tile
             if (!_showAllCategories && index == displayCategories.length && filtered.length > 6) {
               return _buildViewAllTile();
             }
@@ -341,7 +392,6 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
       ),
       child: Row(
         children: [
-          // Product Image
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: CachedNetworkImage(
@@ -364,8 +414,6 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
             ),
           ),
           const SizedBox(width: 14),
-
-          // Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,8 +457,6 @@ class _PharmacyCategoryPageState extends State<PharmacyCategoryPage> {
               ],
             ),
           ),
-
-          // Add Button
           ElevatedButton(
             onPressed: () {
               // TODO: Add to cart or product detail

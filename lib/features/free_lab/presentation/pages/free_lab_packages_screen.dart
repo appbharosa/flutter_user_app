@@ -51,9 +51,9 @@ class _FreeLabPackagesScreenState extends State<FreeLabPackagesScreen> {
         backgroundColor: AppColors.whiteColor,
         appBar: AppBar(
           title: Text(
-            widget.packageId == 14 ? 'Medrayder Tests' : 'Free Lab Package',
+            widget.packageId == 14 ? 'Medrayder Tests' : 'Lab Package',
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               fontFamily: 'Poppins',
               color: AppColors.whiteColor,

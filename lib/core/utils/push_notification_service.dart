@@ -1,9 +1,8 @@
-// lib/core/services/push_notification_service.dart
 import 'package:flutter/material.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import '../../features/notifications/presentation/pages/notification_list_screen.dart';
 import '../../features/video_call_screen.dart';
-import '../utils/navigation.dart'; // your navigatorKey
+import '../utils/navigation.dart';
 
 class PushNotificationService {
   static final GlobalKey<NavigatorState> _navigatorKey = navigatorKey;
@@ -15,7 +14,7 @@ class PushNotificationService {
   }
 
   static Future<void> _initOneSignal() async {
-    const String appId = "cebaa375-de95-4fb8-9403-71089f304ffe";
+    const String appId = "c1fa84ce-ef13-43a6-829c-61143b9f113c";
 
     await OneSignal.initialize(appId);
     await OneSignal.Notifications.requestPermission(true);

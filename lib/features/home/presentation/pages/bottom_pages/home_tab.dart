@@ -63,11 +63,11 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   final List<Map<String, dynamic>> _quickActions = [
     {"svgPath": "assets/online-doctor.svg", "title": "Online\nDoctor","screen": "online_doctor"},
     {"svgPath": "assets/blood-test.svg", "title": "Book Lab\nTest", "screen": "med_tests"},
-    {"svgPath": "assets/pharmacy.svg", "title": "Order\nMedicine","screen": "order_pharmacy"},
-    {"svgPath": "assets/drugs.svg", "title": "find\nMedicine","screen": "pharmacy"},
+    {"svgPath": "assets/drugs.svg", "title": "Order\nMedicine","screen": "order_pharmacy"},
     {"svgPath": "assets/hospital.svg", "title": "Find\nHospitals", "screen": "hospitals"},
     {"svgPath": "assets/observation.svg", "title": "Find Labs", "screen": "lab_tests"},
     {"svgPath": "assets/ct-scan.svg", "title": "Find\nDiagnostics", "screen": "diagnostics"},
+    {"svgPath": "assets/pharmacy.svg", "title": "find\n Pharmacy","screen": "pharmacy"},
   ];
 
   @override
@@ -219,18 +219,6 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           ),
         );
         break;
-
-      case 'pharmacy':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PharmacyTab(
-              searchNotifier: widget.searchNotifier,
-              addressNotifier: widget.addressNotifier,
-            ),
-          ),
-        );
-        break;
       case 'hospitals':
         Navigator.push(
           context,
@@ -259,6 +247,18 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
           context,
           MaterialPageRoute(
             builder: (_) => DiagnosticsTab(
+              searchNotifier: widget.searchNotifier,
+              addressNotifier: widget.addressNotifier,
+            ),
+          ),
+        );
+        break;
+
+      case 'pharmacy':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PharmacyTab(
               searchNotifier: widget.searchNotifier,
               addressNotifier: widget.addressNotifier,
             ),
