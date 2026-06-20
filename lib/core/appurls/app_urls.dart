@@ -82,6 +82,7 @@ class AppUrls{
   static const String freeLabSubCategory = "get-package-by-cat-id";
   static const String medRayDerPharmacy ="med-pharmacy-category-list";
   static const String medRayDerPharmacyCategory ="med-pharmacy-list";
+  static const String userFcmToken="register-token";
 
   static const String banners = "banners";
   static const String disconnectCall = "disconnect-call";

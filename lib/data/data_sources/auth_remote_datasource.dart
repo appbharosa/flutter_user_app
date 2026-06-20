@@ -12,6 +12,7 @@ abstract class AuthRemoteDataSource {
   Future<LoginResponseModel> sendOtp(String phoneNumber);
   Future<OtpResponseModel> verifyOtp(int userId, String otp);
   Future<UserRegisterModel> registerUser(Map<String, dynamic> userData);
+  Future<void> registerFcmToken(String token, String deviceType);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -97,6 +98,26 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         rethrow;
       }
       throw ServerException(e.toString(),);
+    }
+  }
+
+  @override
+  Future<void> registerFcmToken(String token, String deviceType) async {
+    try {
+      final response = await dioClient.dio.post(
+        AppUrls.userFcmToken, // "register-token"
+        data: {
+          'device_token': token,
+          'device_type': deviceType,
+        },
+      );
+      // Optionally log success
+      debugPrint('✅ FCM token registered for user');
+    } on DioException catch (e) {
+      // Non‑critical – just log
+      debugPrint('❌ FCM token registration error: $e');
+    } catch (e) {
+      debugPrint('❌ FCM token registration error: $e');
     }
   }
 

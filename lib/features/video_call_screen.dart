@@ -7,7 +7,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/appurls/app_urls.dart';
-
+import '../main.dart';
 
 
 class VideoCallScreen extends StatefulWidget {
@@ -47,20 +47,20 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   Timer? _timer;
   int _callDurationSeconds = 0;
   late Stopwatch _stopwatch;
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
     _stopwatch = Stopwatch();
     _checkPermissionsAndSetup();
+    WakelockPlus.enable();
   }
 
   Future<void> _checkPermissionsAndSetup() async {
     Map<Permission, PermissionStatus> statuses = await [
       Permission.camera,
       Permission.microphone,
-      if (await Permission.bluetoothConnect.isRestricted) Permission.bluetoothConnect,
-      if (await Permission.bluetoothScan.isRestricted) Permission.bluetoothScan,
     ].request();
 
     bool allGranted = statuses[Permission.camera]!.isGranted &&
@@ -68,6 +68,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     if (allGranted) {
       setState(() => _permissionsGranted = true);
       _registerCallbacks();
+      if (_isIncomingCall) {
+        ringtonePlayer.stop();
+      }
     } else {
       _showErrorAndClose('Camera and microphone permissions are required.');
     }
@@ -84,9 +87,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     EnxRtc.onSubscribedStream = _onSubscribedStream;
     EnxRtc.onAudioEvent = _onAudioEvent;
     EnxRtc.onVideoEvent = _onVideoEvent;
-    EnxRtc.onReconnect = _onReconnect;
-    EnxRtc.onUserReconnectSuccess = _onUserReconnectSuccess;
   }
+
 
   void _onRoomConnected(Map<dynamic, dynamic> map) {
     setState(() {
@@ -95,6 +97,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     });
     WakelockPlus.enable();
     EnxRtc.publish();
+  //  EnxRtc.setSpeakerphoneOn(true); // ✅ enable speaker
     _stopwatch.start();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
@@ -106,35 +109,42 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   void _onRoomError(Map<dynamic, dynamic> map) {
+    if (_isDisposed) return;
     _showErrorAndClose(map['msg'] ?? 'Room error');
   }
 
   void _onRoomDisconnected(Map<dynamic, dynamic> map) {
+    if (_isDisposed) return;
     _cleanupAndExit();
   }
 
   void _onUserConnected(Map<dynamic, dynamic> map) {}
   void _onUserDisconnected(Map<dynamic, dynamic> map) {
+    if (_isDisposed) return;
     if (_isCallActive) _endCall();
   }
 
   void _onPublishedStream(Map<dynamic, dynamic> map) {
+    if (_isDisposed) return;
     setState(() {
       _localStreamId = map['streamId'].toString();
     });
   }
 
   void _onStreamAdded(Map<dynamic, dynamic> map) {
+    if (_isDisposed) return;
     EnxRtc.subscribe(map as String);
   }
 
   void _onSubscribedStream(Map<dynamic, dynamic> map) {
+    if (_isDisposed) return;
     setState(() {
       _remoteStreamId = map['streamId'].toString();
     });
   }
 
   void _onAudioEvent(Map<dynamic, dynamic> event) {
+    if (_isDisposed) return;
     final String? message = event['msg'];
     setState(() {
       _isAudioMuted = (message == 'Audio Off');
@@ -142,21 +152,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   void _onVideoEvent(Map<dynamic, dynamic> event) {
+    if (_isDisposed) return;
     final String? message = event['msg'];
     setState(() {
       _isVideoMuted = (message == 'Video Off');
     });
   }
 
-  void _onReconnect(String message) {
-    debugPrint("Reconnect: $message");
-  }
-
-  void _onUserReconnectSuccess(Map<dynamic, dynamic> map) {
-    debugPrint("Reconnect success: $map");
-  }
-
   void _acceptCall() async {
+    if (_isDisposed) return;
     setState(() {
       _isIncomingCall = false;
       _isConnecting = true;
@@ -165,11 +169,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   void _rejectCall() {
+    if (_isDisposed) return;
     _sendDisconnectNotification("reject_call");
     _cleanupAndExit();
   }
 
   Future<void> _joinRoom() async {
+    if (_isDisposed) return;
     final localInfo = {
       'audio': true,
       'video': true,
@@ -194,30 +200,32 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     try {
       await EnxRtc.joinRoom(widget.token, localInfo, roomInfo, advanceOptions);
     } catch (e) {
-      _showErrorAndClose("Failed to join room: $e");
+      if (mounted && !_isDisposed) {
+        _showErrorAndClose("Failed to join room: $e");
+      }
     }
   }
 
   void _toggleMute() {
-    if (_localStreamId != null) {
-      EnxRtc.muteSelfAudio(!_isAudioMuted);
-    }
+    if (_isDisposed || _localStreamId == null) return;
+    EnxRtc.muteSelfAudio(!_isAudioMuted);
+    setState(() => _isAudioMuted = !_isAudioMuted);
   }
 
   void _toggleVideo() {
-    if (_localStreamId != null) {
-      EnxRtc.muteSelfVideo(!_isVideoMuted);
-    }
+    if (_isDisposed || _localStreamId == null) return;
+    EnxRtc.muteSelfVideo(!_isVideoMuted);
+    setState(() => _isVideoMuted = !_isVideoMuted);
   }
 
   void _switchCamera() {
-    if (_localStreamId != null) {
-      EnxRtc.switchCamera();
-      setState(() => _isFrontCamera = !_isFrontCamera);
-    }
+    if (_isDisposed || _localStreamId == null) return;
+    EnxRtc.switchCamera();
+    setState(() => _isFrontCamera = !_isFrontCamera);
   }
 
   void _endCall() {
+    if (_isDisposed) return;
     _sendDisconnectNotification("hang_up");
     EnxRtc.disconnect();
     _cleanupAndExit();
@@ -244,13 +252,18 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   void _cleanupAndExit() {
+    if (_isDisposed) return;
+    _isDisposed = true;
     _timer?.cancel();
     _stopwatch.stop();
     WakelockPlus.disable();
+    ringtonePlayer.stop();
     if (mounted) Navigator.pop(context);
   }
 
   void _showErrorAndClose(String message) {
+    if (_isDisposed) return;
+    _isDisposed = true;
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -273,187 +286,196 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Remote video (full-screen)
-          if (_isCallActive && _remoteStreamId != null)
-            Positioned.fill(
-              child: EnxPlayerWidget(int.parse(_remoteStreamId!), local: false),
-            ),
+    return WillPopScope(
+      onWillPop: () async {
+        if (_isCallActive) {
+          _endCall();
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // Remote video (full-screen)
+            if (_isCallActive && _remoteStreamId != null)
+              Positioned.fill(
+                child: EnxPlayerWidget(int.parse(_remoteStreamId!), local: false),
+              ),
 
-          // Local preview (top-right) – matches Android 140x200
-          if (_isCallActive && _localStreamId != null)
-            Positioned(
-              top: 40,
-              right: 16,
-              child: Container(
-                width: 140,
-                height: 200,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white, width: 2),
-                  color: Colors.black,
-                ),
-                child: EnxPlayerWidget(
-                  int.parse(_localStreamId!),
-                  local: true,
+            // Local preview (top-right)
+            if (_isCallActive && _localStreamId != null)
+              Positioned(
+                top: 40,
+                right: 16,
+                child: Container(
                   width: 140,
                   height: 200,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white, width: 2),
+                    color: Colors.black,
+                  ),
+                  child: EnxPlayerWidget(
+                    int.parse(_localStreamId!),
+                    local: true,
+                    width: 140,
+                    height: 200,
+                  ),
                 ),
               ),
-            ),
 
-          // Top-left info (name + timer) – when call active
-          if (_isCallActive)
-            Positioned(
-              top: 40,
-              left: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatDuration(_callDurationSeconds),
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-
-          // Incoming call UI (centered)
-          if (_isIncomingCall)
-            Container(
-              color: Colors.black87,
-              child: Center(
+            // Top-left info (name + timer)
+            if (_isCallActive)
+              Positioned(
+                top: 40,
+                left: 16,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Placeholder profile image (like Android's ImageView)
-                    Container(
-                      width: 130,
-                      height: 130,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey[800],
-                        image: const DecorationImage(
-                          image: AssetImage('assets/default_avatar.png'),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: const Icon(Icons.person, size: 80, color: Colors.white),
-                    ),
-                    const SizedBox(height: 16),
                     Text(
                       widget.name,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Incoming Call...',
-                      style: TextStyle(color: Colors.white70, fontSize: 16),
-                    ),
-                    const SizedBox(height: 40),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        // Decline button
-                        Column(
-                          children: [
-                            FloatingActionButton(
-                              heroTag: "decline",
-                              backgroundColor: Colors.red,
-                              onPressed: _rejectCall,
-                              child: const Icon(Icons.call_end, size: 30),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text('Decline', style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                        // Accept button
-                        Column(
-                          children: [
-                            FloatingActionButton(
-                              heroTag: "accept",
-                              backgroundColor: Colors.green,
-                              onPressed: _acceptCall,
-                              child: const Icon(Icons.call, size: 30),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text('Accept', style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      ],
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatDuration(_callDurationSeconds),
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
                     ),
                   ],
                 ),
               ),
-            ),
 
-          // Connecting indicator
-          if (_isConnecting && !_isCallActive)
-            const Center(child: CircularProgressIndicator()),
-
-          // Bottom control bar (when call active)
-          if (_isCallActive)
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    IconButton(
-                      icon: Icon(_isAudioMuted ? Icons.mic_off : Icons.mic),
-                      color: Colors.white,
-                      onPressed: _toggleMute,
-                    ),
-                    IconButton(
-                      icon: Icon(_isVideoMuted ? Icons.videocam_off : Icons.videocam),
-                      color: Colors.white,
-                      onPressed: _toggleVideo,
-                    ),
-                    IconButton(
-                      icon: Icon(_isFrontCamera ? Icons.camera_front : Icons.camera_rear),
-                      color: Colors.white,
-                      onPressed: _switchCamera,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.call_end),
-                      color: Colors.red,
-                      onPressed: _endCall,
-                    ),
-                  ],
+            // Incoming call UI (centered)
+            if (_isIncomingCall)
+              Container(
+                color: Colors.black87,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 130,
+                        height: 130,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[800],
+                          image: const DecorationImage(
+                            image: AssetImage('assets/default_avatar.png'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        child: const Icon(Icons.person, size: 80, color: Colors.white),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        widget.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Incoming Call...',
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                      ),
+                      const SizedBox(height: 40),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            children: [
+                              FloatingActionButton(
+                                heroTag: "decline",
+                                backgroundColor: Colors.red,
+                                onPressed: _rejectCall,
+                                child: const Icon(Icons.call_end, size: 30),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text('Decline', style: TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              FloatingActionButton(
+                                heroTag: "accept",
+                                backgroundColor: Colors.green,
+                                onPressed: _acceptCall,
+                                child: const Icon(Icons.call, size: 30),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text('Accept', style: TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-        ],
+
+            // Connecting indicator
+            if (_isConnecting && !_isCallActive)
+              const Center(child: CircularProgressIndicator()),
+
+            // Bottom control bar (when call active)
+            if (_isCallActive)
+              Positioned(
+                bottom: 20,
+                left: 20,
+                right: 20,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        icon: Icon(_isAudioMuted ? Icons.mic_off : Icons.mic),
+                        color: Colors.white,
+                        onPressed: _toggleMute,
+                      ),
+                      IconButton(
+                        icon: Icon(_isVideoMuted ? Icons.videocam_off : Icons.videocam),
+                        color: Colors.white,
+                        onPressed: _toggleVideo,
+                      ),
+                      IconButton(
+                        icon: Icon(_isFrontCamera ? Icons.camera_front : Icons.camera_rear),
+                        color: Colors.white,
+                        onPressed: _switchCamera,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.call_end),
+                        color: Colors.red,
+                        onPressed: _endCall,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _timer?.cancel();
     EnxRtc.disconnect();
+    WakelockPlus.disable();
+    ringtonePlayer.stop();
     super.dispose();
   }
 }

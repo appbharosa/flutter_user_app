@@ -90,7 +90,7 @@ packages:
     source: hosted
     version: "0.2.3"
   audioplayers:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: audioplayers
       sha256: f16640453cc47487b7de72a2b28d37c7df1ac97999849f4a46d92b1d2b0f093d

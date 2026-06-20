@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:dartz/dartz.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:user/domain/entities/login_response.dart';
 import 'package:user/domain/entities/otp_response.dart';
@@ -42,6 +46,19 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  Future<void> _registerFcmToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null && token.isNotEmpty) {
+        final deviceType = Platform.isAndroid ? 'android' : 'ios';
+        await remoteDataSource.registerFcmToken(token, deviceType);
+      }
+    } catch (e) {
+      // Non‑critical – just log
+      debugPrint('❌ FCM token registration failed: $e');
+    }
+  }
+
 
   @override
   Future<Either<Failure, OtpResponse>> verifyOtp(int userId, String otp) async {
@@ -54,6 +71,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // ✅ Save user data using UserManager
       await UserManager.saveUser(userProfileModel);
+      await _registerFcmToken();
 
       return Right(userProfileModel);
     } on ServerException catch (e) {
@@ -95,7 +113,7 @@ class AuthRepositoryImpl implements AuthRepository {
         name: userModel.name,
         email: userModel.email,
       );
-
+      await _registerFcmToken();
       return Right(userModel);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

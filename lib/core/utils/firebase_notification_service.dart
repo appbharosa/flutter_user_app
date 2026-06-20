@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../main.dart';
 import 'pending_call.dart';
-import 'navigation.dart';
+import 'navigation.dart' hide navigatorKey;
 import '../../features/video_call_screen.dart';
 
 // class FirebaseNotificationService {
@@ -163,9 +165,18 @@ import '../../features/video_call_screen.dart';
 // }
 
 
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:audioplayers/audioplayers.dart';
+
 class FirebaseNotificationService {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+
+  // Global ringtone player (assumes declared in main.dart)
+  static final AudioPlayer _ringtonePlayer = AudioPlayer();
 
   static Future<void> initialize() async {
     try {
@@ -181,18 +192,15 @@ class FirebaseNotificationService {
         return;
       }
 
-      // Initialize local notifications (FIXED)
+      // Initialize local notifications
       await _initLocalNotifications();
 
-      // Get FCM token – this will wait for APNS token on iOS (with internal timeout)
-      // Wrap in try-catch to prevent crash on simulator or early launch
-      String? token;
+      // Get FCM token
       try {
-        token = await _firebaseMessaging.getToken();
+        String? token = await _firebaseMessaging.getToken();
         debugPrint('Firebase FCM Token: $token');
       } catch (e) {
         debugPrint('Could not get FCM token (simulator or no APNS): $e');
-        // Continue anyway – the app should not crash
       }
 
       // Listen to foreground messages
@@ -208,7 +216,6 @@ class FirebaseNotificationService {
       }
     } catch (e) {
       debugPrint('FirebaseNotificationService initialization failed: $e');
-      // Do not rethrow – app continues
     }
   }
 
@@ -244,10 +251,10 @@ class FirebaseNotificationService {
 
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
     debugPrint('Foreground message received: ${message.data}');
+    // Show local notification
     await _showLocalNotification(message);
-    if (message.data['call_type'] == 'video') {
-      _handleCallData(message.data);
-    }
+    // Always handle the call data
+    _handleCallData(message.data);
   }
 
   static Future<void> _handleMessageOpenedApp(RemoteMessage message) async {
@@ -272,7 +279,6 @@ class FirebaseNotificationService {
       );
       String payloadJson = jsonEncode(message.data);
 
-      //  CORRECT: Use named parameters
       await _localNotifications.show(
         id: notificationId,
         title: message.notification?.title ?? 'MedRayder',
@@ -286,24 +292,60 @@ class FirebaseNotificationService {
   }
 
   static void _handleCallData(Map<String, dynamic>? data) {
-    if (data == null) return;
-    if (data['call_type'] == 'video') {
+    if (data == null) {
+      debugPrint('⚠️ No data in FCM message');
+      return;
+    }
+
+    debugPrint('🔍 Handling call data: $data');
+
+    // Check for both 'call_type' and 'type' fields
+    final callType = data['call_type'] ?? data['type'];
+    if (callType == 'video' || callType == 'incoming_call') {
+      // ✅ Play ringtone
+      _ringtonePlayer.stop();
+      _ringtonePlayer.play(
+        AssetSource('ringtone.mp3'),
+        mode: PlayerMode.mediaPlayer,
+
+      );
+
+      // ✅ Extract token – try 'token' first, then 'patient_token'
+      final String? token = data['token'] ?? data['patient_token'];
+      if (token == null || token.isEmpty) {
+        debugPrint('⚠️ Token is missing in the payload – patient cannot join!');
+      }
+
       pendingCallData = data;
       final context = navigatorKey.currentContext;
       if (context != null) {
-        _navigateToVideoCall(context, data);
+        _navigateToVideoCall(context, data, token); // pass token separately
         pendingCallData = null;
+      } else {
+        debugPrint('⏳ Waiting for navigator context...');
+        Future.delayed(const Duration(milliseconds: 500), () {
+          final ctx = navigatorKey.currentContext;
+          if (ctx != null && pendingCallData != null) {
+            final String? delayedToken = pendingCallData!['token'] ?? pendingCallData!['patient_token'];
+            _navigateToVideoCall(ctx, pendingCallData!, delayedToken);
+            pendingCallData = null;
+          }
+        });
       }
+    } else {
+      debugPrint('ℹ️ Not a video call: $callType');
     }
   }
 
-  static void _navigateToVideoCall(BuildContext context, Map<String, dynamic> data) {
+  static void _navigateToVideoCall(BuildContext context, Map<String, dynamic> data, String? token) {
+    // Use the token extracted, or fallback to data['token'] / data['patient_token']
+    final String callToken = token ?? data['token'] ?? data['patient_token'] ?? '';
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => VideoCallScreen(
-          token: data['token'] ?? '',
-          name: data['name'] ?? 'Doctor',
+          token: callToken,
+          name: data['name'] ?? data['doctor_name'] ?? 'Doctor',
           doctorId: data['doctor_id']?.toString() ?? '',
           playerId: data['player_id']?.toString() ?? '',
           familyMemberId: data['family_member_id']?.toString() ?? '',
@@ -312,6 +354,10 @@ class FirebaseNotificationService {
         ),
       ),
     );
+  }
+  // Stop the ringtone when call is accepted or rejected
+  static void stopRingtone() {
+    _ringtonePlayer.stop();
   }
 
   static Future<void> subscribeToTopic(String topic) async {
