@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import android.app.Notification
 
 class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,14 +19,18 @@ class MainActivity : FlutterActivity() {
             val channel = NotificationChannel(
                 "video_call_channel",
                 "Video Calls",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            channel.description = "Notifications for incoming video calls"
-            channel.enableVibration(true)
-            channel.setSound(null, null) // use default sound
-
+                NotificationManager.IMPORTANCE_MAX
+            ).apply {
+                description = "Incoming video call notifications"
+                enableVibration(true)
+                setSound(null, null) // default sound
+                // This will allow the notification to appear on the lock screen
+                setShowBadge(true)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
     }
+
 }

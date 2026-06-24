@@ -16,49 +16,46 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>user</string>
-	<key>CFBundleURLTypes</key>
-    <array>
-      <dict>
-      <key>CFBundleURLSchemes</key>
-      <array>
-        <string>fb1290102726623993</string>
-      </array>
-      </dict>
-    </array>
-    <key>FacebookAppID</key>
-    <string>1290102726623993</string>
-    <key>FacebookDisplayName</key>
-    <string>Flutter Medrayder</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fb1290102726623993</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
+	<key>FacebookAppID</key>
+	<string>1290102726623993</string>
+	<key>FacebookDisplayName</key>
+	<string>Flutter Medrayder</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
+	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>MedRayder needs camera access to enable video consultations with doctors and for profile photo uploads.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app needs your location to fetch your current address for delivery.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs your location to fetch your current address for delivery.</string>
-
-	<!-- Privacy purpose strings required by Apple -->
-	<key>NSCameraUsageDescription</key>
-	<string>MedRayder needs camera access to enable video consultations with doctors and for profile photo uploads.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>MedRayder needs microphone access for audio during video consultations with doctors.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>MedRayder needs photo library access to upload reports and profile pictures.</string>
-
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -85,6 +82,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>fetch</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

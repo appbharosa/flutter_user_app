@@ -47,19 +47,11 @@ class AuthInterceptor extends Interceptor {
     handler.next(options);
   }
 
-  // @override
-  // void onError(DioException err, ErrorInterceptorHandler handler) {
-  //   if (err.response?.statusCode == 401) {
-  //     _handleLogout();
-  //   }
-  //   handler.next(err);
-  // }
-
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
       await _handleLogout();
-      // Return a dummy response so the error doesn't propagate
+      // Dummy response to prevent error propagation
       return handler.resolve(Response(
         requestOptions: err.requestOptions,
         statusCode: 200,
@@ -70,18 +62,23 @@ class AuthInterceptor extends Interceptor {
   }
 
   Future<void> _handleLogout() async {
-    // Clear stored session
-    await secureStorage.delete(key: 'access_token');
-    await secureStorage.delete(key: 'user_data');
-    await secureStorage.delete(key: 'user_registration_data');
+    await secureStorage.deleteAll();
 
-    // Navigate to login and clear the whole stack
-    if (navigatorKey.currentContext != null) {
-      navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-            (route) => false,
-      );
+    // Retry up to 5 times, waiting 200ms between attempts
+    for (int attempt = 0; attempt < 5; attempt++) {
+      if (navigatorKey.currentContext != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+          );
+        });
+        return; // Success
+      }
+      await Future.delayed(const Duration(milliseconds: 200));
     }
+    // Still null after retries – log a warning
+    print('❌ Could not navigate to Login – navigatorKey.context still null after 5 attempts');
   }
 }
 

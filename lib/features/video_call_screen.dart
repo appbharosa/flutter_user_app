@@ -8,7 +8,7 @@ import '../../../../core/di/injection.dart' as di;
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/appurls/app_urls.dart';
 import '../main.dart';
-
+import 'package:audioplayers/audioplayers.dart';
 
 class VideoCallScreen extends StatefulWidget {
   final String token;
@@ -49,6 +49,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   late Stopwatch _stopwatch;
   bool _isDisposed = false;
 
+  // Reference to the ringtone player (defined globally in main.dart)
+  final AudioPlayer _ringtonePlayer = ringtonePlayer;
+
+  bool _isEnding = false;
+
   @override
   void initState() {
     super.initState();
@@ -58,19 +63,18 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   Future<void> _checkPermissionsAndSetup() async {
-    Map<Permission, PermissionStatus> statuses = await [
+    final statuses = await [
       Permission.camera,
       Permission.microphone,
     ].request();
 
-    bool allGranted = statuses[Permission.camera]!.isGranted &&
+    final allGranted = statuses[Permission.camera]!.isGranted &&
         statuses[Permission.microphone]!.isGranted;
     if (allGranted) {
       setState(() => _permissionsGranted = true);
       _registerCallbacks();
-      if (_isIncomingCall) {
-        ringtonePlayer.stop();
-      }
+      // Stop ringtone if already playing
+      _ringtonePlayer.stop();
     } else {
       _showErrorAndClose('Camera and microphone permissions are required.');
     }
@@ -89,18 +93,17 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     EnxRtc.onVideoEvent = _onVideoEvent;
   }
 
-
   void _onRoomConnected(Map<dynamic, dynamic> map) {
+    if (_isDisposed) return;
     setState(() {
       _isCallActive = true;
       _isConnecting = false;
     });
     WakelockPlus.enable();
     EnxRtc.publish();
-  //  EnxRtc.setSpeakerphoneOn(true); // ✅ enable speaker
     _stopwatch.start();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && !_isDisposed) {
         setState(() {
           _callDurationSeconds = _stopwatch.elapsed.inSeconds;
         });
@@ -126,26 +129,36 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void _onPublishedStream(Map<dynamic, dynamic> map) {
     if (_isDisposed) return;
-    setState(() {
-      _localStreamId = map['streamId'].toString();
-    });
+    final streamId = map['streamId']?.toString();
+    if (streamId != null) {
+      setState(() => _localStreamId = streamId);
+    }
   }
 
+  // ✅ FIX: Extract streamId from the map before subscribing
   void _onStreamAdded(Map<dynamic, dynamic> map) {
     if (_isDisposed) return;
-    EnxRtc.subscribe(map as String);
+    final streamId = map['streamId']?.toString();
+    if (streamId != null) {
+      debugPrint('📥 Stream added: $streamId');
+      EnxRtc.subscribe(streamId); // ✅ Pass String, not Map
+    } else {
+      debugPrint('⚠️ No streamId in map: $map');
+    }
   }
 
   void _onSubscribedStream(Map<dynamic, dynamic> map) {
     if (_isDisposed) return;
-    setState(() {
-      _remoteStreamId = map['streamId'].toString();
-    });
+    final streamId = map['streamId']?.toString();
+    if (streamId != null) {
+      debugPrint('✅ Subscribed to stream: $streamId');
+      setState(() => _remoteStreamId = streamId);
+    }
   }
 
   void _onAudioEvent(Map<dynamic, dynamic> event) {
     if (_isDisposed) return;
-    final String? message = event['msg'];
+    final message = event['msg']?.toString();
     setState(() {
       _isAudioMuted = (message == 'Audio Off');
     });
@@ -153,7 +166,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void _onVideoEvent(Map<dynamic, dynamic> event) {
     if (_isDisposed) return;
-    final String? message = event['msg'];
+    final message = event['msg']?.toString();
     setState(() {
       _isVideoMuted = (message == 'Video Off');
     });
@@ -195,10 +208,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       'number_of_attempts': 3,
       'timeout_interval': 15,
     };
-    final advanceOptions = [];
-
     try {
-      await EnxRtc.joinRoom(widget.token, localInfo, roomInfo, advanceOptions);
+      await EnxRtc.joinRoom(widget.token, localInfo, roomInfo, []);
     } catch (e) {
       if (mounted && !_isDisposed) {
         _showErrorAndClose("Failed to join room: $e");
@@ -208,14 +219,16 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void _toggleMute() {
     if (_isDisposed || _localStreamId == null) return;
-    EnxRtc.muteSelfAudio(!_isAudioMuted);
-    setState(() => _isAudioMuted = !_isAudioMuted);
+    final newMute = !_isAudioMuted;
+    EnxRtc.muteSelfAudio(newMute);
+    setState(() => _isAudioMuted = newMute);
   }
 
   void _toggleVideo() {
     if (_isDisposed || _localStreamId == null) return;
-    EnxRtc.muteSelfVideo(!_isVideoMuted);
-    setState(() => _isVideoMuted = !_isVideoMuted);
+    final newMute = !_isVideoMuted;
+    EnxRtc.muteSelfVideo(newMute);
+    setState(() => _isVideoMuted = newMute);
   }
 
   void _switchCamera() {
@@ -226,15 +239,17 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void _endCall() {
     if (_isDisposed) return;
+    // Send notification to backend
     _sendDisconnectNotification("hang_up");
+    // Disconnect from EnableX
     EnxRtc.disconnect();
     _cleanupAndExit();
   }
 
   Future<void> _sendDisconnectNotification(String action) async {
-    final dio = di.sl<DioClient>();
+    final dio = di.sl<DioClient>().dio;
     try {
-      await dio.dio.post(
+      await dio.post(
         AppUrls.disconnectCall,
         data: {
           'doctor_id': widget.doctorId,
@@ -246,8 +261,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
           'booking_id': widget.bookingId,
         },
       );
+      debugPrint('✅ Disconnect notification sent: $action');
     } catch (e) {
-      debugPrint("Disconnect notification error: $e");
+      debugPrint('❌ Disconnect notification error: $e');
     }
   }
 
@@ -256,8 +272,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     _isDisposed = true;
     _timer?.cancel();
     _stopwatch.stop();
+    EnxRtc.disconnect();
     WakelockPlus.disable();
-    ringtonePlayer.stop();
+    _ringtonePlayer.stop();
     if (mounted) Navigator.pop(context);
   }
 
@@ -276,8 +293,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   String _formatDuration(int seconds) {
     final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    final remaining = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remaining.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -297,13 +314,13 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            // Remote video (full-screen)
+            // Remote video (full‑screen)
             if (_isCallActive && _remoteStreamId != null)
               Positioned.fill(
                 child: EnxPlayerWidget(int.parse(_remoteStreamId!), local: false),
               ),
 
-            // Local preview (top-right)
+            // Local preview (top‑right)
             if (_isCallActive && _localStreamId != null)
               Positioned(
                 top: 40,
@@ -325,7 +342,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                 ),
               ),
 
-            // Top-left info (name + timer)
+            // Top‑left info
             if (_isCallActive)
               Positioned(
                 top: 40,
@@ -350,7 +367,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                 ),
               ),
 
-            // Incoming call UI (centered)
+            // Incoming call UI
             if (_isIncomingCall)
               Container(
                 color: Colors.black87,
@@ -361,13 +378,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                       Container(
                         width: 130,
                         height: 130,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.grey[800],
-                          image: const DecorationImage(
-                            image: AssetImage('assets/default_avatar.png'),
-                            fit: BoxFit.cover,
-                          ),
+                          color: Colors.grey,
                         ),
                         child: const Icon(Icons.person, size: 80, color: Colors.white),
                       ),
@@ -424,7 +437,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             if (_isConnecting && !_isCallActive)
               const Center(child: CircularProgressIndicator()),
 
-            // Bottom control bar (when call active)
+            // Bottom control bar
             if (_isCallActive)
               Positioned(
                 bottom: 20,
@@ -475,7 +488,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     _timer?.cancel();
     EnxRtc.disconnect();
     WakelockPlus.disable();
-    ringtonePlayer.stop();
+    _ringtonePlayer.stop();
     super.dispose();
   }
 }
