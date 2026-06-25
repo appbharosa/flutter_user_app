@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:enx_flutter_plugin/base.dart';
 import 'package:enx_flutter_plugin/enx_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:enx_flutter_plugin/enx_flutter_plugin.dart';
@@ -9,6 +10,8 @@ import '../../../../core/network/dio_client.dart';
 import '../../../../core/appurls/app_urls.dart';
 import '../main.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
+
 
 class VideoCallScreen extends StatefulWidget {
   final String token;
@@ -48,11 +51,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   int _callDurationSeconds = 0;
   late Stopwatch _stopwatch;
   bool _isDisposed = false;
-
-  // Reference to the ringtone player (defined globally in main.dart)
-  final AudioPlayer _ringtonePlayer = ringtonePlayer;
-
   bool _isEnding = false;
+
+  final AudioPlayer _ringtonePlayer = ringtonePlayer;
 
   @override
   void initState() {
@@ -73,7 +74,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     if (allGranted) {
       setState(() => _permissionsGranted = true);
       _registerCallbacks();
-      // Stop ringtone if already playing
       _ringtonePlayer.stop();
     } else {
       _showErrorAndClose('Camera and microphone permissions are required.');
@@ -91,6 +91,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     EnxRtc.onSubscribedStream = _onSubscribedStream;
     EnxRtc.onAudioEvent = _onAudioEvent;
     EnxRtc.onVideoEvent = _onVideoEvent;
+    EnxRtc.onActiveTalkerList = _onActiveTalkerList;
   }
 
   void _onRoomConnected(Map<dynamic, dynamic> map) {
@@ -135,41 +136,52 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     }
   }
 
-  // ✅ FIX: Extract streamId from the map before subscribing
   void _onStreamAdded(Map<dynamic, dynamic> map) {
     if (_isDisposed) return;
     final streamId = map['streamId']?.toString();
-    if (streamId != null) {
-      debugPrint('📥 Stream added: $streamId');
-      EnxRtc.subscribe(streamId); // ✅ Pass String, not Map
-    } else {
-      debugPrint('⚠️ No streamId in map: $map');
-    }
+    final hasVideo = map['video'] ?? true;
+    if (streamId == null || !hasVideo) return;
+    if (streamId == _localStreamId) return;
+
+    debugPrint("📥 Stream added: $streamId");
+    EnxRtc.subscribe(streamId);
   }
 
   void _onSubscribedStream(Map<dynamic, dynamic> map) {
     if (_isDisposed) return;
     final streamId = map['streamId']?.toString();
-    if (streamId != null) {
-      debugPrint('✅ Subscribed to stream: $streamId');
+    if (streamId == null) return;
+    if (streamId == _localStreamId) return;
+    if (_remoteStreamId == null) {
       setState(() => _remoteStreamId = streamId);
+    }
+  }
+
+  void _onActiveTalkerList(Map<dynamic, dynamic> map) {
+    if (_isDisposed) return;
+    final list = map['activeList'] as List?;
+    if (list == null || list.isEmpty) return;
+    for (final item in list) {
+      final streamId = item['streamId']?.toString();
+      if (streamId != null && streamId != _localStreamId) {
+        if (_remoteStreamId != streamId) {
+          setState(() => _remoteStreamId = streamId);
+        }
+        break;
+      }
     }
   }
 
   void _onAudioEvent(Map<dynamic, dynamic> event) {
     if (_isDisposed) return;
     final message = event['msg']?.toString();
-    setState(() {
-      _isAudioMuted = (message == 'Audio Off');
-    });
+    setState(() => _isAudioMuted = (message == 'Audio Off'));
   }
 
   void _onVideoEvent(Map<dynamic, dynamic> event) {
     if (_isDisposed) return;
     final message = event['msg']?.toString();
-    setState(() {
-      _isVideoMuted = (message == 'Video Off');
-    });
+    setState(() => _isVideoMuted = (message == 'Video Off'));
   }
 
   void _acceptCall() async {
@@ -238,11 +250,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   void _endCall() {
-    if (_isDisposed) return;
-    // Send notification to backend
+    if (_isEnding) return;
+    _isEnding = true;
     _sendDisconnectNotification("hang_up");
-    // Disconnect from EnableX
-    EnxRtc.disconnect();
+    try { EnxRtc.disconnect(); } catch (_) {}
     _cleanupAndExit();
   }
 
@@ -272,7 +283,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     _isDisposed = true;
     _timer?.cancel();
     _stopwatch.stop();
-    EnxRtc.disconnect();
     WakelockPlus.disable();
     _ringtonePlayer.stop();
     if (mounted) Navigator.pop(context);
@@ -300,7 +310,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_permissionsGranted) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     return WillPopScope(
@@ -312,171 +325,180 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         return true;
       },
       child: Scaffold(
-        body: Stack(
-          children: [
-            // Remote video (full‑screen)
-            if (_isCallActive && _remoteStreamId != null)
-              Positioned.fill(
-                child: EnxPlayerWidget(int.parse(_remoteStreamId!), local: false),
-              ),
-
-            // Local preview (top‑right)
-            if (_isCallActive && _localStreamId != null)
-              Positioned(
-                top: 40,
-                right: 16,
-                child: Container(
-                  width: 140,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white, width: 2),
-                    color: Colors.black,
-                  ),
+        backgroundColor: Colors.black,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          color: Colors.black,
+          child: Stack(
+            children: [
+              // ─── Remote video (full screen) ────────────────────
+              if (_remoteStreamId != null)
+                Positioned.fill(
                   child: EnxPlayerWidget(
-                    int.parse(_localStreamId!),
-                    local: true,
+                    int.parse(_remoteStreamId!),
+                    local: false,
+                    width: MediaQuery.of(context).size.width.toInt(),
+                    height: MediaQuery.of(context).size.height.toInt(),
+                    mScalingType: ScalingType.SCALE_ASPECT_FILL, // ✅ Fill full screen
+                  ),
+                )
+              else
+                const Center(
+                  child: Text(
+                    'Waiting for doctor...',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                ),
+
+              // ─── Local preview ────────────────────────────────
+              if (_isCallActive)
+                Positioned(
+                  top: 40,
+                  right: 16,
+                  child: Container(
                     width: 140,
                     height: 200,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white, width: 2),
+                      color: Colors.black,
+                    ),
+                    child: EnxPlayerWidget(
+                      0,
+                      local: true,
+                      width: 140,
+                      height: 200,
+                      mScalingType: ScalingType.SCALE_ASPECT_BALANCED,
+                    ),
                   ),
                 ),
-              ),
 
-            // Top‑left info
-            if (_isCallActive)
-              Positioned(
-                top: 40,
-                left: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatDuration(_callDurationSeconds),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-
-            // Incoming call UI
-            if (_isIncomingCall)
-              Container(
-                color: Colors.black87,
-                child: Center(
+              // ─── Top-left info ─────────────────────────────────
+              if (_isCallActive)
+                Positioned(
+                  top: 40,
+                  left: 16,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 130,
-                        height: 130,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.grey,
-                        ),
-                        child: const Icon(Icons.person, size: 80, color: Colors.white),
-                      ),
-                      const SizedBox(height: 16),
                       Text(
                         widget.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatDuration(_callDurationSeconds),
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // ─── Incoming call UI ─────────────────────────────
+              if (_isIncomingCall)
+                Container(
+                  color: Colors.black87,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 130,
+                          height: 130,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey,
+                          ),
+                          child: const Icon(Icons.person, size: 80, color: Colors.white),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Incoming Call...',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                      const SizedBox(height: 40),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Column(
-                            children: [
-                              FloatingActionButton(
-                                heroTag: "decline",
-                                backgroundColor: Colors.red,
-                                onPressed: _rejectCall,
-                                child: const Icon(Icons.call_end, size: 30),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text('Decline', style: TextStyle(color: Colors.white)),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              FloatingActionButton(
-                                heroTag: "accept",
-                                backgroundColor: Colors.green,
-                                onPressed: _acceptCall,
-                                child: const Icon(Icons.call, size: 30),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text('Accept', style: TextStyle(color: Colors.white)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Text(
+                          widget.name,
+                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Incoming Call...', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                        const SizedBox(height: 40),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Column(
+                              children: [
+                                FloatingActionButton(
+                                  heroTag: ObjectKey('decline'),
+                                  backgroundColor: Colors.red,
+                                  onPressed: _rejectCall,
+                                  child: const Icon(Icons.call_end, size: 30),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text('Decline', style: TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                FloatingActionButton(
+                                  heroTag: ObjectKey('accept'),
+                                  backgroundColor: Colors.green,
+                                  onPressed: _acceptCall,
+                                  child: const Icon(Icons.call, size: 30),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text('Accept', style: TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-            // Connecting indicator
-            if (_isConnecting && !_isCallActive)
-              const Center(child: CircularProgressIndicator()),
+              // ─── Connecting indicator ─────────────────────────
+              if (_isConnecting && !_isCallActive)
+                const Center(child: CircularProgressIndicator()),
 
-            // Bottom control bar
-            if (_isCallActive)
-              Positioned(
-                bottom: 20,
-                left: 20,
-                right: 20,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      IconButton(
-                        icon: Icon(_isAudioMuted ? Icons.mic_off : Icons.mic),
-                        color: Colors.white,
-                        onPressed: _toggleMute,
-                      ),
-                      IconButton(
-                        icon: Icon(_isVideoMuted ? Icons.videocam_off : Icons.videocam),
-                        color: Colors.white,
-                        onPressed: _toggleVideo,
-                      ),
-                      IconButton(
-                        icon: Icon(_isFrontCamera ? Icons.camera_front : Icons.camera_rear),
-                        color: Colors.white,
-                        onPressed: _switchCamera,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.call_end),
-                        color: Colors.red,
-                        onPressed: _endCall,
-                      ),
-                    ],
+              // ─── Bottom control bar ───────────────────────────
+              if (_isCallActive)
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        IconButton(
+                          icon: Icon(_isAudioMuted ? Icons.mic_off : Icons.mic),
+                          color: Colors.white,
+                          onPressed: _toggleMute,
+                        ),
+                        IconButton(
+                          icon: Icon(_isVideoMuted ? Icons.videocam_off : Icons.videocam),
+                          color: Colors.white,
+                          onPressed: _toggleVideo,
+                        ),
+                        IconButton(
+                          icon: Icon(_isFrontCamera ? Icons.camera_front : Icons.camera_rear),
+                          color: Colors.white,
+                          onPressed: _switchCamera,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.call_end),
+                          color: Colors.red,
+                          onPressed: _endCall,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
