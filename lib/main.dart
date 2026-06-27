@@ -177,20 +177,57 @@ void _navigateToVideoCall(Map<String, dynamic> data, [String? token]) {
 }
 
 void _doNavigate(BuildContext context, Map<String, dynamic> data, String token) {
+  final roomId = data['room_id']?.toString() ?? '';
+  // ✅ Extract booking_id from appointment_id (or fallback to booking_id)
+  final bookingId = data['appointment_id']?.toString() ?? data['booking_id']?.toString() ?? '';
+  final mainDataId = data['main_data_id']?.toString() ?? '';
   Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => VideoCallScreen(
         token: token,
+        roomId: roomId,
         name: data['name'] ?? data['doctor_name'] ?? 'Doctor',
         doctorId: data['doctor_id']?.toString() ?? '',
         playerId: data['player_id']?.toString() ?? '',
         familyMemberId: data['family_member_id']?.toString() ?? '',
-        bookingId: data['booking_id']?.toString() ?? '',
+        bookingId: bookingId,        // ✅ Now gets appointment_id
         consultType: data['consult_type'] ?? 'online',
+        mainDataId: mainDataId,      // ✅ Pass main_data_id
       ),
     ),
   );
+}
+
+void _checkPendingCall() {
+  if (pendingCallData != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = navigatorKey.currentContext;
+      if (ctx != null) {
+        final token = pendingCallData!['token'] ?? pendingCallData!['patient_token'] ?? '';
+        final roomId = pendingCallData!['room_id']?.toString() ?? '';
+        final bookingId = pendingCallData!['appointment_id']?.toString() ?? pendingCallData!['booking_id']?.toString() ?? '';
+        final mainDataId = pendingCallData!['main_data_id']?.toString() ?? '';
+        Navigator.push(
+          ctx,
+          MaterialPageRoute(
+            builder: (_) => VideoCallScreen(
+              token: token,
+              roomId: roomId,
+              name: pendingCallData!['name'] ?? pendingCallData!['doctor_name'] ?? 'Doctor',
+              doctorId: pendingCallData!['doctor_id']?.toString() ?? '',
+              playerId: pendingCallData!['player_id']?.toString() ?? '',
+              familyMemberId: pendingCallData!['family_member_id']?.toString() ?? '',
+              bookingId: bookingId,
+              consultType: pendingCallData!['consult_type'] ?? 'online',
+              mainDataId: mainDataId,
+            ),
+          ),
+        );
+        pendingCallData = null;
+      }
+    });
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -215,9 +252,12 @@ class MyApp extends StatelessWidget {
               showIgnore: false,
               showLater: true,
               upgrader: Upgrader(
-                debugLogging: true,
-                durationUntilAlertAgain: const Duration(days: 1),
+                debugLogging: true,                    // logs to console
+                debugDisplayAlways: false,             // only when update available
+                durationUntilAlertAgain: const Duration(days: 1), // wait 1 day after "Later"
+                countryCode: 'in',
               ),
+              dialogStyle: UpgradeDialogStyle.material,
               child: MaterialApp(
                 scaffoldMessengerKey: scaffoldMessengerKey,
                 title: AppTranslations.get('MEDRAYDER'),

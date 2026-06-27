@@ -51,7 +51,15 @@ class AuthRepositoryImpl implements AuthRepository {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null && token.isNotEmpty) {
         final deviceType = Platform.isAndroid ? 'android' : 'ios';
+
+        // ✅ Log the device type and token
+        debugPrint('📱 Registering FCM token on $deviceType device');
+        debugPrint('📱 Token: $token');
+
         await remoteDataSource.registerFcmToken(token, deviceType);
+        debugPrint('✅ FCM token registered successfully on $deviceType');
+      } else {
+        debugPrint('⚠️ FCM token is null or empty');
       }
     } catch (e) {
       // Non‑critical – just log
