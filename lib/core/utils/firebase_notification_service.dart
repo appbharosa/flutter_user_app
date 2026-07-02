@@ -9,8 +9,6 @@ import 'pending_call.dart';
 import 'navigation.dart' hide navigatorKey;
 import '../../features/video_call_screen.dart';
 
-
-
 class FirebaseNotificationService {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();

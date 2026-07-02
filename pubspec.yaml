@@ -66,6 +66,7 @@ dependencies:
   upgrader: ^13.5.0
   enx_uikit_flutter: ^2.1.2
   audioplayers: ^6.7.1
+  incoming_call_kit: ^0.0.1
 
 dev_dependencies:
   flutter_test:

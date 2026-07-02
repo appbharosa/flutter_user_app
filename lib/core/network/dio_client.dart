@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../appurls/app_urls.dart';
 import 'package:flutter/material.dart';
+import '../services/navigation_service.dart';
 import '../utils/navigation.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 
@@ -50,8 +51,13 @@ class AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
-      await _handleLogout();
-      // Dummy response to prevent error propagation
+      // Clear storage
+      await secureStorage.deleteAll();
+
+      // ✅ Use NavigationService to navigate to Login
+      NavigationService().pushAndRemoveUntil(const LoginPage());
+
+      // Return a dummy response to prevent error propagation
       return handler.resolve(Response(
         requestOptions: err.requestOptions,
         statusCode: 200,
@@ -59,26 +65,6 @@ class AuthInterceptor extends Interceptor {
       ));
     }
     handler.next(err);
-  }
-
-  Future<void> _handleLogout() async {
-    await secureStorage.deleteAll();
-
-    // Retry up to 5 times, waiting 200ms between attempts
-    for (int attempt = 0; attempt < 5; attempt++) {
-      if (navigatorKey.currentContext != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          navigatorKey.currentState?.pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-                (route) => false,
-          );
-        });
-        return; // Success
-      }
-      await Future.delayed(const Duration(milliseconds: 200));
-    }
-    // Still null after retries – log a warning
-    print('❌ Could not navigate to Login – navigatorKey.context still null after 5 attempts');
   }
 }
 

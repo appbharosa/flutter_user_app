@@ -41,7 +41,7 @@ class _SplashPageState extends State<SplashPage>
             context,
             MaterialPageRoute(builder: (_) => const HomePage()),
           );
-          _checkPendingCall();
+        //  _checkPendingCall();
         }
       } else {
         if (mounted) {
@@ -49,42 +49,42 @@ class _SplashPageState extends State<SplashPage>
             context,
             MaterialPageRoute(builder: (_) => const LanguageSelectionPage(fromSplash: true)),
           );
-          _checkPendingCall();
+         // _checkPendingCall();
         }
       }
     });
   }
 
-  void _checkPendingCall() {
-    if (pendingCallData != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final ctx = navigatorKey.currentContext;
-        if (ctx != null) {
-          final token = pendingCallData!['token'] ?? pendingCallData!['patient_token'] ?? '';
-          final roomId = pendingCallData!['room_id']?.toString() ?? '';
-          final bookingId = pendingCallData!['appointment_id']?.toString() ?? pendingCallData!['booking_id']?.toString() ?? '';
-          final mainDataId = pendingCallData!['main_data_id']?.toString() ?? '';
-          Navigator.push(
-            ctx,
-            MaterialPageRoute(
-              builder: (_) => VideoCallScreen(
-                token: token,
-                roomId: roomId,
-                name: pendingCallData!['name'] ?? pendingCallData!['doctor_name'] ?? 'Doctor',
-                doctorId: pendingCallData!['doctor_id']?.toString() ?? '',
-                playerId: pendingCallData!['player_id']?.toString() ?? '',
-                familyMemberId: pendingCallData!['family_member_id']?.toString() ?? '',
-                bookingId: bookingId,
-                consultType: pendingCallData!['consult_type'] ?? 'online',
-                mainDataId: mainDataId,
-              ),
-            ),
-          );
-          pendingCallData = null;
-        }
-      });
-    }
-  }
+  // void _checkPendingCall() {
+  //   if (pendingCallData != null) {
+  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+  //       final ctx = navigatorKey.currentContext;
+  //       if (ctx != null) {
+  //         final token = pendingCallData!['token'] ?? pendingCallData!['patient_token'] ?? '';
+  //         final roomId = pendingCallData!['room_id']?.toString() ?? '';
+  //         final bookingId = pendingCallData!['appointment_id']?.toString() ?? pendingCallData!['booking_id']?.toString() ?? '';
+  //         final mainDataId = pendingCallData!['main_data_id']?.toString() ?? '';
+  //         Navigator.push(
+  //           ctx,
+  //           MaterialPageRoute(
+  //             builder: (_) => VideoCallScreen(
+  //               token: token,
+  //               roomId: roomId,
+  //               name: pendingCallData!['name'] ?? pendingCallData!['doctor_name'] ?? 'Doctor',
+  //               doctorId: pendingCallData!['doctor_id']?.toString() ?? '',
+  //               playerId: pendingCallData!['player_id']?.toString() ?? '',
+  //               familyMemberId: pendingCallData!['family_member_id']?.toString() ?? '',
+  //               bookingId: bookingId,
+  //               consultType: pendingCallData!['consult_type'] ?? 'online',
+  //               mainDataId: mainDataId,
+  //             ),
+  //           ),
+  //         );
+  //         pendingCallData = null;
+  //       }
+  //     });
+  //   }
+  // }
 
   @override
   void dispose() {
