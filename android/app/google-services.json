@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "557889947661",
+    "project_id": "medrayder-flutter",
+    "storage_bucket": "medrayder-flutter.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:557889947661:android:9302d533e0f70a3e87ad44",
+        "android_client_info": {
+          "package_name": "com.medrayder.doctors"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaCFV7PxMrk7X__mxTb5jA3pVBGo3txf8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:557889947661:android:a73a5d254fe4a19f87ad44",
+        "android_client_info": {
+          "package_name": "com.medrayder.user"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaCFV7PxMrk7X__mxTb5jA3pVBGo3txf8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

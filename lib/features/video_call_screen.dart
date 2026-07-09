@@ -24,6 +24,8 @@ class VideoCallScreen extends StatefulWidget {
   final String bookingId;
   final String consultType;
   final String mainDataId;
+  final String callId; // ✅ New field
+  final String duration; // ✅ New field
 
   const VideoCallScreen({
     Key? key,
@@ -36,6 +38,8 @@ class VideoCallScreen extends StatefulWidget {
     required this.bookingId,
     required this.consultType,
     this.mainDataId = '',
+    required this.callId,
+    required this.duration,
   }) : super(key: key);
 
   @override
@@ -192,6 +196,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void _acceptCall() async {
     if (_isDisposed) return;
+    if (widget.token == null || widget.token.isEmpty) {
+      _showErrorAndClose('Unable to join call: missing token.');
+      return;
+    }
     final statuses = await [
       Permission.camera,
       Permission.microphone,

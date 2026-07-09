@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -9,14 +10,17 @@ import 'pending_call.dart';
 import 'navigation.dart' hide navigatorKey;
 import '../../features/video_call_screen.dart';
 
+
 class FirebaseNotificationService {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   static final AudioPlayer _ringtonePlayer = AudioPlayer();
   static bool _isCallScreenOpen = false;
+  static Map<String, dynamic>? pendingCallData;
 
   static Future<void> initialize() async {
     try {
+      // Request notification permissions
       final settings = await _firebaseMessaging.requestPermission(
         alert: true,
         badge: true,
@@ -28,8 +32,10 @@ class FirebaseNotificationService {
         return;
       }
 
+      // Initialize local notifications
       await _initLocalNotifications();
 
+      // Get FCM token
       try {
         final token = await _firebaseMessaging.getToken();
         debugPrint('Firebase FCM Token: $token');
@@ -37,12 +43,15 @@ class FirebaseNotificationService {
         debugPrint('Could not get FCM token: $e');
       }
 
+      // Set up Firebase Messaging listeners
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
       FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
+      // Handle initial message (app launched from terminated state)
       final initialMessage = await _firebaseMessaging.getInitialMessage();
       if (initialMessage != null) {
-        _handleCallData(initialMessage.data);
+        handleCallData(initialMessage.data);
       }
     } catch (e) {
       debugPrint('FirebaseNotificationService initialization failed: $e');
@@ -72,7 +81,7 @@ class FirebaseNotificationService {
     if (details.payload != null) {
       try {
         final data = jsonDecode(details.payload!) as Map<String, dynamic>;
-        _handleCallData(data);
+        handleCallData(data);
       } catch (e) {
         debugPrint('Error parsing notification payload: $e');
       }
@@ -81,17 +90,18 @@ class FirebaseNotificationService {
 
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
     debugPrint('Foreground message received: ${message.data}');
-    // Play ringtone immediately
+    if (message.data.isEmpty) {
+      debugPrint('⚠️ Empty FCM data payload');
+      return;
+    }
     _playRingtone();
-    // Show full-screen incoming call UI (overlay)
-    _handleCallData(message.data);
-    // Also show local notification for background fallback
     await _showLocalNotification(message);
+    handleCallData(message.data);
   }
 
   static Future<void> _handleMessageOpenedApp(RemoteMessage message) async {
     debugPrint('Message opened app: ${message.data}');
-    _handleCallData(message.data);
+    handleCallData(message.data);
   }
 
   static void _playRingtone() {
@@ -99,7 +109,7 @@ class FirebaseNotificationService {
     _ringtonePlayer.play(
       AssetSource('ringtone.mp3'),
       mode: PlayerMode.mediaPlayer,
-
+      volume: 1.0,
     );
   }
 
@@ -111,15 +121,13 @@ class FirebaseNotificationService {
         'video_call_channel',
         'Video Call Notifications',
         channelDescription: 'Incoming video call notifications',
-        importance: Importance.max, // High priority for heads-up
+        importance: Importance.max,
         priority: Priority.max,
         category: AndroidNotificationCategory.call,
         fullScreenIntent: true,
         enableVibration: true,
         vibrationPattern: Int64List.fromList([0, 500, 200, 500]),
-        sound: const RawResourceAndroidNotificationSound('default_ringtone'),
-        // Add actions for Accept/Decline (optional)
-        // But we handle navigation via `onDidReceiveNotificationResponse`
+        sound: RawResourceAndroidNotificationSound('ringtone'), // ✅ Use your sound file
       );
 
       const iosDetails = DarwinNotificationDetails(
@@ -128,7 +136,6 @@ class FirebaseNotificationService {
         presentBadge: true,
         presentBanner: true,
         presentList: true,
-      //  interruptionLevel: 'critical',
         sound: 'default',
       );
 
@@ -137,8 +144,8 @@ class FirebaseNotificationService {
 
       await _localNotifications.show(
         id: notificationId,
-        title: message.notification?.title ?? 'Incoming Video Call',
-        body: message.notification?.body ?? 'Doctor is calling...',
+        title: message.notification?.title ?? 'Incoming Call from ${message.data['doctor_name'] ?? 'Doctor'}',
+        body: message.notification?.body ?? 'Tap to answer',
         notificationDetails: details,
         payload: payloadJson,
       );
@@ -147,13 +154,13 @@ class FirebaseNotificationService {
     }
   }
 
-  static void _handleCallData(Map<String, dynamic>? data) {
-    if (data == null) {
-      debugPrint('⚠️ FCM data is null');
+  // ✅ Updated to handle your payload fields
+  static void handleCallData(Map<String, dynamic>? data) {
+    if (data == null || data.isEmpty) {
+      debugPrint('⚠️ FCM data is null or empty');
       return;
     }
 
-    // ✅ DEBUG: Print the entire payload
     debugPrint('📩 FULL FCM PAYLOAD:');
     debugPrint('┌─────────────────────────────────────');
     data.forEach((key, value) {
@@ -161,10 +168,10 @@ class FirebaseNotificationService {
     });
     debugPrint('└─────────────────────────────────────');
 
-    // ✅ Check for specific fields
-    final callType = data['call_type'] ?? data['type'];
-    if (callType != 'video' && callType != 'incoming_call') {
-      debugPrint('ℹ️ Not a video call: $callType');
+    // ✅ Use 'type' from your payload
+    final callType = data['type'];
+    if (callType != 'incoming_call') {
+      debugPrint('ℹ️ Not an incoming call: $callType');
       return;
     }
 
@@ -173,31 +180,35 @@ class FirebaseNotificationService {
       return;
     }
 
+    // ✅ Extract fields from your payload
     final roomId = data['room_id']?.toString() ?? '';
-    final token = data['token'] ?? data['patient_token'];
-    final bookingId = data['appointment_id']?.toString() ?? data['booking_id']?.toString() ?? '';
+    final token = data['patient_token']?.toString() ?? '';
+    final bookingId = data['appointment_id']?.toString() ?? '';
     final mainDataId = data['main_data_id']?.toString() ?? '';
+    final doctorName = data['doctor_name']?.toString() ?? 'Doctor';
+    final doctorId = data['doctor_id']?.toString() ?? '';
+    final callId = data['call_id']?.toString() ?? '';
+    final action = data['action']?.toString() ?? '';
+    final duration = data['duration']?.toString() ?? '';
 
     debugPrint('📱 Room ID: $roomId');
     debugPrint('📱 Booking ID: $bookingId');
     debugPrint('📱 Main Data ID: $mainDataId');
-    debugPrint('📱 Token: ${token != null ? token.substring(0, 30) + '...' : 'null'}');
+    debugPrint('📱 Doctor Name: $doctorName');
+    debugPrint('📱 Token: ${token.isNotEmpty ? token.substring(0, 30) + '...' : 'null'}');
 
-    if (bookingId.isEmpty) {
-      debugPrint('⚠️ booking_id is missing or empty in payload');
+    if (roomId.isEmpty) {
+      debugPrint('⚠️ room_id is missing or empty in payload');
+      return;
     }
-    if (mainDataId.isEmpty) {
-      debugPrint('⚠️ main_data_id is missing or empty in payload');
+    if (token.isEmpty) {
+      debugPrint('⚠️ patient_token is missing or empty in payload');
+      return;
     }
 
-    // Play ringtone
     _playRingtone();
-
-    if (token == null || token.isEmpty) {
-      debugPrint('⚠️ Token missing – patient cannot join');
-    }
-
     pendingCallData = data;
+
     final context = navigatorKey.currentContext;
     if (context != null) {
       _showIncomingCallScreen(context, data, token);
@@ -207,7 +218,7 @@ class FirebaseNotificationService {
       Future.delayed(const Duration(milliseconds: 500), () {
         final ctx = navigatorKey.currentContext;
         if (ctx != null && pendingCallData != null) {
-          final delayedToken = pendingCallData!['token'] ?? pendingCallData!['patient_token'];
+          final delayedToken = pendingCallData!['patient_token']?.toString() ?? '';
           _showIncomingCallScreen(ctx, pendingCallData!, delayedToken);
           pendingCallData = null;
         }
@@ -215,29 +226,24 @@ class FirebaseNotificationService {
     }
   }
 
-  // ✅ Shows a full-screen incoming call UI (overlay) instead of directly navigating
-  static void _showIncomingCallScreen(BuildContext context, Map<String, dynamic> data, String? token) {
-    final callToken = token ?? data['token'] ?? data['patient_token'] ?? '';
+  static void _showIncomingCallScreen(BuildContext context, Map<String, dynamic> data, String token) {
     final roomId = data['room_id']?.toString() ?? '';
-    final name = data['name'] ?? data['doctor_name'] ?? 'Doctor';
+    final doctorName = data['doctor_name']?.toString() ?? 'Doctor';
     final doctorId = data['doctor_id']?.toString() ?? '';
-    final playerId = data['player_id']?.toString() ?? '';
-    final familyMemberId = data['family_member_id']?.toString() ?? '';
-    final bookingId = data['booking_id']?.toString() ?? '';
-    final consultType = data['consult_type'] ?? 'online';
-    final mainDataId = data['main_data_id']?.toString() ?? ''; // ✅ NEW: extract main_data_id
+    final bookingId = data['appointment_id']?.toString() ?? '';
+    final mainDataId = data['main_data_id']?.toString() ?? '';
+    final callId = data['call_id']?.toString() ?? '';
+    final duration = data['duration']?.toString() ?? '';
 
     _isCallScreenOpen = true;
-    debugPrint('📱 booking_id: $bookingId, main_data_id: $mainDataId');
+    debugPrint('📱 Showing incoming call screen for $doctorName');
 
-    debugPrint('✅ Disconnect notification sent: $mainDataId');
-    // Show a dialog-like overlay
     showDialog(
       context: context,
       barrierDismissible: false,
       useSafeArea: true,
       builder: (context) => WillPopScope(
-        onWillPop: () async => false, // Prevent back press
+        onWillPop: () async => false,
         child: Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: EdgeInsets.zero,
@@ -249,79 +255,76 @@ class FirebaseNotificationService {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Avatar
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 60,
-                    backgroundColor: Colors.grey[800],
+                    backgroundColor: Colors.grey,
                     child: Icon(Icons.person, size: 70, color: Colors.white),
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    name,
+                    doctorName,
                     style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Incoming call...',
-                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  Text(
+                    'Incoming call... (Duration: $duration mins)',
+                    style: const TextStyle(color: Colors.white70, fontSize: 16),
                   ),
                   const SizedBox(height: 48),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Decline
                       Column(
                         children: [
                           FloatingActionButton(
                             heroTag: 'decline_incoming',
                             backgroundColor: Colors.red,
                             onPressed: () {
-                              Navigator.pop(context); // Close dialog
+                              Navigator.pop(context);
                               _isCallScreenOpen = false;
                               _ringtonePlayer.stop();
-                              // Send reject notification
                               _sendDisconnectNotification('reject_call', data);
                             },
-                            child: Icon(Icons.call_end, size: 32, color: Colors.white),
+                            child: const Icon(Icons.call_end, size: 32, color: Colors.white),
                           ),
                           const SizedBox(height: 8),
-                          Text('Decline', style: TextStyle(color: Colors.white)),
+                          const Text('Decline', style: TextStyle(color: Colors.white)),
                         ],
                       ),
-                      // Accept
                       Column(
                         children: [
                           FloatingActionButton(
                             heroTag: 'accept_incoming',
                             backgroundColor: Colors.green,
                             onPressed: () {
-                              Navigator.pop(context); // Close dialog
+                              Navigator.pop(context);
                               _isCallScreenOpen = false;
                               _ringtonePlayer.stop();
-                              // Navigate to VideoCallScreen with all parameters including main_data_id
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => VideoCallScreen(
-                                    token: callToken,
+                                    token: token,
                                     roomId: roomId,
-                                    name: name,
+                                    name: doctorName,
                                     doctorId: doctorId,
-                                    playerId: playerId,
-                                    familyMemberId: familyMemberId,
+                                    playerId: '', // Not in your payload, so empty
+                                    familyMemberId: '', // Not in your payload, so empty
                                     bookingId: bookingId,
-                                    consultType: consultType,
-                                    mainDataId: mainDataId, // ✅ NEW: pass main_data_id
+                                    consultType: 'online', // Default, adjust as needed
+                                    mainDataId: mainDataId,
+                                    callId: callId, // Pass call_id if needed
+                                    duration: duration, // Pass duration if needed
                                   ),
                                 ),
                               ).then((_) {
                                 _isCallScreenOpen = false;
                               });
                             },
-                            child: Icon(Icons.call, size: 32, color: Colors.white),
+                            child: const Icon(Icons.call, size: 32, color: Colors.white),
                           ),
                           const SizedBox(height: 8),
-                          Text('Accept', style: TextStyle(color: Colors.white)),
+                          const Text('Accept', style: TextStyle(color: Colors.white)),
                         ],
                       ),
                     ],
@@ -334,11 +337,24 @@ class FirebaseNotificationService {
       ),
     );
   }
+
   static void _sendDisconnectNotification(String action, Map<String, dynamic> data) async {
-    // Implement your disconnect notification logic here
+    debugPrint('📤 Disconnect notification sent: $action for call_id=${data['call_id']}');
+    // Implement your API call here to send hang_up/reject_call to the server
   }
 
   static void stopRingtone() {
     _ringtonePlayer.stop();
+  }
+}
+
+// ✅ Moved outside the class (top-level function)
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  debugPrint('Background message received: ${message.data}');
+  if (message.data.isNotEmpty) {
+    await FirebaseNotificationService._showLocalNotification(message);
+    FirebaseNotificationService.handleCallData(message.data);
   }
 }

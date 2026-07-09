@@ -2,7 +2,7 @@ name: user
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.1+10
+version: 1.0.0+22
 
 environment:
   sdk: ^3.11.4
@@ -44,7 +44,7 @@ dependencies:
   flutter_cashfree_pg_sdk: ^2.0.25+28
 
   # Push Notifications
-  onesignal_flutter: ^5.5.4
+#  onesignal_flutter: ^5.5.4
 
   # Video Calling (EnableX)
   enx_flutter_plugin: ^3.1.5
@@ -67,6 +67,8 @@ dependencies:
   enx_uikit_flutter: ^2.1.2
   audioplayers: ^6.7.1
   incoming_call_kit: ^0.0.1
+  firebase_crashlytics: ^5.2.4
+  firebase_analytics: ^12.4.3
 
 dev_dependencies:
   flutter_test:

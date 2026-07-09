@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../../core/di/injection.dart' as di;
 import '../../../core/utils/pending_call.dart';          // ← import global var
 import '../../../core/utils/navigation.dart';           // ← for navigatorKey
+import '../../../data/data_sources/auth_remote_datasource.dart';
 import '../../home/presentation/pages/home_page.dart';
 import '../../language/pages/language_selection_page.dart';
 import '../../video_call_screen.dart';
+
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -19,6 +24,9 @@ class _SplashPageState extends State<SplashPage>
   late AnimationController _controller;
   late Animation<double> _animation;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  // ✅ Get the auth remote data source from DI
+  final AuthRemoteDataSource _authRemoteDataSource = di.sl<AuthRemoteDataSource>();
 
   @override
   void initState() {
@@ -34,14 +42,18 @@ class _SplashPageState extends State<SplashPage>
     _controller.forward();
 
     Timer(const Duration(seconds: 2), () async {
-      final token = await _storage.read(key: 'access_token');
-      if (token != null && token.isNotEmpty) {
+      final accessToken = await _storage.read(key: 'access_token');
+      final isLoggedIn = accessToken != null && accessToken.isNotEmpty;
+
+      if (isLoggedIn) {
+        // ✅ Register FCM token (non-blocking)
+        _registerFcmToken();
+
         if (mounted) {
           await Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const HomePage()),
           );
-        //  _checkPendingCall();
         }
       } else {
         if (mounted) {
@@ -49,42 +61,34 @@ class _SplashPageState extends State<SplashPage>
             context,
             MaterialPageRoute(builder: (_) => const LanguageSelectionPage(fromSplash: true)),
           );
-         // _checkPendingCall();
         }
       }
     });
   }
 
-  // void _checkPendingCall() {
-  //   if (pendingCallData != null) {
-  //     WidgetsBinding.instance.addPostFrameCallback((_) {
-  //       final ctx = navigatorKey.currentContext;
-  //       if (ctx != null) {
-  //         final token = pendingCallData!['token'] ?? pendingCallData!['patient_token'] ?? '';
-  //         final roomId = pendingCallData!['room_id']?.toString() ?? '';
-  //         final bookingId = pendingCallData!['appointment_id']?.toString() ?? pendingCallData!['booking_id']?.toString() ?? '';
-  //         final mainDataId = pendingCallData!['main_data_id']?.toString() ?? '';
-  //         Navigator.push(
-  //           ctx,
-  //           MaterialPageRoute(
-  //             builder: (_) => VideoCallScreen(
-  //               token: token,
-  //               roomId: roomId,
-  //               name: pendingCallData!['name'] ?? pendingCallData!['doctor_name'] ?? 'Doctor',
-  //               doctorId: pendingCallData!['doctor_id']?.toString() ?? '',
-  //               playerId: pendingCallData!['player_id']?.toString() ?? '',
-  //               familyMemberId: pendingCallData!['family_member_id']?.toString() ?? '',
-  //               bookingId: bookingId,
-  //               consultType: pendingCallData!['consult_type'] ?? 'online',
-  //               mainDataId: mainDataId,
-  //             ),
-  //           ),
-  //         );
-  //         pendingCallData = null;
-  //       }
-  //     });
-  //   }
-  // }
+  /// Get the FCM token and send it to the backend
+  Future<void> _registerFcmToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null && token.isNotEmpty) {
+        debugPrint('📱 FCM Token: $token');
+        // ✅ Call the register method from remote data source
+        await _authRemoteDataSource.registerFcmToken(token, _getDeviceType());
+        debugPrint('✅ FCM token registered successfully');
+      } else {
+        debugPrint('⚠️ FCM token is null or empty');
+      }
+    } catch (e) {
+      debugPrint('❌ FCM token registration failed: $e');
+    }
+  }
+
+  /// Determine device type (android / ios)
+  String _getDeviceType() {
+    if (Platform.isAndroid) return 'android';
+    if (Platform.isIOS) return 'ios';
+    return 'unknown';
+  }
 
   @override
   void dispose() {
