@@ -10,7 +10,7 @@ import '../../../data/data_sources/auth_remote_datasource.dart';
 import '../../home/presentation/pages/home_page.dart';
 import '../../language/pages/language_selection_page.dart';
 import '../../video_call_screen.dart';
-
+import 'package:user/core/utils/firebase_notification_service.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -24,8 +24,6 @@ class _SplashPageState extends State<SplashPage>
   late AnimationController _controller;
   late Animation<double> _animation;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-
-  // ✅ Get the auth remote data source from DI
   final AuthRemoteDataSource _authRemoteDataSource = di.sl<AuthRemoteDataSource>();
 
   @override
@@ -41,23 +39,51 @@ class _SplashPageState extends State<SplashPage>
     );
     _controller.forward();
 
+    // ✅ Check for pending call data before navigating
     Timer(const Duration(seconds: 2), () async {
+      // ✅ Check if there's pending call data (from terminated state)
+      if (FirebaseNotificationService.pendingCallData != null) {
+        final data = FirebaseNotificationService.pendingCallData!;
+        FirebaseNotificationService.pendingCallData = null;
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => VideoCallScreen(
+                token: data['patient_token']?.toString() ?? '',
+                roomId: data['room_id']?.toString() ?? '',
+                name: data['doctor_name']?.toString() ?? 'Doctor',
+                doctorId: data['doctor_id']?.toString() ?? '',
+                playerId: '',
+                familyMemberId: '',
+                bookingId: data['appointment_id']?.toString() ?? '',
+                consultType: 'online',
+                mainDataId: data['main_data_id']?.toString() ?? '',
+                callId: data['call_id']?.toString() ?? '',
+                duration: data['duration']?.toString() ?? '',
+              ),
+            ),
+          );
+          return;
+        }
+      }
+
+      // ✅ Default navigation logic
       final accessToken = await _storage.read(key: 'access_token');
       final isLoggedIn = accessToken != null && accessToken.isNotEmpty;
 
       if (isLoggedIn) {
-        // ✅ Register FCM token (non-blocking)
         _registerFcmToken();
-
         if (mounted) {
-          await Navigator.pushReplacement(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const HomePage()),
           );
         }
       } else {
         if (mounted) {
-          await Navigator.pushReplacement(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const LanguageSelectionPage(fromSplash: true)),
           );
@@ -66,13 +92,11 @@ class _SplashPageState extends State<SplashPage>
     });
   }
 
-  /// Get the FCM token and send it to the backend
   Future<void> _registerFcmToken() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null && token.isNotEmpty) {
         debugPrint('📱 FCM Token: $token');
-        // ✅ Call the register method from remote data source
         await _authRemoteDataSource.registerFcmToken(token, _getDeviceType());
         debugPrint('✅ FCM token registered successfully');
       } else {
@@ -83,7 +107,6 @@ class _SplashPageState extends State<SplashPage>
     }
   }
 
-  /// Determine device type (android / ios)
   String _getDeviceType() {
     if (Platform.isAndroid) return 'android';
     if (Platform.isIOS) return 'ios';

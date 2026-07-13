@@ -1,31 +1,22 @@
 import 'dart:ui';
-
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:user/features/splash/presentation/splash_page.dart';
 import 'package:user/core/di/injection.dart' as di;
-import 'package:user/core/utils/navigation.dart';
-import 'package:user/features/video_call_screen.dart';
 import 'package:upgrader/upgrader.dart';
-import 'dart:convert';
 import 'dart:async';
-
+import 'core/utils/navigation.dart' show navigatorKey;
 import 'core/utils/firebase_notification_service.dart';
 import 'features/language/bloc/language_bloc.dart';
 import 'features/language/bloc/language_state.dart';
 
 
-// ─── Global Keys ──────────────────────────────────────────────────────────
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
 GlobalKey<ScaffoldMessengerState>();
 final AudioPlayer ringtonePlayer = AudioPlayer();
@@ -38,19 +29,14 @@ void main() async {
   await Firebase.initializeApp();
 
   // ─── Crashlytics Setup ──────────────────────────────────────────────────
-  // Enable Crashlytics collection
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
-
-  // Automatically capture Flutter framework errors
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
-
-  // Capture all Dart errors (including async)
   PlatformDispatcher.instance.onError = (error, stack) {
     FirebaseCrashlytics.instance.recordError(error, stack);
-    return true; // Prevents default error handling (still logs to console)
+    return true;
   };
 
-  // Initialize dependency injection and services
+  // Initialize services
   await di.init();
   await _initServices();
 
@@ -59,7 +45,6 @@ void main() async {
 
 // ─── Initialize Services ────────────────────────────────────────────────
 Future<void> _initServices() async {
-  // Firebase Notification Service (handles FCM notifications)
   await FirebaseNotificationService.initialize();
 }
 
@@ -71,10 +56,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Keep any other providers you need – OneSignal provider removed
         ChangeNotifierProvider.value(value: ValueNotifier<String>('')),
         ChangeNotifierProvider.value(value: ValueNotifier<dynamic>(null)),
-        // ❌ Removed: oneSignalPlayerIdNotifier provider
       ],
       child: BlocProvider(
         create: (context) => di.sl<LanguageBloc>(),
@@ -84,10 +67,17 @@ class MyApp extends StatelessWidget {
               showIgnore: false,
               showLater: true,
               upgrader: Upgrader(
-                debugLogging: true,
-                debugDisplayAlways: false,
+                debugLogging: true, // ✅ Prints logs in console
+
+                // ✅ THE FIX: Shows dialog ONLY in debug mode
+                debugDisplayAlways: kDebugMode,
+
+                // Prevents showing again immediately if they ignore it (1 day)
                 durationUntilAlertAgain: const Duration(days: 1),
                 countryCode: 'in',
+
+                // 🧪 (OPTIONAL) UNCOMMENT THIS TO FORCE THE DIALOG IN RELEASE:
+                // minAppVersion: '99.0.0',
               ),
               dialogStyle: UpgradeDialogStyle.material,
               child: MaterialApp(
@@ -97,7 +87,7 @@ class MyApp extends StatelessWidget {
                   primarySwatch: Colors.blue,
                   fontFamily: 'Poppins',
                 ),
-                navigatorKey: navigatorKey,
+                navigatorKey: navigatorKey, // ✅ Uses the shared key
                 home: const SplashPage(),
                 debugShowCheckedModeBanner: false,
               ),

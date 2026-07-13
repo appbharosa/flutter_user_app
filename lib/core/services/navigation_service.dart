@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:user/core/utils/navigation.dart' show navigatorKey;
 
-import '../../main.dart';
 
 class NavigationService {
   static final NavigationService _instance = NavigationService._internal();
