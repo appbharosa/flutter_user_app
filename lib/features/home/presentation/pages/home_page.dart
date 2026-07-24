@@ -13,6 +13,7 @@ import 'package:user/features/subscription/presentation/pages/subscriptions_page
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/services/language_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/translations.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../about/presentation/pages/about_page.dart';
 import '../../../contact_us/presentation/pages/contact_us_page.dart';
@@ -22,6 +23,7 @@ import '../../../hospital/presentation/pages/hospital_booking_history_screen.dar
 import '../../../hospital/presentation/pages/hospital_doctor_booking_history_screen.dart';
 import '../../../hospital/presentation/pages/hospital_pharmacy_booking_history_screen.dart';
 import '../../../labtest/presentation/pages/lab_test_booking_fetch_list_page.dart';
+import '../../../language/bloc/language_bloc.dart';
 import '../../../medlocker/presentation/pages/med_locker_list_page.dart';
 import '../../../notifications/presentation/bloc/notification_bloc.dart';
 import '../../../notifications/presentation/bloc/notification_event.dart';
@@ -74,21 +76,119 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       const ProfilePage(),
     ];
   }
+  String _getLanguageCode(Language lang) {
+    switch (lang) {
+      case Language.english:
+        return 'en';
+      case Language.hindi:
+        return 'hi';
+      case Language.telugu:
+        return 'te';
+      default:
+        return 'en';
+    }
+  }
+
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _addressBloc = di.sl<AddressBloc>()..add(LoadAddresses());
-    _notificationBloc = di.sl<NotificationBloc>();
-    _restoreSelectedAddress();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadUnreadCount();
-      if (_selectedAddressNotifier.value == null) {
-        _checkLocationAndInitializeAddress();
-      }
+    // Get the current language synchronously from the static getter
+    final currentLang = _getLanguageCode(LanguageBloc.currentLanguage);
+
+    _addressBloc = di.sl<AddressBloc>()..add(LoadAddresses(currentLang));
+    _notificationBloc = di.sl<NotificationBloc>();
+
+    _restoreSelectedAddress().then((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadUnreadCount();
+        if (_selectedAddressNotifier.value == null) {
+          _checkLocationAndInitializeAddress();
+        }
+      });
     });
+  }
+
+  Future<bool> _handleCurrentLocationSelection(BuildContext bottomSheetContext) async {
+    // 1. Check if location services are enabled
+    bool serviceEnabled = await _location.serviceEnabled();
+    if (!serviceEnabled) {
+      // Show a dialog asking to turn on location
+      final shouldTurnOn = await showDialog<bool>(
+        context: bottomSheetContext,
+        barrierDismissible: true,
+        builder: (context) => AlertDialog(
+          title: const Text('Location Required'),
+          content: const Text(
+            'To fetch your current address, please enable location services.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xff0057FF),
+              ),
+              child: const Text('Turn On'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldTurnOn == true) {
+        // Close the bottom sheet first (so it doesn't stay behind settings)
+        if (mounted && bottomSheetContext.mounted) {
+          Navigator.pop(bottomSheetContext);
+        }
+        // Set flag and open settings
+        _shouldFetchLocationOnResume = true;
+        await _openLocationSettings();
+        return false; // location will be fetched when app resumes
+      } else {
+        // User cancelled – just return false (bottom sheet stays open)
+        return false;
+      }
+    }
+
+    // 2. Check permissions
+    loc.PermissionStatus permissionGranted = await _location.hasPermission();
+    if (permissionGranted == loc.PermissionStatus.denied) {
+      permissionGranted = await _location.requestPermission();
+      if (permissionGranted != loc.PermissionStatus.granted) {
+        ScaffoldMessenger.of(bottomSheetContext).showSnackBar(
+          const SnackBar(
+            content: Text('Location permission is required.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return false;
+      }
+    }
+
+    // 3. Fetch the location
+    try {
+      await _fetchCurrentLocationOnce(); // this updates the notifier and storage
+      ScaffoldMessenger.of(bottomSheetContext).showSnackBar(
+        const SnackBar(
+          content: Text('Current location selected successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      return true;
+    } catch (e) {
+      ScaffoldMessenger.of(bottomSheetContext).showSnackBar(
+        SnackBar(
+          content: Text('Failed to fetch location: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
   }
 
   Future<void> _restoreSelectedAddress() async {
@@ -377,15 +477,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (_) => AddressBottomSheet(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (bottomSheetContext) => AddressBottomSheet(
         onAddressSelected: _onAddressSelected,
         currentAddress: _selectedAddressNotifier.value,
-        onSelectCurrentLocation: () async {
-          Navigator.pop(context);
-          // Force fetch current location, overriding any manual selection
-          await _fetchCurrentLocationOnce();
-        },
+        onSelectCurrentLocation: () => _handleCurrentLocationSelection(bottomSheetContext),
       ),
     );
   }
@@ -403,17 +501,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
       _loadUnreadCount();
-      // If we have a pending location fetch (user tapped "Turn on"), fetch now
       if (_shouldFetchLocationOnResume) {
         _shouldFetchLocationOnResume = false;
-        // Clear any existing address to ensure we fetch fresh
+        // If we have an address, clear it before fetching new one
         if (_selectedAddressNotifier.value != null) {
           _selectedAddressNotifier.value = null;
-          setState(() => _displayAddress = "Select Address");
         }
         await _fetchCurrentLocationOnce();
       } else if (_selectedAddressNotifier.value == null) {
-        // No address and no pending flag, try to fetch normally
         bool serviceEnabled = await _location.serviceEnabled();
         loc.PermissionStatus permissionGranted = await _location.hasPermission();
         if (serviceEnabled && permissionGranted == loc.PermissionStatus.granted) {
@@ -422,6 +517,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -528,7 +624,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.10), blurRadius: 12, offset: const Offset(0, 3))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.10),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: const Icon(Icons.menu_rounded, color: Color(0xff1F2A55)),
             ),
@@ -540,15 +642,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               child: Container(
                 height: 50,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(color: const Color(0xffF5F7FB), borderRadius: BorderRadius.circular(30)),
+                decoration: BoxDecoration(
+                  color: const Color(0xffF5F7FB),
+                  borderRadius: BorderRadius.circular(30),
+                ),
                 child: Row(
                   children: [
                     const Icon(Icons.location_on, color: Color(0xff0057FF), size: 20),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Text(_displayAddress, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xff13234B))),
+                      child: ValueListenableBuilder<Address?>(
+                        valueListenable: _selectedAddressNotifier,
+                        builder: (context, address, child) {
+                          final displayText = address?.address ?? "Select Address";
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Text(
+                              displayText,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xff13234B),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
@@ -560,7 +678,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           const SizedBox(width: 12),
           GestureDetector(
             onTap: () async {
-              await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationListScreen()));
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationListScreen()),
+              );
               _loadUnreadCount();
             },
             child: Stack(
@@ -571,9 +692,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.10), blurRadius: 12, offset: const Offset(0, 3))],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.10),
+                        blurRadius: 12,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.notifications_none_rounded, color: Color(0xff1F2A55)),
+                  child: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Color(0xff1F2A55),
+                  ),
                 ),
                 if (_unreadCount > 0)
                   Positioned(
@@ -582,9 +712,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     child: Container(
                       width: 18,
                       height: 18,
-                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
                       child: Center(
-                        child: Text(_unreadCount.toString(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          _unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -595,6 +735,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       ),
     );
   }
+
 
   void _showSideMenuDialog(BuildContext context) {
     showGeneralDialog(

@@ -5,9 +5,9 @@ import '../../core/network/dio_client.dart';
 import '../models/address_model.dart';
 
 abstract class AddressRemoteDataSource {
-  Future<List<AddressModel>> getAddresses();
-  Future<AddressModel> addAddress(Map<String, dynamic> addressData);
- // Future<void> setDefaultAddress(int addressId);
+  Future<List<AddressModel>> getAddresses({required String lang});
+  Future<AddressModel> addAddress(Map<String, dynamic> addressData, {required String lang});
+// Future<void> setDefaultAddress(int addressId, {required String lang});
 }
 
 class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
@@ -16,9 +16,13 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
   AddressRemoteDataSourceImpl(this.dioClient);
 
   @override
-  Future<List<AddressModel>> getAddresses() async {
+  Future<List<AddressModel>> getAddresses({required String lang}) async {
     try {
-      final response = await dioClient.dio.get(AppUrls.addressList);
+      final queryParams = {'lang': lang}; // Add language to query params
+      final response = await dioClient.dio.get(
+        AppUrls.addressList,
+        queryParameters: queryParams,
+      );
       if (response.data['status'] == 200) {
         final List list = response.data['result'];
         return list.map((json) => AddressModel.fromJson(json)).toList();
@@ -30,17 +34,21 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
     }
   }
 
-
   @override
-  Future<AddressModel> addAddress(Map<String, dynamic> addressData) async {
+  Future<AddressModel> addAddress(Map<String, dynamic> addressData, {required String lang}) async {
     try {
-      final response = await dioClient.dio.post(AppUrls.postAddress, data: addressData);
+      // Add lang to the request body or as query param – here we add to query params
+      final queryParams = {'lang': lang};
+      final response = await dioClient.dio.post(
+        AppUrls.postAddress,
+        data: addressData,
+        queryParameters: queryParams,
+      );
       if (response.data['status'] == 200) {
         final result = response.data['result'];
-        // If the result is empty or not a Map, return a dummy address
         if (result == null || result is! Map<String, dynamic> || result.isEmpty) {
           return AddressModel(
-            id: DateTime.now().millisecondsSinceEpoch, // temporary unique id
+            id: DateTime.now().millisecondsSinceEpoch,
             address: addressData['address'] ?? '',
             hno: addressData['hno'],
             buildingNo: addressData['building_no'],
@@ -62,9 +70,6 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
       throw _handleDioError(e);
     }
   }
-
-
-
 
   Exception _handleDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||

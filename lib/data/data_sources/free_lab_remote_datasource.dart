@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/appurls/app_urls.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../domain/entities/free_lab_package.dart';
 import '../models/free_lab_package_model.dart';
 import '../models/free_lab_slot_model.dart';
 

@@ -10,13 +10,16 @@ import '../../../../domain/use_cases/create_cashfree_order_usecase.dart';
 class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
   final CreateCashfreeOrderUseCase createOrderUseCase;
   final CheckPaymentStatusUseCase checkStatusUseCase;
+  final GetWalletBalanceUseCase getWalletUseCase; // ✅ NEW
 
   PaymentBloc({
     required this.createOrderUseCase,
     required this.checkStatusUseCase,
+    required this.getWalletUseCase,
   }) : super(PaymentInitial()) {
     on<CreatePaymentOrder>(_onCreatePaymentOrder);
     on<CheckPaymentStatus>(_onCheckPaymentStatus);
+    on<FetchWalletBalance>(_onFetchWalletBalance); // ✅ NEW
   }
 
   Future<void> _onCreatePaymentOrder(CreatePaymentOrder event, Emitter<PaymentState> emit) async {
@@ -34,6 +37,16 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     result.fold(
           (failure) => emit(PaymentError(failure.message)),
           (status) => emit(PaymentStatusChecked(status)),
+    );
+  }
+
+  // ✅ NEW
+  Future<void> _onFetchWalletBalance(FetchWalletBalance event, Emitter<PaymentState> emit) async {
+    emit(PaymentLoading());
+    final result = await getWalletUseCase();
+    result.fold(
+          (failure) => emit(PaymentError(failure.message)),
+          (balance) => emit(WalletBalanceLoaded(balance)),
     );
   }
 }

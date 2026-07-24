@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:equatable/equatable.dart';
 
+import 'dart:convert';
+import 'package:equatable/equatable.dart';
+
 class Address extends Equatable {
   final int id;
   final String address;
@@ -31,6 +34,18 @@ class Address extends Equatable {
   });
 
   factory Address.fromJson(Map<String, dynamic> json) {
+    // Robust parsing for 'default_address' – handles int, bool, and string
+    bool parseDefault(dynamic value) {
+      if (value == null) return false;
+      if (value is bool) return value;
+      if (value is int) return value == 1;
+      if (value is String) {
+        final trimmed = value.trim().toLowerCase();
+        return trimmed == '1' || trimmed == 'true';
+      }
+      return false;
+    }
+
     return Address(
       id: json['id'] ?? 0,
       address: json['address'] ?? '',
@@ -43,7 +58,7 @@ class Address extends Equatable {
       pincode: json['pincode']?.toString() ?? '',
       state: json['state'] ?? '',
       city: json['city'] ?? '',
-      isDefault: json['default_address'] == 1,
+      isDefault: parseDefault(json['default_address']),
     );
   }
 
@@ -75,6 +90,50 @@ class Address extends Equatable {
     return jsonEncode(toJson());
   }
 
+  // ✅ copyWith method – essential for client-side corrections
+  Address copyWith({
+    int? id,
+    String? address,
+    String? hno,
+    String? buildingNo,
+    String? landmark,
+    String? lat,
+    String? lon,
+    String? addressType,
+    String? pincode,
+    String? state,
+    String? city,
+    bool? isDefault,
+  }) {
+    return Address(
+      id: id ?? this.id,
+      address: address ?? this.address,
+      hno: hno ?? this.hno,
+      buildingNo: buildingNo ?? this.buildingNo,
+      landmark: landmark ?? this.landmark,
+      lat: lat ?? this.lat,
+      lon: lon ?? this.lon,
+      addressType: addressType ?? this.addressType,
+      pincode: pincode ?? this.pincode,
+      state: state ?? this.state,
+      city: city ?? this.city,
+      isDefault: isDefault ?? this.isDefault,
+    );
+  }
+
   @override
-  List<Object?> get props => [id, address, isDefault];
+  List<Object?> get props => [
+    id,
+    address,
+    hno,
+    buildingNo,
+    landmark,
+    lat,
+    lon,
+    addressType,
+    pincode,
+    state,
+    city,
+    isDefault,
+  ];
 }

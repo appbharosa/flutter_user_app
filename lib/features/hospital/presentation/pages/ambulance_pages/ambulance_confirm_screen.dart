@@ -5,6 +5,7 @@ import '../../../../../core/services/language_service.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../domain/entities/address.dart';
 import '../../../../../domain/repositories/address_repository.dart';
+import '../../../../../domain/use_cases/get_addresses_usecase.dart';
 import '../../../../home/presentation/pages/home_page.dart';
 import '../../ambulance_booking_bloc/ambulance_booking_bloc.dart';
 import '../../ambulance_booking_bloc/ambulance_booking_event.dart';
@@ -35,11 +36,13 @@ class _AmbulanceConfirmScreenState extends State<AmbulanceConfirmScreen> {
   @override
   void initState() {
     super.initState();
-    _addressFuture = _fetchAddress();
+    _addressFuture = _fetchAddress(context);
   }
 
-  Future<Address?> _fetchAddress() async {
-    final result = await di.sl<AddressRepository>().getAddresses();
+  Future<Address?> _fetchAddress(BuildContext context) async {
+    // Get current language (e.g., from context or a global provider)
+    final currentLang = Localizations.localeOf(context).languageCode; // or from your own service
+    final result = await di.sl<GetAddressesUseCase>().call(lang: currentLang);
     return result.fold(
           (failure) => null,
           (addresses) {

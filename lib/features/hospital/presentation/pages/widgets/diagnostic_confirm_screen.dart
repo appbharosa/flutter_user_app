@@ -6,6 +6,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../domain/entities/address.dart';
 import '../../../../../domain/entities/hospital_diagnostic_booking.dart';
 import '../../../../../domain/repositories/address_repository.dart';
+import '../../../../../domain/use_cases/get_addresses_usecase.dart';
 import '../../bloc/hospital_diagnostic_booking_bloc/hospital_diagnostic_booking_bloc.dart';
 import '../../bloc/hospital_diagnostic_booking_bloc/hospital_diagnostic_booking_event.dart';
 import '../../bloc/hospital_diagnostic_booking_bloc/hospital_diagnostic_booking_state.dart';
@@ -36,21 +37,21 @@ class _HospitalDiagnosticConfirmState extends State<HospitalDiagnosticConfirm> {
   @override
   void initState() {
     super.initState();
-    _addressFuture = _fetchAddress();
+    _addressFuture = _fetchAddress(context);
   }
 
-  Future<Address?> _fetchAddress() async {
-    final result = await di.sl<AddressRepository>().getAddresses();
+  Future<Address?> _fetchAddress(BuildContext context) async {
+    // Get current language (e.g., from context or a global provider)
+    final currentLang = Localizations.localeOf(context).languageCode; // or from your own service
+    final result = await di.sl<GetAddressesUseCase>().call(lang: currentLang);
     return result.fold(
           (failure) => null,
           (addresses) {
-        // Find address by ID
         for (final addr in addresses) {
           if (addr.id == widget.addressId) {
             return addr;
           }
         }
-        // If not found, return first available or null
         return addresses.isNotEmpty ? addresses.first : null;
       },
     );

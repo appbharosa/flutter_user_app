@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:user/core/utils/translations.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/family_member.dart';
@@ -44,7 +45,7 @@ class _OnlineDoctorFamilySelectionScreenState extends State<OnlineDoctorFamilySe
         top: false,
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Select Family Member',style: TextStyle(
+            title:  Text('select_family_member'.tr(),style: TextStyle(
               color: AppColors.whiteColor,
               fontSize: 18,
               fontWeight: FontWeight.w500,  // SemiBold

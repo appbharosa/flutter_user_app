@@ -6,10 +6,12 @@ import '../../core/errors/exceptions.dart';
 import '../../domain/entities/payment_status.dart';
 import '../models/cashfree_order_model.dart';
 import '../models/payment_status_model.dart';
+import '../models/wallet_balance_model.dart';
 
 abstract class PaymentRemoteDataSource {
   Future<CashfreeOrderModel> createOrder(int amount);
   Future<PaymentStatusModel> checkStatus(String orderId);
+  Future<WalletBalanceModel> getWallet();
 }
 
 class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
@@ -39,29 +41,45 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
 
 
   @override
-
   Future<PaymentStatusModel> checkStatus(String orderId) async {
     try {
       final response = await dioClient.dio.post(
         AppUrls.cashFreePaymentStatus,
         data: {'order_id': orderId},
       );
-      // The API returns HTTP 200 with "status": true/false
-      if (response.data['status'] == true) {
+      // ✅ Check for 'success' string
+      if (response.data['status'] == 'success') {
         return PaymentStatusModel.fromJson(response.data);
       } else {
-        throw ServerException(response.data['message'] ?? 'Status check failed');
+        // If status is something else (e.g., 'pending' or 'failed'), extract message
+        final message = response.data['message'] ?? 'Status check failed';
+        throw ServerException(message);
       }
     } on DioException catch (e) {
-      // Handle network errors
+      // 500 is often a callback timeout – treat as success if we have the order
       if (e.response?.statusCode == 500) {
-        // Fallback – assume success if we have the Cashfree callback
         return PaymentStatusModel(
           orderId: orderId,
           status: PaymentResult.success,
           message: 'Payment successful (pending server confirmation)',
         );
       }
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<WalletBalanceModel> getWallet() async {
+    try {
+      final response = await dioClient.dio.get(
+        AppUrls.getWallet,
+      );
+      if (response.data['status'] == 200) {
+        return WalletBalanceModel.fromJson(response.data);
+      } else {
+        throw ServerException(response.data['message'] ?? 'Failed to fetch wallet');
+      }
+    } on DioException catch (e) {
       throw _handleDioError(e);
     }
   }

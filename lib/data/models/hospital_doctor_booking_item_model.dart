@@ -33,9 +33,22 @@ class HospitalDoctorBookingItemModel extends HospitalDoctorBookingItem {
     required super.email,
     required super.gender,
     required super.dob,
+    required super.medicines,
+    required super.tests,
+    required super.notes,
   });
 
   factory HospitalDoctorBookingItemModel.fromJson(Map<String, dynamic> json) {
+    final medicinesList = json['medicines'] as List? ?? [];
+    final medicines = medicinesList.map((e) => Medicine.fromJson(e)).toList();
+
+    // Parse nested tests
+    final testsList = json['tests'] as List? ?? [];
+    final tests = testsList.map((e) => Test.fromJson(e)).toList();
+
+    // Parse notes (list of strings)
+    final notesList = json['notes'] as List? ?? [];
+    final notes = notesList.map((e) => e.toString()).toList();
     return HospitalDoctorBookingItemModel(
       id: _toInt(json['id']),
       bookingId: _toString(json['booking_id']),
@@ -67,6 +80,9 @@ class HospitalDoctorBookingItemModel extends HospitalDoctorBookingItem {
       email: _toString(json['email']),
       gender: _toString(json['gender']),
       dob: _toString(json['dob']),
+      medicines: medicines,
+      tests: tests,
+      notes: notes,
     );
   }
 
@@ -81,4 +97,44 @@ class HospitalDoctorBookingItemModel extends HospitalDoctorBookingItem {
     if (value == null) return '';
     return value.toString();
   }
+}
+
+// ─── Medicine Model ──────────────────────────────────────────────────
+class Medicine {
+  final String medicine;
+  final String medicineTime;
+
+  Medicine({required this.medicine, required this.medicineTime});
+
+  factory Medicine.fromJson(Map<String, dynamic> json) {
+    return Medicine(
+      medicine: json['medicine']?.toString() ?? '',
+      medicineTime: json['medicine_time']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'medicine': medicine,
+    'medicine_time': medicineTime,
+  };
+}
+
+// ─── Test Model ─────────────────────────────────────────────────────
+class Test {
+  final String test;
+  final String testInstruction;
+
+  Test({required this.test, required this.testInstruction});
+
+  factory Test.fromJson(Map<String, dynamic> json) {
+    return Test(
+      test: json['test']?.toString() ?? '',
+      testInstruction: json['test_instruction']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'test': test,
+    'test_instruction': testInstruction,
+  };
 }

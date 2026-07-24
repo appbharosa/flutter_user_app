@@ -13,6 +13,7 @@ import '../bloc/payment_state.dart';
 import '../../../../core/services/cashfree_service.dart';
 
 
+
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
 
@@ -25,10 +26,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
   late final PaymentBloc _paymentBloc;
   final CashfreeService _cashfree = CashfreeService();
 
+  // ✅ Cached wallet balance – survives state changes
+  double _walletBalance = 0.0;
+  bool _isBalanceLoading = true;
+
   @override
   void initState() {
     super.initState();
     _paymentBloc = sl<PaymentBloc>();
+    _paymentBloc.add(FetchWalletBalance());
   }
 
   @override
@@ -39,18 +45,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   void _createOrder() {
     final amount = int.tryParse(_amountController.text);
-
     if (amount == null || amount <= 0) {
       _showSnackBar('Enter valid amount', isError: true);
       return;
     }
-
+    debugPrint('🟢 Creating order for amount: $amount');
     _paymentBloc.add(CreatePaymentOrder(amount));
   }
 
   void _startCashfreeCheckout(CashfreeOrder order) async {
-    final environment = CFEnvironment.PRODUCTION;
+    debugPrint('🟢 Starting Cashfree checkout with amount: ${order.amount}');
+    debugPrint('🟢 Order ID: ${order.orderId}');
 
+    // ⚠️ This warns you about the backend bug
+    if (order.amount == 0) {
+      _showSnackBar('Order amount is 0. Please check backend.', isError: true);
+    }
+
+    final environment = CFEnvironment.PRODUCTION;
     await _cashfree.startPayment(
       orderId: order.orderId,
       paymentSessionId: order.paymentSessionId,
@@ -77,8 +89,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor:
-        isError ? Colors.red.shade400 : Colors.green.shade500,
+        backgroundColor: isError ? Colors.red.shade400 : Colors.green.shade500,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
@@ -141,36 +152,57 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         body: BlocConsumer<PaymentBloc, PaymentState>(
           listener: (context, state) {
+            // ─── Update cached balance whenever it loads ──────────────
+            if (state is WalletBalanceLoaded) {
+              _walletBalance = state.balance;
+              _isBalanceLoading = false;
+              // No setState needed – builder will rebuild automatically
+            }
+
+            // ─── Handle order creation ────────────────────────────────
             if (state is PaymentOrderCreated) {
               _startCashfreeCheckout(state.order);
-            } else if (state is PaymentStatusChecked) {
+            }
+
+            // ─── Handle payment status ────────────────────────────────
+            if (state is PaymentStatusChecked) {
               if (state.status.status == PaymentResult.success) {
-                _showSnackBar(
-                  'Payment successful!',
-                  isError: false,
-                );
+                _showSnackBar('Payment successful!', isError: false);
+                // Refresh balance after success
+                _paymentBloc.add(FetchWalletBalance());
                 Navigator.pop(context, true);
-              } else if (state.status.status ==
-                  PaymentResult.pending) {
+              } else if (state.status.status == PaymentResult.pending) {
                 _showSnackBar(
                   'Payment processed. Please check status later.',
                   isError: false,
                 );
+                // Refresh balance to be safe
+                _paymentBloc.add(FetchWalletBalance());
                 Navigator.pop(context, true);
               } else {
-                _showSnackBar(
-                  'Payment failed. Please try again.',
-                  isError: true,
-                );
+                _showSnackBar('Payment failed. Please try again.', isError: true);
+                // ✅ Refresh balance on failure too – ensures correct amount
+                _paymentBloc.add(FetchWalletBalance());
               }
-            } else if (state is PaymentError) {
+            }
+
+            // ─── Handle errors ──────────────────────────────────────────
+            if (state is PaymentError) {
               _showSnackBar(state.message, isError: true);
+              // ✅ Refresh balance on error (e.g., network issue)
+              // This prevents the UI from showing 0 if balance fetch fails
+              if (state.message.contains('Network') || state.message.contains('connection')) {
+                // Do nothing, keep the cached balance
+              } else {
+                // For other errors, we might want to re-fetch
+                _paymentBloc.add(FetchWalletBalance());
+              }
             }
           },
           builder: (context, state) {
+            // ─── Build UI using the cached _walletBalance ──────────────
             return Stack(
               children: [
-                /// Top Blue Background
                 Container(
                   height: 220,
                   decoration: BoxDecoration(
@@ -188,8 +220,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                   ),
                 ),
-
-                /// Main Content
                 SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -217,12 +247,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ],
                         ),
                         child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                          children: const [
-                            Row(
-                              mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   "Wallet Balance",
@@ -239,23 +267,34 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 18),
-                            Text(
-                              "₹ 0.00",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Poppins',
+                            const SizedBox(height: 18),
+                            // ✅ Always display the cached balance
+                            if (_isBalanceLoading && state is PaymentLoading)
+                              const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            else
+                              Text(
+                                "₹ ${_walletBalance.toStringAsFixed(2)}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Poppins',
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
 
                       const SizedBox(height: 28),
 
-                      /// Payment Card
+                      /// Payment Card (unchanged)
                       Container(
                         padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
@@ -270,8 +309,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ],
                         ),
                         child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               "Add Money",
@@ -281,9 +319,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 fontFamily: 'Poppins',
                               ),
                             ),
-
                             const SizedBox(height: 8),
-
                             Text(
                               "Enter amount to add into your wallet",
                               style: TextStyle(
@@ -292,10 +328,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 fontFamily: 'Poppins',
                               ),
                             ),
-
                             const SizedBox(height: 24),
-
-                            /// Amount Field
                             TextField(
                               controller: _amountController,
                               keyboardType: TextInputType.number,
@@ -314,30 +347,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   color: Colors.grey.shade500,
                                 ),
                                 filled: true,
-                                fillColor:
-                                const Color(0xffF5F7FB),
-                                contentPadding:
-                                const EdgeInsets.symmetric(
+                                fillColor: const Color(0xffF5F7FB),
+                                contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 14,
                                   vertical: 10,
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius:
-                                  BorderRadius.circular(18),
+                                  borderRadius: BorderRadius.circular(18),
                                   borderSide: BorderSide.none,
                                 ),
-                                enabledBorder:
-                                OutlineInputBorder(
-                                  borderRadius:
-                                  BorderRadius.circular(18),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(18),
                                   borderSide: BorderSide(
                                     color: Colors.grey.shade200,
                                   ),
                                 ),
-                                focusedBorder:
-                                OutlineInputBorder(
-                                  borderRadius:
-                                  BorderRadius.circular(18),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(18),
                                   borderSide: const BorderSide(
                                     color: AppColors.blue,
                                     width: 1.5,
@@ -345,10 +371,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 22),
-
-                            /// Quick Amounts
                             Wrap(
                               spacing: 12,
                               runSpacing: 12,
@@ -359,10 +382,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 _buildQuickAmountChip("1000"),
                               ],
                             ),
-
                             const SizedBox(height: 34),
-
-                            /// Pay Button
                             SizedBox(
                               width: double.infinity,
                               height: 58,
@@ -370,25 +390,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 onPressed: state is PaymentLoading
                                     ? null
                                     : _createOrder,
-                                style:
-                                ElevatedButton.styleFrom(
+                                style: ElevatedButton.styleFrom(
                                   elevation: 0,
-                                  backgroundColor:
-                                  AppColors.blue,
-                                  shape:
-                                  RoundedRectangleBorder(
-                                    borderRadius:
-                                    BorderRadius.circular(
-                                      18,
-                                    ),
+                                  backgroundColor: AppColors.blue,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
                                   ),
                                 ),
                                 child: state is PaymentLoading
                                     ? const SizedBox(
                                   height: 24,
                                   width: 24,
-                                  child:
-                                  CircularProgressIndicator(
+                                  child: CircularProgressIndicator(
                                     color: Colors.white,
                                     strokeWidth: 2.5,
                                   ),
@@ -398,10 +411,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
-                                    fontWeight:
-                                    FontWeight.w600,
-                                    fontFamily:
-                                    'Poppins',
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Poppins',
                                   ),
                                 ),
                               ),

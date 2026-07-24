@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../../../core/appurls/app_urls.dart';
 import '../../../../core/di/injection.dart' as di;
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/services/language_service.dart';
 import '../../../../core/utils/user_manager.dart';
 import '../../../../data/data_sources/free_lab_remote_datasource.dart';
 import '../../../../data/models/free_lab_package_model.dart';
 import '../../../../domain/entities/address.dart';
+import '../../../../domain/entities/free_lab_package.dart';
 import '../../../../domain/repositories/subscription_repository.dart';
 import '../../../../domain/use_cases/get_free_lab_reports.dart';
 import '../lab_test_category_bloc/lab_test_category_bloc.dart';
@@ -16,6 +19,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../domain/entities/lab_test_category.dart';
 import 'free_lab_reports_screen.dart';
+import 'free_labsub_package_screen.dart';
 import 'lab_test_subcategory_screen.dart';
 import '../../../subscription/presentation/pages/subscriptions_page.dart';
 
@@ -55,6 +59,33 @@ class _LabTestScreenState extends State<LabTestScreen> {
     }
   }
 
+  Future<FreeLabPackage?> _fetchPackageForCategory(int categoryId) async {
+    try {
+      // ✅ Get DioClient from dependency injection
+      final dioClient = di.sl<DioClient>();
+      final response = await dioClient.dio.get(
+        AppUrls.freeLabSubCategory,
+        queryParameters: {
+          'lang': 'en',
+          'category_id': categoryId,
+        },
+      );
+      if (response.data['status'] == 200) {
+        final result = response.data['result'];
+        if (result is List && result.isNotEmpty) {
+          final paginationMap = result[0] as Map<String, dynamic>;
+          final dataList = paginationMap['data'] as List? ?? [];
+          if (dataList.isNotEmpty) {
+            return FreeLabPackageModel.fromJson(dataList.first);
+          }
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching package: $e');
+      return null;
+    }
+  }
 
   Future<void> _checkSubscriptionStatus() async {
     final language = await LanguageService.getCurrentLanguage();
@@ -230,7 +261,7 @@ class _LabTestScreenState extends State<LabTestScreen> {
                 const SizedBox(height: 20),
 
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
                     if (!_hasActiveSubscription) {
                       Navigator.push(
                         context,
@@ -245,16 +276,36 @@ class _LabTestScreenState extends State<LabTestScreen> {
                           builder: (_) => const FreeLabReportsScreen(),
                         ),
                       );
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => FreeLabPackagesScreen(
-                            addressNotifier: widget.addressNotifier,
-                            packageId: 1,
+                    }
+                    else {
+                      try {
+                        final package = await _fetchPackageForCategory(23);
+                        if (package != null && mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => FreeLabSubPackagesScreen(
+                                addressNotifier: widget.addressNotifier,
+                                package: package,
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('No package found for this category'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to load package: $e'),
+                            backgroundColor: Colors.red,
                           ),
-                        ),
-                      );
+                        );
+                      }
                     }
                   },
 
@@ -642,10 +693,8 @@ class _LabTestScreenState extends State<LabTestScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => FreeLabPackagesScreen(
-          addressNotifier: widget.addressNotifier,
-          packageId: packageId,
-        ),
+        builder: (_) =>
+           SubscriptionPage()
       ),
     );
   }

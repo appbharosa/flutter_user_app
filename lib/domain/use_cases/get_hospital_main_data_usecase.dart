@@ -7,7 +7,7 @@ import '../repositories/hospital_main_data_repository.dart';
 class GetHospitalMainDataUseCase {
   final HospitalMainDataRepository repository;
   GetHospitalMainDataUseCase(this.repository);
-  Future<Either<Failure, (HospitalMainData, List<HospitalDoctor>)>> call(int mainDataId) async {
-    return await repository.getHospitalData(mainDataId);
+  Future<Either<Failure, (HospitalMainData, List<HospitalDoctor>)>> call(int mainDataId, String lang) async {
+    return await repository.getHospitalData(mainDataId: mainDataId, lang: lang);
   }
 }

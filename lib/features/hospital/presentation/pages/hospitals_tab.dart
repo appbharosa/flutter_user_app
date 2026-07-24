@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:user/core/utils/translations.dart';
 import 'package:user/features/hospital/presentation/pages/hospital_doctor_screen.dart';
 import '../../../../core/di/injection.dart' as sl;
 import '../../../../core/theme/app_colors.dart';
@@ -142,8 +143,8 @@ class _HospitalsTabState extends State<HospitalsTab> {
             );
           },
         ),
-        title: const Text(
-          'Hospitals',
+        title:  Text(
+          'hospitals'.tr(),
           style: TextStyle(
             color: Colors.white,
             fontSize: 18,

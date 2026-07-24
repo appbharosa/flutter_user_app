@@ -1,5 +1,7 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pdf/pdf.dart';
 import '../../../../core/di/injection.dart' as sl;
 import '../../../../core/services/language_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -22,6 +24,17 @@ import '../subscription_status_bloc/subscription_status_state.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
 
+import 'dart:io';
+import 'package:dio/dio.dart';
+
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'dart:typed_data';
+
+
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key});
 
@@ -34,7 +47,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   late SubscriptionBloc _subscriptionBloc;
   late SubscriptionPaymentBloc _paymentBloc;
 
-  // Track selected plan index (for UI highlight)
   int _selectedPlanIndex = 0;
 
   @override
@@ -49,12 +61,352 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   Future<void> _loadSubscriptionStatus() async {
     final language = await LanguageService.getCurrentLanguage();
     _statusBloc.add(LoadUserSubscription(language));
+  }
 
-    final hasActive = await UserManager.hasActiveSubscription();
-    if (!hasActive) {
-      // Optionally, we could clear local flag here, but the API will tell us.
-      // We'
+
+
+  Future<void> _downloadInvoice(UserSubscription subscription) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      Uint8List pdfBytes;
+
+      // If invoice URL exists, download it
+      if (subscription.invoice != null && subscription.invoice!.isNotEmpty) {
+        // Request storage permission (only needed for Android)
+        if (await Permission.storage.request().isGranted) {
+          // granted
+        } else if (await Permission.storage.request().isPermanentlyDenied) {
+          Navigator.pop(context);
+          showErrorSnackBar('Storage permission denied. Please enable from settings.');
+          return;
+        }
+
+        final dio = Dio();
+        final response = await dio.get(
+          subscription.invoice!,
+          options: Options(responseType: ResponseType.bytes),
+        );
+        pdfBytes = response.data as Uint8List;
+      } else {
+        // Generate a local PDF invoice from subscription data
+        pdfBytes = await _generateInvoicePdf(subscription);
+      }
+
+      // Save to temp folder
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/invoice_${DateTime.now().millisecondsSinceEpoch}.pdf');
+      await file.writeAsBytes(pdfBytes);
+
+      // Dismiss loading
+      Navigator.pop(context);
+
+      // Share
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Your MedRayder Subscription Invoice',
+      );
+    } catch (e) {
+      Navigator.pop(context);
+      showErrorSnackBar('Failed to download invoice: $e');
     }
+  }
+
+  Future<Uint8List> _generateInvoicePdf(UserSubscription sub) async {
+    final pdf = pw.Document();
+
+    final invoiceNo =
+        "INV-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}";
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(30),
+        build: (context) => [
+
+          /// HEADER
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+
+                  pw.Text(
+                    "MEDRAYDER",
+                    style: pw.TextStyle(
+                      fontSize: 28,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+
+                  pw.SizedBox(height: 5),
+
+                  pw.Text(
+                    "Subscription Invoice",
+                    style: const pw.TextStyle(
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 8,
+                ),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(),
+                  borderRadius: pw.BorderRadius.circular(5),
+                ),
+                child: pw.Text(
+                  "PAID",
+                  style: pw.TextStyle(
+                    color: PdfColors.green700,
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          pw.SizedBox(height: 30),
+
+          /// INVOICE DETAILS
+
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+
+                  pw.Text(
+                    "Invoice No",
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                  ),
+
+                  pw.Text(invoiceNo),
+
+                  pw.SizedBox(height: 10),
+
+                  pw.Text(
+                    "Invoice Date",
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                  ),
+
+                  pw.Text(sub.createdOn.toString()),
+                ],
+              ),
+
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+
+                  pw.Text(
+                    "Customer",
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                  ),
+
+                  pw.Text("MedRayder User"),
+                ],
+              ),
+            ],
+          ),
+
+          pw.SizedBox(height: 30),
+
+          /// TABLE
+
+          pw.Table(
+            border: pw.TableBorder.all(
+              color: PdfColors.grey400,
+            ),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(4),
+              1: const pw.FlexColumnWidth(2),
+            },
+            children: [
+
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(
+                  color: PdfColors.blue100,
+                ),
+                children: [
+
+                  _tableCell(
+                    "Description",
+                    bold: true,
+                  ),
+
+                  _tableCell(
+                    "Value",
+                    bold: true,
+                  ),
+                ],
+              ),
+
+              _row("Plan Name", sub.name),
+
+              _row("Duration", sub.duration),
+
+              _row("Start Date", sub.fromDate),
+
+              _row("End Date", sub.toDate),
+
+              _row("Subscribed On", sub.createdOn),
+
+              _row("Status", "Active"),
+            ],
+          ),
+
+          pw.SizedBox(height: 30),
+
+          /// TOTAL BOX
+
+          pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Container(
+              width: 220,
+              padding: const pw.EdgeInsets.all(15),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(
+                  color: PdfColors.grey600,
+                ),
+              ),
+              child: pw.Column(
+                children: [
+
+                  _amountRow(
+                    "Subscription Amount",
+                    "₹${sub.discountPrice}",
+                  ),
+
+                  pw.Divider(),
+
+                  _amountRow(
+                    "Total Paid",
+                    "₹${sub.discountPrice}",
+                    bold: true,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          pw.SizedBox(height: 40),
+
+          pw.Divider(),
+
+          pw.Center(
+            child: pw.Column(
+              children: [
+
+                pw.Text(
+                  "Thank you for choosing MedRayder!",
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+
+                pw.SizedBox(height: 8),
+
+                pw.Text(
+                  "This is a computer generated invoice and does not require a signature.",
+                  textAlign: pw.TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  pw.TableRow _row(String title, String value) {
+    return pw.TableRow(
+      children: [
+        _tableCell(title),
+        _tableCell(value),
+      ],
+    );
+  }
+
+  pw.Widget _tableCell(
+      String text, {
+        bool bold = false,
+      }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(10),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          fontWeight:
+          bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
+  pw.Widget _amountRow(
+      String title,
+      String value, {
+        bool bold = false,
+      }) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+
+        pw.Text(
+          title,
+          style: pw.TextStyle(
+            fontWeight:
+            bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+          ),
+        ),
+
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontWeight:
+            bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── HELPERS ──────────────────────────────────────────────────────────
+  void showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -103,14 +455,13 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 listener: (context, state) async {
                   if (state is SubscriptionStatusError) {
                     showErrorSnackBar(state.message);
-                    // If error indicates no active subscription, clear flag
                     if (state.message.contains('no active subscription') ||
                         state.message.contains('No subscription found')) {
                       await UserManager.setSubscriptionActive(false);
                     }
                   } else if (state is SubscriptionStatusLoaded) {
-                    // Sync local flag with actual API result
-                    final hasActive = (state.subscription != null && !state.subscription!.isExpired);
+                    final hasActive = (state.subscription != null &&
+                        !state.subscription!.isExpired);
                     await UserManager.setSubscriptionActive(hasActive);
                   }
                 },
@@ -150,7 +501,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       }
                     } else {
                       UserManager.setSubscriptionActive(false);
-                      return _buildPlansList(); // No active subscription → show plans
+                      return _buildPlansList();
                     }
                   }
                   return const SizedBox();
@@ -163,8 +514,155 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  // ---------- Expired Subscription UI ----------
+  Widget _buildActiveSubscription(UserSubscription subscription) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ─── Active Subscription Card ──────────────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1F52A5), Color(0xFF4CAF50)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.verified, color: Colors.white, size: 24),
+                    SizedBox(width: 8),
+                    Text('Active Subscription', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(subscription.name, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(subscription.duration, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Valid From', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        const SizedBox(height: 4),
+                        Text(subscription.fromDate, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('Valid Until', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        const SizedBox(height: 4),
+                        Text(subscription.toDate, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total amount Paid', style: TextStyle(color: Colors.white, fontSize: 14)),
+                      Text('₹${subscription.discountPrice}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ─── Benefits Included ──────────────────────────────────────
+          const Text('Benefits Included', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: subscription.benefits.map((benefit) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.check_circle, size: 20, color: Colors.green),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(benefit, style: const TextStyle(fontSize: 13))),
+                    ],
+                  ),
+                )).toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ─── Subscription Details (with invoice button inside) ─────
+          const Text('Subscription Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildInfoRow('Plan Name', subscription.name),
+                  _buildInfoRow('Duration', subscription.duration),
+                  _buildInfoRow('Start Date', subscription.fromDate),
+                  _buildInfoRow('End Date', subscription.toDate),
+                  _buildInfoRow('Amount Paid', '₹${subscription.discountPrice}'),
+                  _buildInfoRow('Subscribed On', subscription.createdOn.split(' ')[0]),
+                  const Divider(height: 24, thickness: 1),
+                  // ─── INVOICE BUTTON (inside the card) ──────────────
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _downloadInvoice(subscription),
+                      icon: const Icon(Icons.download, color: Colors.white),
+                      label: const Text('Download Invoice',style: TextStyle(color: Colors.white),),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.blue,
+
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  // ─── EXPIRED SUBSCRIPTION ──────────────────────────────────────────
   Widget _buildExpiredSubscription(UserSubscription subscription) {
+    // ... unchanged (keep your existing code) ...
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
@@ -304,148 +802,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  // ---------- Active Subscription UI ----------
-  Widget _buildActiveSubscription(UserSubscription subscription) {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF1F52A5), Color(0xFF4CAF50)],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.verified, color: Colors.white, size: 24),
-                    SizedBox(width: 8),
-                    Text('Active Subscription', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(subscription.name, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text(subscription.duration, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Valid From', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Text(subscription.fromDate, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text('Valid Until', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Text(subscription.toDate, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Total amount Paid', style: TextStyle(color: Colors.white, fontSize: 14)),
-                      Text('₹${subscription.discountPrice}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text('Benefits Included', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: subscription.benefits.map((benefit) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.check_circle, size: 20, color: Colors.green),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(benefit, style: const TextStyle(fontSize: 13))),
-                    ],
-                  ),
-                )).toList(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text('Subscription Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildInfoRow('Plan Name', subscription.name),
-                  _buildInfoRow('Duration', subscription.duration),
-                  _buildInfoRow('Start Date', subscription.fromDate),
-                  _buildInfoRow('End Date', subscription.toDate),
-                  _buildInfoRow('Amount Paid', '₹${subscription.discountPrice}'),
-                  _buildInfoRow('Subscribed On', subscription.createdOn.split(' ')[0]),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (subscription.invoice != null && subscription.invoice!.isNotEmpty)
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('View Invoice'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.blue,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  // ---------- Renew Subscription ----------
+  // ─── RENEW SUBSCRIPTION ──────────────────────────────────────────────
   void _renewSubscription(UserSubscription subscription) {
     final plan = SubscriptionPlan(
       id: subscription.id,
@@ -460,12 +817,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       totalAmount: (subscription.discountPrice * 1.18),
       savings: (subscription.price - subscription.discountPrice).toDouble(),
       personsCovered: subscription.name.contains('Family') ? 2 : 1,
-      coverageType: 'Family',
+      coverageType: subscription.name.contains('Family') ? 'Family' : 'Single',
     );
     _showPriceBottomSheet(context, plan);
   }
 
-  // ---------- Plans List (Benefits first, then Blue Plans section) ----------
+  // ─── PLANS LIST ─────────────────────────────────────────────────────
   Widget _buildPlansList() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_subscriptionBloc.state is SubscriptionInitial) {
@@ -487,8 +844,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           if (state.plans.isEmpty) {
             return const Center(child: Text('No plans available'));
           }
-
-          // Reset selection if needed
           if (_selectedPlanIndex >= state.plans.length) _selectedPlanIndex = 0;
 
           return SingleChildScrollView(
@@ -496,7 +851,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ========== 1. BENEFITS SECTION (White background) ==========
+                // Benefits section (unchanged)
                 Container(
                   color: Colors.white,
                   child: Padding(
@@ -533,7 +888,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   ),
                 ),
 
-                // ========== 2. PLANS SECTION (Blue gradient background) ==========
+                // Plans section (unchanged)
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Container(
@@ -562,8 +917,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                             ),
                           ),
                           const SizedBox(height: 20),
-
-                          // Plans cards container
                           Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
@@ -589,9 +942,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                               }),
                             ),
                           ),
-
                           const SizedBox(height: 18),
-
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -624,9 +975,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                               ],
                             ),
                           ),
-
                           const SizedBox(height: 18),
-
                           Container(
                             height: 66,
                             width: double.infinity,
@@ -689,13 +1038,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   ),
                 ),
 
-                // ========== 3. REVIEWS & FAQS SECTION ==========
+                // Reviews & FAQs
                 _buildReviewsAndFaqs(),
               ],
             ),
           );
         }
-
         if (state is SubscriptionError) {
           return Center(
             child: Column(
@@ -718,14 +1066,173 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-// ================= REVIEWS + FAQS SECTION =================
+  // ─── HELPER WIDGETS (BENEFITS, FAQ, PLAN CARDS) ─────────────────────
+  Widget _buildPremiumPlanCard(SubscriptionPlan plan, int index,
+      {required bool isSelected, required VoidCallback onTap}) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.shade50 : Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: isSelected ? Border.all(color: AppColors.blue, width: 2) : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 62,
+              width: 62,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.blue.shade50,
+              ),
+              child: Icon(
+                plan.name.contains('Family') ? Icons.family_restroom : Icons.person,
+                color: AppColors.blue,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${index + 1}. ${plan.name}",
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "₹${plan.discountPrice.toStringAsFixed(0)}",
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.blue,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    plan.discountPrice <= 1500
+                        ? "Only ₹100/month"
+                        : "Only ₹2/day /person",
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              color: AppColors.blue,
+              size: 34,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBenefitCard(Map<String, dynamic> benefit) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 95,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0046C0), Color(0xFF005BFF)],
+              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Image.asset(
+                benefit['image'],
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.image_not_supported, color: Colors.white, size: 40);
+                },
+              ),
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: const BoxDecoration(color: Color(0xFF032C76)),
+            child: Text(
+              benefit['title'],
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: Column(
+                  children: List.generate(
+                    benefit['points'].length,
+                        (index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: Icon(Icons.check_circle, color: AppColors.blue, size: 16),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              benefit['points'][index],
+                              style: const TextStyle(fontSize: 11, height: 1.3, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReviewsAndFaqs() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ---------- Reviews ----------
           const Text(
             "What our members say",
             style: TextStyle(
@@ -758,8 +1265,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             ),
           ),
           const SizedBox(height: 32),
-
-          // ---------- FAQ Section ----------
           const Text(
             "Frequently Asked Questions",
             style: TextStyle(
@@ -844,7 +1349,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   _buildFaqTile(
                     question: "What is the process to claim accidental insurance cover?",
                     answer:
-                    " Contact Acko (our insurance partner) directly. You can reach their claims team via the Acko app or call their 24/7 claims support number. They will guide you through the simple process with minimal documentation."                  ),
+                    "Contact Acko (our insurance partner) directly. You can reach their claims team via the Acko app or call their 24/7 claims support number. They will guide you through the simple process with minimal documentation.",
+                  ),
                 ],
               ),
             ),
@@ -854,7 +1360,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-// Single review card widget
   Widget _buildReviewCard({
     required String name,
     required int rating,
@@ -908,7 +1413,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-// Expandable FAQ tile (using built-in ExpansionTile)
   Widget _buildFaqTile({required String question, required String answer}) {
     return ExpansionTile(
       title: Text(
@@ -930,84 +1434,107 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  // ---------- Premium plan card with selection highlight ----------
-  Widget _buildPremiumPlanCard(SubscriptionPlan plan, int index, {required bool isSelected, required VoidCallback onTap}) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(22),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.shade50 : Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: isSelected ? Border.all(color: AppColors.blue, width: 2) : null,
-        ),
-        child: Row(
-          children: [
-            // Icon
-            Container(
-              height: 62,
-              width: 62,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.blue.shade50,
-              ),
-              child: Icon(
-                plan.name.contains('Family') ? Icons.family_restroom : Icons.person,
-                color: AppColors.blue,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${index + 1}. ${plan.name}",
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+  // ─── PRICE BOTTOM SHEET ─────────────────────────────────────────────
+  void _showPriceBottomSheet(BuildContext context, SubscriptionPlan plan) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) {
+        return BlocProvider.value(
+          value: _paymentBloc,
+          child: BlocConsumer<SubscriptionPaymentBloc, SubscriptionPaymentState>(
+            listener: (context, state) {
+              if (state is SubscriptionPaymentOrderCreated) {
+                Navigator.pop(context);
+                _openCashfreeCheckout(context, state.order, state.subscriptionId, _paymentBloc);
+              } else if (state is SubscriptionPaymentError) {
+                Navigator.pop(context);
+                showErrorSnackBar(state.message);
+              }
+            },
+            builder: (context, state) {
+              return Container(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Price Details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Poppins', color: AppColors.black)),
+                    const SizedBox(height: 16),
+                    _buildDetailRow('Plan', plan.name),
+                    _buildDetailRow('Subtotal', '₹${plan.finalPrice.toStringAsFixed(2)}'),
+                    _buildDetailRow('Persons Covered', plan.personsCovered.toString()),
+                    _buildDetailRow('GST (18%)', '₹${plan.gstAmount.toStringAsFixed(2)}'),
+                    const Divider(height: 32, thickness: 1),
+                    _buildDetailRow('Total Amount', '₹${plan.totalAmount.toStringAsFixed(2)}', isTotal: true),
+                    const SizedBox(height: 24),
+                    state is SubscriptionPaymentLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          _paymentBloc.add(CreateSubscriptionPaymentOrder(
+                              plan.totalAmount.ceil(), plan.id));
+                        },
+                        child: const Text('Subscribe Now', style: TextStyle(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.w600)),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "₹${plan.discountPrice.toStringAsFixed(0)}",
-                    style: const TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.blue,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    plan.discountPrice <= 1500
-                        ? "Only ₹100/month"
-                        : "Only ₹2/day /person",
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Radio / Selection indicator
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: AppColors.blue,
-              size: 34,
-            ),
-          ],
-        ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _openCashfreeCheckout(BuildContext context, SubscriptionOrder order,
+      int subscriptionId, SubscriptionPaymentBloc bloc) {
+    final cashfree = sl.sl<CashfreeService>();
+    cashfree.startPayment(
+      orderId: order.orderId,
+      paymentSessionId: order.paymentSessionId,
+      environment: CFEnvironment.PRODUCTION,
+      onSuccess: (orderId) => bloc.add(ConfirmSubscriptionPayment(orderId, subscriptionId)),
+      onFailure: (error) => showErrorSnackBar(error),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, fontFamily: 'Poppins', color: AppColors.black)),
+          Text(value, style: TextStyle(fontSize: 12, fontWeight: isTotal ? FontWeight.bold : FontWeight.w500, fontFamily: 'Poppins', color: AppColors.black)),
+        ],
       ),
     );
   }
 
-  // ---------- Benefits list data ----------
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+
+  // ─── BENEFITS DATA ────────────────────────────────────────────────────
   final List<Map<String, dynamic>> _benefitsList = [
     {
       "title": "Doctor Consultations",
@@ -1064,192 +1591,4 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       ]
     },
   ];
-
-  // ---------- Benefit card widget ----------
-  Widget _buildBenefitCard(Map<String, dynamic> benefit) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // IMAGE
-          Container(
-            height: 95,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0046C0), Color(0xFF005BFF)],
-              ),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Image.asset(
-                benefit['image'],
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.image_not_supported, color: Colors.white, size: 40);
-                },
-              ),
-            ),
-          ),
-          // TITLE
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: const BoxDecoration(color: Color(0xFF032C76)),
-            child: Text(
-              benefit['title'],
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          // CONTENT
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
-                child: Column(
-                  children: List.generate(
-                    benefit['points'].length,
-                        (index) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(top: 2),
-                            child: Icon(Icons.check_circle, color: AppColors.blue, size: 16),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              benefit['points'][index],
-                              style: const TextStyle(fontSize: 11, height: 1.3, fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------- Payment Bottom Sheet ----------
-  void _showPriceBottomSheet(BuildContext context, SubscriptionPlan plan) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) {
-        return BlocProvider.value(
-          value: _paymentBloc,
-          child: BlocConsumer<SubscriptionPaymentBloc, SubscriptionPaymentState>(
-            listener: (context, state) {
-              if (state is SubscriptionPaymentOrderCreated) {
-                Navigator.pop(context);
-                _openCashfreeCheckout(context, state.order, state.subscriptionId, _paymentBloc);
-              } else if (state is SubscriptionPaymentError) {
-                Navigator.pop(context);
-                showErrorSnackBar(state.message);
-              }
-            },
-            builder: (context, state) {
-              return Container(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Price Details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Poppins', color: AppColors.black)),
-                    const SizedBox(height: 16),
-                    _buildDetailRow('Plan', plan.name),
-                    _buildDetailRow('Subtotal', '₹${plan.finalPrice.toStringAsFixed(2)}'),
-                    _buildDetailRow('Persons Covered', plan.personsCovered.toString()),
-                    _buildDetailRow('GST (18%)', '₹${plan.gstAmount.toStringAsFixed(2)}'),
-                    const Divider(height: 32, thickness: 1),
-                    _buildDetailRow('Total Amount', '₹${plan.totalAmount.toStringAsFixed(2)}', isTotal: true),
-                    const SizedBox(height: 24),
-                    state is SubscriptionPaymentLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.blue,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () {
-                          _paymentBloc.add(CreateSubscriptionPaymentOrder(plan.totalAmount.ceil(), plan.id));
-                        },
-                        child: const Text('Subscribe Now', style: TextStyle(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  void _openCashfreeCheckout(BuildContext context, SubscriptionOrder order, int subscriptionId, SubscriptionPaymentBloc bloc) {
-    final cashfree = sl.sl<CashfreeService>();
-    cashfree.startPayment(
-      orderId: order.orderId,
-      paymentSessionId: order.paymentSessionId,
-      environment: CFEnvironment.PRODUCTION,
-      onSuccess: (orderId) => bloc.add(ConfirmSubscriptionPayment(orderId, subscriptionId)),
-      onFailure: (error) => showErrorSnackBar(error),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value, {bool isTotal = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, fontFamily: 'Poppins', color: AppColors.black)),
-          Text(value, style: TextStyle(fontSize: 12, fontWeight: isTotal ? FontWeight.bold : FontWeight.w500, fontFamily: 'Poppins', color: AppColors.black)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
 }

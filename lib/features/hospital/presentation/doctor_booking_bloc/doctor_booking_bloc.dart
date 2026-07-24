@@ -73,7 +73,7 @@ class DoctorBookingBloc extends Bloc<DoctorBookingEvent, DoctorBookingState> {
       cashfreeService.startPayment(
         orderId: orderId,
         paymentSessionId: paymentSessionId,
-        environment: CFEnvironment.PRODUCTION, // Change to PRODUCTION for live
+        environment: CFEnvironment.SANDBOX, // Change to PRODUCTION for live
         onSuccess: (orderId) {
           completer.complete(true);
         },

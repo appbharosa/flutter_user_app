@@ -16,3 +16,4 @@ class CheckPaymentStatus extends PaymentEvent {
   final String orderId;
   const CheckPaymentStatus(this.orderId);
 }
+class FetchWalletBalance extends PaymentEvent {}

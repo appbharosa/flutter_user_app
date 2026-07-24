@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:user/core/theme/app_colors.dart';
+import 'package:user/core/utils/translations.dart';
 
 
 
@@ -38,16 +39,16 @@ class BottomNavBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Changed from spaceAround
           children: [
-            Expanded(child: _bottomItem(Icons.home_filled, "Home", 0, isSmallScreen: isSmallScreen)),
-            Expanded(child: _bottomItem(Icons.calendar_month, "Admission", 1, isSmallScreen: isSmallScreen)),
+            Expanded(child: _bottomItem(Icons.home_filled, 'home'.tr(), 0, isSmallScreen: isSmallScreen)),
+            Expanded(child: _bottomItem(Icons.calendar_month, 'admission'.tr(), 1, isSmallScreen: isSmallScreen)),
             Expanded(
-              child: _bottomItem(Icons.add, "ECard", 2,
+              child: _bottomItem(Icons.add, 'ecard'.tr(), 2,
                 isSpecial: true,
                 isSmallScreen: isSmallScreen,
               ),
             ),
-            Expanded(child: _bottomItem(Icons.description_outlined, "Records", 3, isSmallScreen: isSmallScreen)),
-            Expanded(child: _bottomItem(Icons.person_outline, "Profile", 4, isSmallScreen: isSmallScreen)),
+            Expanded(child: _bottomItem(Icons.description_outlined, 'records'.tr(), 3, isSmallScreen: isSmallScreen)),
+            Expanded(child: _bottomItem(Icons.person_outline, 'profile'.tr(), 4, isSmallScreen: isSmallScreen)),
           ],
         ),
       ),

@@ -6,19 +6,28 @@ import '../models/hospital_main_data_model.dart';
 import '../models/hospital_doctor_model.dart';
 
 abstract class HospitalMainDataRemoteDataSource {
-  Future<(HospitalMainDataModel, List<HospitalDoctorModel>)> getHospitalData(int mainDataId);
+  Future<(HospitalMainDataModel, List<HospitalDoctorModel>)> getHospitalData({
+    required int mainDataId,
+    required String lang,
+  });
 }
-
 class HospitalMainDataRemoteDataSourceImpl implements HospitalMainDataRemoteDataSource {
   final DioClient dioClient;
   HospitalMainDataRemoteDataSourceImpl(this.dioClient);
 
   @override
-  Future<(HospitalMainDataModel, List<HospitalDoctorModel>)> getHospitalData(int mainDataId) async {
+  Future<(HospitalMainDataModel, List<HospitalDoctorModel>)> getHospitalData({
+    required int mainDataId,
+    required String lang,
+  }) async {
     try {
+      final queryParams = {
+        'main_data_id': mainDataId,
+        'lang': lang, // ✅ add language here
+      };
       final response = await dioClient.dio.get(
         AppUrls.hospitalMainData,
-        queryParameters: {'main_data_id': mainDataId},
+        queryParameters: queryParams,
       );
       if (response.data['status'] == 200) {
         final data = response.data['data'];

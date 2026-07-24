@@ -1,5 +1,5 @@
-
 import '../../domain/entities/online_doctor_booking_item.dart';
+import 'hospital_doctor_booking_item_model.dart';
 
 class OnlineDoctorBookingItemModel extends OnlineDoctorBookingItem {
   OnlineDoctorBookingItemModel({
@@ -31,9 +31,22 @@ class OnlineDoctorBookingItemModel extends OnlineDoctorBookingItem {
     required super.email,
     required super.gender,
     required super.dob,
+    required super.medicines,
+    required super.tests,
+    required super.notes,
   });
 
   factory OnlineDoctorBookingItemModel.fromJson(Map<String, dynamic> json) {
+    // Parse medicines, tests, notes using the imported types
+    final medicinesList = json['medicines'] as List? ?? [];
+    final medicines = medicinesList.map((e) => Medicine.fromJson(e)).toList();
+
+    final testsList = json['tests'] as List? ?? [];
+    final tests = testsList.map((e) => Test.fromJson(e)).toList();
+
+    final notesList = json['notes'] as List? ?? [];
+    final notes = notesList.map((e) => e.toString()).toList();
+
     return OnlineDoctorBookingItemModel(
       id: _toInt(json['id']),
       bookingId: _toString(json['booking_id']),
@@ -63,6 +76,9 @@ class OnlineDoctorBookingItemModel extends OnlineDoctorBookingItem {
       email: _toString(json['email']),
       gender: _toString(json['gender']),
       dob: _toString(json['dob']),
+      medicines: medicines,
+      tests: tests,
+      notes: notes,
     );
   }
 

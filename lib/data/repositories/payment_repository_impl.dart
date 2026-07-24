@@ -42,4 +42,19 @@ class PaymentRepositoryImpl implements PaymentRepository {
       return Left(ServerFailure('Unexpected error: $e'));
     }
   }
+
+  @override
+  Future<Either<Failure, double>> getWallet() async {
+    if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
+    try {
+      final balanceModel = await remoteDataSource.getWallet();
+      return Right(balanceModel.walletAmount);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException {
+      return Left(NetworkFailure());
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
 }

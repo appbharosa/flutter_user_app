@@ -608,6 +608,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetPackagesByCategoryId(sl<FreeLabRepository>()));
   sl.registerLazySingleton(() => GetPharmacyCategories(sl<PharmacyRepository>()));
   sl.registerLazySingleton(() => GetPharmacyProducts(sl<PharmacyRepository>()));
+  sl.registerLazySingleton<GetWalletBalanceUseCase>( // ✅ NEW
+        () => GetWalletBalanceUseCase(sl<PaymentRepository>()),
+  );
 
 
   // ========== BLoCs ==========
@@ -625,7 +628,7 @@ Future<void> init() async {
   sl.registerFactory(() => LanguageBloc());
   sl.registerFactory(() => MedLockerBloc(getMedLockersUseCase: sl(), getMedLockerDetailUseCase: sl(), addMedLockerUseCase: sl(),));
   sl.registerFactory(() => OrderBloc(createOrderUseCase: sl()));
-  sl.registerFactory(() => PaymentBloc(createOrderUseCase: sl(), checkStatusUseCase: sl(),));
+  sl.registerFactory(() => PaymentBloc(createOrderUseCase: sl(), checkStatusUseCase: sl(),getWalletUseCase: sl(),));
   sl.registerFactory(() => SubscriptionBloc(getSubscriptionPlansUseCase: sl()));
   sl.registerFactory(() => DiagnosticBookingBloc(bookDiagnosticUseCase: sl()));
   sl.registerFactory(() => FamilyMembersBloc(getFamilyMembersUseCase: sl()));

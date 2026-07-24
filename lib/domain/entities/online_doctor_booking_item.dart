@@ -1,4 +1,6 @@
 
+import '../../data/models/hospital_doctor_booking_item_model.dart';
+
 class OnlineDoctorBookingItem {
   final int id;
   final String bookingId;
@@ -28,6 +30,9 @@ class OnlineDoctorBookingItem {
   final String email;
   final String gender;
   final String dob;
+  final List<Medicine> medicines;
+  final List<Test> tests;
+  final List<String> notes;
 
   OnlineDoctorBookingItem({
     required this.id,
@@ -58,5 +63,8 @@ class OnlineDoctorBookingItem {
     required this.email,
     required this.gender,
     required this.dob,
+    required this.medicines,
+    required this.tests,
+    required this.notes,
   });
 }

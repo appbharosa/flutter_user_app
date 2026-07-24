@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:user/core/theme/app_colors.dart';
 import '../../../../../core/di/injection.dart';
+import '../../../../../core/utils/translations.dart';
 import '../../../../../domain/entities/address.dart';
+import '../../../../language/bloc/language_bloc.dart';
 import '../../address_bloc/address_bloc.dart';
 import '../../address_bloc/address_event.dart';
 import '../../address_bloc/address_state.dart';
@@ -12,7 +14,7 @@ import 'add_address_screen.dart';
 class AddressBottomSheet extends StatefulWidget {
   final Function(Address) onAddressSelected;
   final Address? currentAddress;
-  final VoidCallback onSelectCurrentLocation;
+  final Future<bool> Function() onSelectCurrentLocation;
 
   const AddressBottomSheet({
     super.key,
@@ -27,11 +29,24 @@ class AddressBottomSheet extends StatefulWidget {
 
 class _AddressBottomSheetState extends State<AddressBottomSheet> {
   late AddressBloc _addressBloc;
+  bool _isLoadingLocation = false;
+
+  String getLanguageCode(Language lang) {
+    switch (lang) {
+      case Language.english: return 'en';
+      case Language.hindi:   return 'hi';
+      case Language.telugu:  return 'te';
+      default:               return 'en';
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _addressBloc = sl<AddressBloc>()..add(LoadAddresses());
+    _addressBloc = sl<AddressBloc>();
+    // Get current language and load addresses
+    final lang = getLanguageCode(LanguageBloc.currentLanguage);
+    _addressBloc.add(LoadAddresses(lang));
   }
 
   @override
@@ -81,16 +96,17 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const Padding(
+                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        'Select Delivery Address',
-                        style:  TextStyle(
+                        'select_delivery_address'.tr(),
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
                           color: AppColors.black,
-                        ),                    ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Expanded(
@@ -99,7 +115,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                           : state is AddressLoaded
                           ? ListView.builder(
                         controller: scrollController,
-                        itemCount: state.addresses.length + 1, // +1 for current location option
+                        itemCount: state.addresses.length + 1,
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             return _buildCurrentLocationTile();
@@ -119,7 +135,9 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.blue,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           onPressed: () async {
                             final addressBloc = context.read<AddressBloc>();
@@ -130,16 +148,20 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                               ),
                             );
                             if (result == true && mounted) {
-                              addressBloc.add(LoadAddresses());
+                              // 👇 Reload with current language
+                              final lang = getLanguageCode(LanguageBloc.currentLanguage);
+                              addressBloc.add(LoadAddresses(lang));
                             }
                           },
                           icon: const Icon(Icons.add, color: Colors.white),
-                          label: const Text('Add New Address', style:  TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Poppins',
-                            color: AppColors.whiteColor,
-                          ),
+                          label:  Text(
+                            'add_new_address'.tr(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
+                              color: AppColors.whiteColor,
+                            ),
                           ),
                         ),
                       ),
@@ -158,21 +180,40 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
   Widget _buildCurrentLocationTile() {
     final isSelected = widget.currentAddress?.id == -1;
     return GestureDetector(
-      onTap: widget.onSelectCurrentLocation,
+      onTap: _isLoadingLocation
+          ? null
+          : () async {
+        setState(() => _isLoadingLocation = true);
+        final success = await widget.onSelectCurrentLocation();
+        setState(() => _isLoadingLocation = false);
+        if (success && mounted) {
+          Navigator.pop(context); // Close bottom sheet on success
+        }
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: isSelected ? Colors.blue : Colors.grey.shade200, width: isSelected ? 2 : 1),
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.grey.shade200,
+            width: isSelected ? 2 : 1,
+          ),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            const Icon(Icons.my_location, color: Colors.green, size: 24),
+            if (_isLoadingLocation)
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              const Icon(Icons.my_location, color: Colors.green, size: 24),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Use Current Location',
+                _isLoadingLocation ? 'Fetching location...' : 'Use Current Location',
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -181,7 +222,8 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                 ),
               ),
             ),
-            if (isSelected) const Icon(Icons.check_circle, color: Colors.green),
+            if (isSelected && !_isLoadingLocation)
+              const Icon(Icons.check_circle, color: Colors.green),
           ],
         ),
       ),
@@ -189,7 +231,8 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
   }
 
   Widget _buildAddressTile(Address addr, bool isSelected) {
-    final formattedAddress = '${addr.hno ?? ''} ${addr.buildingNo ?? ''}, ${addr.address}'.trim();
+    final formattedAddress =
+    '${addr.hno ?? ''} ${addr.buildingNo ?? ''}, ${addr.address}'.trim();
     return GestureDetector(
       onTap: () {
         widget.onAddressSelected(addr);
@@ -199,17 +242,17 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: isSelected ? Colors.blue : Colors.grey.shade200, width: isSelected ? 2 : 1),
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.grey.shade200,
+            width: isSelected ? 2 : 1,
+          ),
           borderRadius: BorderRadius.circular(12),
+          // Only color background if this address is the default
           color: addr.isDefault ? Colors.blue.shade50 : null,
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.location_on,
-              color: Colors.red,
-              size: 24,
-            ),
+            const Icon(Icons.location_on, color: Colors.red, size: 24),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -232,13 +275,20 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                       fontWeight: FontWeight.w400,
                       fontFamily: 'Poppins',
                       color: AppColors.black,
-                    ),                  ),
-                  if (addr.isDefault)
+                    ),
+                  ),
+                  if (addr.isDefault) // ✅ Show the label only for the default address
                     Container(
                       margin: const EdgeInsets.only(top: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(12)),
-                      child: const Text('DEFAULT', style: TextStyle(fontSize: 10, color: Colors.green)),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Default', // ✅ Add text here
+                        style: TextStyle(fontSize: 10, color: Colors.green),
+                      ),
                     ),
                 ],
               ),

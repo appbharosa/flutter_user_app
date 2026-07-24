@@ -13,10 +13,10 @@ class AddressRepositoryImpl implements AddressRepository {
   AddressRepositoryImpl({required this.remoteDataSource, required this.networkInfo});
 
   @override
-  Future<Either<Failure, List<Address>>> getAddresses() async {
+  Future<Either<Failure, List<Address>>> getAddresses({required String lang}) async {
     if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
     try {
-      final addresses = await remoteDataSource.getAddresses();
+      final addresses = await remoteDataSource.getAddresses(lang: lang);
       return Right(addresses);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -28,10 +28,10 @@ class AddressRepositoryImpl implements AddressRepository {
   }
 
   @override
-  Future<Either<Failure, Address>> addAddress(Map<String, dynamic> addressData) async {
+  Future<Either<Failure, Address>> addAddress(Map<String, dynamic> addressData, {required String lang}) async {
     if (!(await networkInfo.isConnected)) return Left(NetworkFailure());
     try {
-      final address = await remoteDataSource.addAddress(addressData);
+      final address = await remoteDataSource.addAddress(addressData, lang: lang);
       return Right(address);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

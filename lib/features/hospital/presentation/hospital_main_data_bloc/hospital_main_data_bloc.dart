@@ -4,8 +4,6 @@ import 'hospital_main_data_event.dart';
 import 'hospital_main_data_state.dart';
 
 
-
-
 class HospitalMainDataBloc extends Bloc<HospitalMainDataEvent, HospitalMainDataState> {
   final GetHospitalMainDataUseCase getHospitalDataUseCase;
   HospitalMainDataBloc({required this.getHospitalDataUseCase}) : super(HospitalMainDataInitial()) {
@@ -14,11 +12,11 @@ class HospitalMainDataBloc extends Bloc<HospitalMainDataEvent, HospitalMainDataS
 
   Future<void> _onLoad(LoadHospitalMainData event, Emitter<HospitalMainDataState> emit) async {
     emit(HospitalMainDataLoading());
-    final result = await getHospitalDataUseCase(event.mainDataId);
+    // ✅ Pass both arguments (positional)
+    final result = await getHospitalDataUseCase(event.mainDataId, event.lang);
     result.fold(
           (failure) => emit(HospitalMainDataError(failure.message)),
           (data) {
-        // ✅ Access record fields using $1 and $2
         final hospital = data.$1;
         final doctors = data.$2;
         emit(HospitalMainDataLoaded(hospital, doctors));

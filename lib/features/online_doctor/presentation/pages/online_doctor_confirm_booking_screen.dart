@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:user/core/utils/translations.dart';
 import 'package:user/features/online_doctor/presentation/pages/widgets/online_doctor_coupon_bottom_sheet.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
@@ -202,7 +203,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
               top: false,
               child: Scaffold(
                 appBar: AppBar(
-                  title: const Text('Confirm Booking', style: TextStyle(color: AppColors.whiteColor, fontSize: 16.5, fontWeight: FontWeight.w500, fontFamily: 'Poppins')),
+                  title:  Text('confirm_booking'.tr(), style: TextStyle(color: AppColors.whiteColor, fontSize: 16.5, fontWeight: FontWeight.w500, fontFamily: 'Poppins')),
                   backgroundColor: AppColors.blue,
                   foregroundColor: Colors.white,
                 ),
@@ -245,7 +246,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                           const SizedBox(height: 20),
 
                           // Appointment details
-                          const Text('Appointment Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                           Text('appointment_details'.tr(), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
                           const SizedBox(height: 8),
                           Card(
                             elevation: 1,
@@ -254,9 +255,9 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                               padding: const EdgeInsets.all(16),
                               child: Column(
                                 children: [
-                                  _buildDetailRow('Date', widget.formattedDate),
+                                  _buildDetailRow('date'.tr(), widget.formattedDate),
                                   const SizedBox(height: 8),
-                                  _buildDetailRow('Time', widget.slot.time),
+                                  _buildDetailRow('time'.tr(), widget.slot.time),
                                 ],
                               ),
                             ),
@@ -264,7 +265,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                           const SizedBox(height: 20),
 
                           // Patient details
-                          const Text('Patient Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                           Text('patient_details'.tr(), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
                           const SizedBox(height: 8),
                           Card(
                             elevation: 1,
@@ -273,9 +274,9 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                               padding: const EdgeInsets.all(16),
                               child: Column(
                                 children: [
-                                  _buildDetailRow('Name', widget.familyMember.name),
+                                  _buildDetailRow('name'.tr(), widget.familyMember.name),
                                   const SizedBox(height: 8),
-                                  _buildDetailRow('Mobile', widget.familyMember.mobile),
+                                  _buildDetailRow('mobile'.tr(), widget.familyMember.mobile),
                                 ],
                               ),
                             ),
@@ -283,7 +284,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                           const SizedBox(height: 20),
 
                           // Payment summary
-                          const Text('Payment Summary', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                           Text('payment_summary'.tr(), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
                           const SizedBox(height: 8),
                           Card(
                             elevation: 1,
@@ -293,7 +294,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                               child: Column(
                                 children: [
                                   isFree
-                                      ? _buildDetailRow('Consultation Fee', 'FREE')
+                                      ? _buildDetailRow('consultation_fee'.tr(), 'FREE')
                                       : _buildDetailRow('Consultation Fee', '₹${_originalAmount.toStringAsFixed(2)}'),
                                   if (_appliedCouponCode != null && !isFree) ...[
                                     const Divider(),
@@ -301,8 +302,8 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                                   ],
                                   const Divider(),
                                   isFree
-                                      ? _buildDetailRow('Total Amount', 'FREE', isTotal: true)
-                                      : _buildDetailRow('Total Amount', '₹${_finalAmount.toStringAsFixed(2)}', isTotal: true),
+                                      ? _buildDetailRow('total_amount'.tr(), 'FREE', isTotal: true)
+                                      : _buildDetailRow('total_amount'.tr(), '₹${_finalAmount.toStringAsFixed(2)}', isTotal: true),
                                 ],
                               ),
                             ),
@@ -315,7 +316,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                               child: OutlinedButton.icon(
                                 onPressed: _showCouponSheet,
                                 icon: const Icon(Icons.local_offer),
-                                label: const Text('Apply Coupon'),
+                                label:  Text('apply_coupon'.tr()),
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(color: AppColors.blue),
                                   foregroundColor: AppColors.blue,
@@ -335,7 +336,7 @@ class _OnlineDoctorConfirmBookingScreenState extends State<OnlineDoctorConfirmBo
                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                               child: isProcessing
                                   ? const CircularProgressIndicator(color: Colors.white)
-                                  : Text(isFree ? 'Book Now' : 'Confirm & Pay', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                                  : Text(isFree ? 'Book Now' : 'confirm_and_pay'.tr(), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                             ),
                           ),
                           const SizedBox(height: 16),

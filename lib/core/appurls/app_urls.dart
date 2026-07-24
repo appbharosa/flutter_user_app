@@ -46,6 +46,7 @@ class AppUrls{
   static const String medLockerShow = "medlocker-show/";
   static const String createPharmacyOrder = "booking-pharmacy";
   static const String cashFreeWallet = "user-wallet-create";
+  static const String getWallet="get-wallet";
   static const String cashFreePaymentStatus = "check-status";
   static const String subscriptionList = "subscription-list";
   static const String createOrder = "create-order";

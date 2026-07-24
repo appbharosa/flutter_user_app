@@ -5,6 +5,7 @@ import 'package:user/features/pharmacy/presentation/pages/pharmacy_detail_page.d
 import '../../../../core/di/injection.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/translations.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/pharmacy.dart';
 import '../../../home/presentation/pages/home_page.dart';
@@ -145,8 +146,8 @@ class _PharmacyTabState extends State<PharmacyTab> {
             );
           },
         ),
-        title: const Text(
-          'Pharmacy',
+        title:  Text(
+          'pharmacy'.tr(),
           style: TextStyle(
             color: Colors.white,
             fontSize: 18,

@@ -7,7 +7,9 @@ import '../repositories/address_repository.dart';
 class GetAddressesUseCase {
   final AddressRepository repository;
   GetAddressesUseCase(this.repository);
-  Future<Either<Failure, List<Address>>> call() async {
-    return await repository.getAddresses();
+
+  // Accept lang as a required parameter
+  Future<Either<Failure, List<Address>>> call({required String lang}) async {
+    return await repository.getAddresses(lang: lang);
   }
 }
