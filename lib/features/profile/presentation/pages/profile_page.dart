@@ -111,7 +111,7 @@ class _ProfilePageState extends State<ProfilePage> {
           foregroundColor: AppColors.whiteColor,
           elevation: 0,
           title: Text(
-            'Profile',
+            'profile'.tr(),
             style: TextStyle(
               color: AppColors.whiteColor,
               fontSize: 16,
@@ -178,19 +178,19 @@ class _ProfilePageState extends State<ProfilePage> {
                       onBackgroundImageError: (_, __) => const Icon(Icons.person, size: 60),
                     ),
                     const SizedBox(height: 20),
-                    _buildInfoRow('Name', _nameController, _isEditing),
-                    _buildInfoRow('Email', _emailController, _isEditing),
-                    _buildInfoRow('Mobile', _mobileController, _isEditing),
+                    _buildInfoRow('name'.tr(), _nameController, _isEditing),
+                    _buildInfoRow('email'.tr(), _emailController, _isEditing),
+                    _buildInfoRow('mobile'.tr(), _mobileController, _isEditing),
                     _buildDateRow(_isEditing),
-                    _buildDropdownRow('Gender', _selectedGender, _isEditing,
+                    _buildDropdownRow('gender'.tr(), _selectedGender, _isEditing,
                         ['Male', 'Female'], (value) {
                           setState(() => _selectedGender = value!);
                         }),
-                    _buildDropdownRow('Blood Group', _selectedBloodGroup, _isEditing,
+                    _buildDropdownRow('blood_group'.tr(), _selectedBloodGroup, _isEditing,
                         ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'], (value) {
                           setState(() => _selectedBloodGroup = value!);
                         }),
-                    _buildDropdownRow('Coverage Category', _selectedCoverage, _isEditing, [
+                    _buildDropdownRow('coverage_category'.tr(), _selectedCoverage, _isEditing, [
                       'Health Insurance',
                       'ESIC/EHS/CGHS',
                       'Aarogya Sree',

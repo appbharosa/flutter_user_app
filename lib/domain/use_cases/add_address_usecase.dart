@@ -11,7 +11,9 @@ class AddAddressParams {
 class AddAddressUseCase {
   final AddressRepository repository;
   AddAddressUseCase(this.repository);
-  Future<Either<Failure, Address>> call(AddAddressParams params) async {
-    return await repository.addAddress(params.addressData);
+
+  // Add lang as a required parameter
+  Future<Either<Failure, Address>> call(AddAddressParams params, {required String lang}) async {
+    return await repository.addAddress(params.addressData, lang: lang);
   }
 }

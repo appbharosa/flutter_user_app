@@ -7,5 +7,6 @@ abstract class HospitalMainDataEvent extends Equatable {
 
 class LoadHospitalMainData extends HospitalMainDataEvent {
   final int mainDataId;
-  LoadHospitalMainData(this.mainDataId);
+  final String lang;
+  LoadHospitalMainData(this.mainDataId, this.lang);
 }

@@ -24,3 +24,8 @@ class PaymentError extends PaymentState {
   final String message;
   const PaymentError(this.message);
 }
+
+class WalletBalanceLoaded extends PaymentState { // ✅ NEW
+  final double balance;
+  const WalletBalanceLoaded(this.balance);
+}

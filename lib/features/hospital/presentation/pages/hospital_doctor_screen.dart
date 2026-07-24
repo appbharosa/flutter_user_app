@@ -6,7 +6,9 @@ import 'package:user/features/hospital/presentation/pages/widgets/hospital_medic
 import '../../../../core/di/injection.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/translations.dart';
 import '../../../../domain/entities/hospital_doctor.dart';
+import '../../../language/bloc/language_bloc.dart';
 import '../hospital_main_data_bloc/hospital_main_data_bloc.dart';
 import '../hospital_main_data_bloc/hospital_main_data_event.dart';
 import '../hospital_main_data_bloc/hospital_main_data_state.dart';
@@ -35,6 +37,15 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
     _tabController = TabController(length: 3, vsync: this);
   }
 
+  String getLanguageCode(Language lang) {
+    switch (lang) {
+      case Language.english: return 'en';
+      case Language.hindi:   return 'hi';
+      case Language.telugu:  return 'te';
+      default:               return 'en';
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -43,8 +54,10 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
 
   @override
   Widget build(BuildContext context) {
+    final lang = getLanguageCode(LanguageBloc.currentLanguage);
     return BlocProvider(
-      create: (context) => di.sl<HospitalMainDataBloc>()..add(LoadHospitalMainData(widget.mainDataId)),
+      create: (context) => di.sl<HospitalMainDataBloc>()
+        ..add(LoadHospitalMainData(widget.mainDataId, lang)),
       child: SafeArea(
         top: false,
         bottom: true,
@@ -95,7 +108,7 @@ class _HospitalDoctorScreenState extends State<HospitalDoctorScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  hospital.name,
+                                  hospital.name.tr(),
                                   style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,

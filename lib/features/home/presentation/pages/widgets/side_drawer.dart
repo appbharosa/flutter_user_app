@@ -160,25 +160,25 @@ class SideMenuDialog extends StatelessWidget {
                     // 2. Med Locker
                     _buildMenuItem(
                       icon: Icons.lock,
-                      title: 'Med Locker',
+                      title: 'med_locker'.tr(),
                       onTap: () => onMenuItemSelected(1),
                     ),
                     // 3. Wallet
                     _buildMenuItem(
                       icon: Icons.wallet,
-                      title: 'Wallet',
+                      title: 'wallet'.tr(),
                       onTap: () => onMenuItemSelected(2),
                     ),
                     // 4. Care Plans
                     _buildMenuItem(
                       icon: Icons.subscriptions,
-                      title: 'Care Plans',
+                      title: 'care_plans'.tr(),
                       onTap: () => onMenuItemSelected(3),
                     ),
                     // 5. My eCard
                     _buildMenuItem(
                       icon: Icons.credit_card,
-                      title: 'My eCard',
+                      title: 'my_ecard'.tr(),
                       onTap: () {
                         Navigator.of(context).pop();
                         onMenuItemSelected(13);
@@ -191,8 +191,8 @@ class SideMenuDialog extends StatelessWidget {
                         width: 28,
                         height: 28,
                       ),
-                      title: const Text(
-                        'Acko Insurance',
+                      title:  Text(
+                        'acko_insurance'.tr(),
                         style: TextStyle(
                           color: Colors.black87,
                           fontSize: 14,
@@ -217,37 +217,37 @@ class SideMenuDialog extends StatelessWidget {
                       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
                         leading: const Icon(Icons.local_hospital, color: Colors.black87),
-                        title: const Text(
-                          'Bookings',
+                        title:  Text(
+                          'bookingss'.tr(),
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                         ),
                         children: [
                           _buildSubMenuItem(
-                            title: 'Diagnostic Bookings',
+                            title: 'diagnostic_bookings'.tr(),
                             onTap: () => onMenuItemSelected(6),
                           ),
                           _buildSubMenuItem(
-                            title: 'Hospital Diagnostic Bookings',
+                            title: 'hospital_diagnostic_bookings'.tr(),
                             onTap: () => onMenuItemSelected(7),
                           ),
                           _buildSubMenuItem(
-                            title: 'Hospital Pharmacy Bookings',
+                            title: 'hospital_pharmacy_bookings'.tr(),
                             onTap: () => onMenuItemSelected(8),
                           ),
                           _buildSubMenuItem(
-                            title: 'Hospital Doctor Bookings',
+                            title: 'hospital_doctor_bookings'.tr(),
                             onTap: () => onMenuItemSelected(9),
                           ),
                           _buildSubMenuItem(
-                            title: 'LabTest Bookings',
+                            title: 'lab_test_bookings'.tr(),
                             onTap: () => onMenuItemSelected(10),
                           ),
                           _buildSubMenuItem(
-                            title: 'Pharmacy Bookings',
+                            title: 'pharmacy_bookings'.tr(),
                             onTap: () => onMenuItemSelected(11),
                           ),
                           _buildSubMenuItem(
-                            title: 'Online Doctor Bookings',
+                            title: 'online_doctor_bookings'.tr(),
                             onTap: () => onMenuItemSelected(12),
                           ),
                         ],
@@ -268,7 +268,7 @@ class SideMenuDialog extends StatelessWidget {
                     // 10. Share
                     _buildMenuItem(
                       icon: Icons.share,
-                      title: 'Share',
+                      title: 'share'.tr(),
                       onTap: () {
                         Navigator.of(context).pop();
                         _shareApp(context);

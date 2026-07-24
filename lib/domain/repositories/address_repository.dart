@@ -4,7 +4,6 @@ import '../entities/address.dart';
 
 
 abstract class AddressRepository {
-  Future<Either<Failure, List<Address>>> getAddresses();
-  Future<Either<Failure, Address>> addAddress(Map<String, dynamic> addressData);
-  // Future<Either<Failure, void>> setDefaultAddress(int addressId);
+  Future<Either<Failure, List<Address>>> getAddresses({required String lang});
+  Future<Either<Failure, Address>> addAddress(Map<String, dynamic> addressData, {required String lang});
 }

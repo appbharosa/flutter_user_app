@@ -2,8 +2,9 @@ name: user
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+23
+version: 1.0.2+11
 
+ # version: 1.0.2+26  android version
 environment:
   sdk: ^3.11.4
 
@@ -21,7 +22,7 @@ dependencies:
   dartz: ^0.10.1
 
   # UI & Assets
-  flutter_svg: ^2.0.10+1
+  flutter_svg: ^2.3.0
   lottie: ^3.3.3
   cached_network_image: ^3.3.0
   cupertino_icons: ^1.0.8
@@ -29,6 +30,8 @@ dependencies:
   flutter_pdfview: ^1.4.4
   share_plus: ^7.2.1
   url_launcher: ^6.3.0
+  http: ^1.6.0
+  audio_session: ^0.1.18
 
   # Location & Maps
   geolocator: ^14.0.2
@@ -69,6 +72,11 @@ dependencies:
   incoming_call_kit: ^0.0.1
   firebase_crashlytics: ^5.2.4
   firebase_analytics: ^12.4.3
+  pdf: ^3.10.4
+  printing: ^5.11.1
+  path_provider: ^2.1.2
+  open_file: ^3.3.2
+
 
 dev_dependencies:
   flutter_test:

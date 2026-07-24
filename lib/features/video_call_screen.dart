@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audio_session/audio_session.dart';
 import 'package:dio/dio.dart';
 import 'package:enx_flutter_plugin/base.dart';
 import 'package:enx_flutter_plugin/enx_player_widget.dart';
@@ -11,7 +12,7 @@ import '../../../../core/di/injection.dart' as di;
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/appurls/app_urls.dart';
 import '../main.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:audioplayers/audioplayers.dart' hide AVAudioSessionCategory;
 import 'package:flutter/services.dart';
 
 class VideoCallScreen extends StatefulWidget {
@@ -200,6 +201,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       _showErrorAndClose('Unable to join call: missing token.');
       return;
     }
+
     final statuses = await [
       Permission.camera,
       Permission.microphone,
@@ -210,11 +212,31 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       _showPermissionDialog();
       return;
     }
+
+    // ✅ NEW: Configure audio session for iOS (and Android)
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+        avAudioSessionCategoryOptions:
+        AVAudioSessionCategoryOptions.defaultToSpeaker |
+        AVAudioSessionCategoryOptions.allowBluetooth |
+        AVAudioSessionCategoryOptions.allowAirPlay,
+        avAudioSessionMode: AVAudioSessionMode.videoChat,
+        avAudioSessionRouteSharingPolicy:
+        AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      ));
+    } catch (e) {
+      debugPrint('⚠️ Audio session config error: $e');
+      // Continue anyway – audio might still work but fallback to default.
+    }
+
     setState(() {
       _permissionsGranted = true;
       _isIncomingCall = false;
       _isConnecting = true;
     });
+
     await _joinRoom();
   }
 

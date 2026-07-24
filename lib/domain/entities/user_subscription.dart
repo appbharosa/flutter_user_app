@@ -5,17 +5,22 @@ class UserSubscription {
   final String name;
   final int price;
   final int discountPrice;
-  final String duration; // Keep as String since API returns "12 MONTHS"
+  final String duration;
   final String fromDate;
   final String toDate;
   final int totalPremium;
-  final String? invoice; // Make nullable since it can be null in response
-  final String status; // Changed to String since API returns "active"
+  final String? invoice;
+  final String status;
   final int deleteStatus;
   final String createdOn;
   final String modifiedOn;
   final List<String> benefits;
   final bool isExpired;
+
+  // ✅ NEW FIELDS
+  final String totalAmount;        // "5898.82"
+  final String gst;                // "899.82"
+  final CompanyDetails? companyDetails; // nested object
 
   UserSubscription({
     required this.id,
@@ -26,17 +31,20 @@ class UserSubscription {
     required this.fromDate,
     required this.toDate,
     required this.totalPremium,
-    required this.invoice,
+    this.invoice,
     required this.status,
     required this.deleteStatus,
     required this.createdOn,
     required this.modifiedOn,
     required this.benefits,
     required this.isExpired,
+    required this.totalAmount,
+    required this.gst,
+    this.companyDetails,
   });
 
   factory UserSubscription.fromJson(Map<String, dynamic> json) {
-    // Handle benefits which is already a List in your API response
+    // Parse benefits (supports both List and JSON string)
     List<String> benefitsList = [];
     final benefitsData = json['benefits'];
     if (benefitsData is List) {
@@ -50,6 +58,13 @@ class UserSubscription {
       } catch (e) {
         benefitsList = [];
       }
+    }
+
+    // Parse company details
+    CompanyDetails? companyDetails;
+    final companyData = json['company_details'];
+    if (companyData is Map<String, dynamic>) {
+      companyDetails = CompanyDetails.fromJson(companyData);
     }
 
     return UserSubscription(
@@ -68,6 +83,37 @@ class UserSubscription {
       modifiedOn: json['modified_on'] as String? ?? '',
       benefits: benefitsList,
       isExpired: json['is_expired'] as bool? ?? false,
+      totalAmount: json['total_amount']?.toString() ?? '0',
+      gst: json['gst']?.toString() ?? '0',
+      companyDetails: companyDetails,
+    );
+  }
+}
+class CompanyDetails {
+  final String address;
+  final String addressPlain;
+  final String gstNo;
+  final String companyName;
+  final String contactEmail;
+  final String contactPhone;
+
+  CompanyDetails({
+    required this.address,
+    required this.addressPlain,
+    required this.gstNo,
+    required this.companyName,
+    required this.contactEmail,
+    required this.contactPhone,
+  });
+
+  factory CompanyDetails.fromJson(Map<String, dynamic> json) {
+    return CompanyDetails(
+      address: json['address']?.toString() ?? '',
+      addressPlain: json['address_plain']?.toString() ?? '',
+      gstNo: json['gst_no']?.toString() ?? '',
+      companyName: json['company_name']?.toString() ?? '',
+      contactEmail: json['contact_email']?.toString() ?? '',
+      contactPhone: json['contact_phone']?.toString() ?? '',
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:user/core/utils/translations.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/address.dart';
@@ -142,8 +143,8 @@ class _DiagnosticsTabState extends State<DiagnosticsTab> {
             );
           },
         ),
-        title: const Text(
-          'Diagnostics',
+        title:  Text(
+          'diagnostics'.tr(),
           style: TextStyle(
             color: Colors.white,
             fontSize: 18,

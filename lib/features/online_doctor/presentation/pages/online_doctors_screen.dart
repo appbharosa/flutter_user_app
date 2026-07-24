@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user/features/online_doctor/presentation/pages/online_doctor_detail_screen.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/translations.dart';
 import '../../../../domain/entities/address.dart';
 import '../../../../domain/entities/online_doctor.dart';
 import '../../../language/bloc/language_bloc.dart';
@@ -101,7 +102,7 @@ class _OnlineDoctorsScreenState extends State<OnlineDoctorsScreen> {
       child: Scaffold(
         backgroundColor: AppColors.whiteColor,
         appBar: AppBar(
-          title: const Text('Online Doctors', style: TextStyle(
+          title:  Text('online_doctor'.tr(), style: TextStyle(
             color: AppColors.whiteColor,
             fontSize: 17,
             fontWeight: FontWeight.w500,
@@ -130,12 +131,12 @@ class _OnlineDoctorsScreenState extends State<OnlineDoctorsScreen> {
                       child: DropdownButtonFormField<int?>(
                         isExpanded: true, // allows dropdown to expand horizontally
                         decoration: InputDecoration(
-                          labelText: 'Select Speciality',
+                          labelText: 'select_speciality'.tr(),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         value: _selectedSpecialityId,
                         items: [
-                          const DropdownMenuItem(value: null, child: Text('All Specialities', overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 12),)),
+                           DropdownMenuItem(value: null, child: Text('all_specialities'.tr(), overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 12),)),
                           ...specialities.map((spec) => DropdownMenuItem(
                             value: spec.id,
                             child: Text(

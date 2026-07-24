@@ -10,10 +10,19 @@ class AppliedCouponModel extends AppliedCoupon {
 
   factory AppliedCouponModel.fromJson(Map<String, dynamic> json) {
     return AppliedCouponModel(
-      code: json['code'] ?? '',
-      discountAmount: json['discount_amount'] ?? 0,
-      finalAmount: json['final_amount'] ?? 0,
-      isValid: json['is_valid'] ?? false,
+      code: json['code']?.toString() ?? '',
+      discountAmount: _toInt(json['discount_amount']),
+      finalAmount: _toInt(json['final_amount']),
+      isValid: json['is_valid'] == true,
     );
+  }
+
+  // ✅ Safe conversion to int (handles double, string, null)
+  static int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 }

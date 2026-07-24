@@ -248,7 +248,7 @@ class _LabTestSubcategoryScreenState extends State<LabTestSubcategoryScreen> {
 
                 // Book Button
                 ElevatedButton(
-                  onPressed: () => _navigateToDetail(package.id,package.image),
+                 onPressed: () => _navigateToDetail(package),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.blue,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -398,14 +398,13 @@ class _LabTestSubcategoryScreenState extends State<LabTestSubcategoryScreen> {
     );
   }
 
-  void _navigateToDetail(int packageId,String? image) {
+  void _navigateToDetail(FreeLabPackage package) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => FreeLabPackagesScreen(
           addressNotifier: widget.addressNotifier,
-          packageId: packageId,
-          packageImageUrl: image,
+          package: package, // ✅ pass the full object
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:user/core/utils/translations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/online_doctor.dart';
 import 'online_doctor_slot_screen.dart';
@@ -14,7 +15,7 @@ class OnlineDoctorDetailScreen extends StatelessWidget {
       top: false,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Doctor Details', style: TextStyle(
+          title:  Text('doctor_details'.tr(), style: TextStyle(
             color: AppColors.whiteColor,
             fontSize: 16.5,
             fontWeight: FontWeight.w600,
@@ -67,13 +68,13 @@ class OnlineDoctorDetailScreen extends StatelessWidget {
                     const Divider(),
                     const SizedBox(height: 12),
                     // Qualification
-                    _buildDetailRow('Qualification', doctor.qualification),
+                    _buildDetailRow('qualification'.tr(), doctor.qualification),
                     const SizedBox(height: 12),
-                    _buildDetailRow('Experience', '${doctor.specialization} years'),
+                    _buildDetailRow('experience'.tr(), '${doctor.specialization} years'),
                     const SizedBox(height: 12),
-                    _buildDetailRow('Fee', '₹${doctor.fee}'),
+                    _buildDetailRow('fee'.tr(), '₹${doctor.fee}'),
                     const SizedBox(height: 12),
-                    _buildDetailRow('Rating', '${doctor.totalRating} (${doctor.totalReviews} reviews)'),
+                    _buildDetailRow('rating'.tr(), '${doctor.totalRating} (${doctor.totalReviews} reviews)'),
                     const SizedBox(height: 12),
                     if (doctor.availability == 1)
                       Container(
@@ -82,8 +83,8 @@ class OnlineDoctorDetailScreen extends StatelessWidget {
                           color: Colors.green.shade100,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Text(
-                          'Available Today',
+                        child:  Text(
+                          'available_today'.tr(),
                           style: TextStyle(color: Colors.green, fontWeight: FontWeight.w400,fontSize: 13),
                         ),
                       ),
@@ -111,8 +112,8 @@ class OnlineDoctorDetailScreen extends StatelessWidget {
                     backgroundColor: AppColors.blue,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text(
-                    'Request Booking',
+                  child:  Text(
+                    'request_booking'.tr(),
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

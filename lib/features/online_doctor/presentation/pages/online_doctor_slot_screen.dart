@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:user/core/utils/translations.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/di/injection.dart' as sl;
 import '../../../../core/theme/app_colors.dart';
@@ -94,7 +95,7 @@ class _OnlineDoctorSlotScreenState extends State<OnlineDoctorSlotScreen> {
         child: Scaffold(
           backgroundColor: AppColors.whiteColor,
           appBar: AppBar(
-            title: const Text('Select Time Slot',
+            title:  Text('select_time_slot'.tr(),
               style: TextStyle(color: AppColors.whiteColor, fontSize: 17, fontWeight: FontWeight.w500, fontFamily: 'Poppins'),
             ),
             backgroundColor: AppColors.blue,
@@ -114,7 +115,7 @@ class _OnlineDoctorSlotScreenState extends State<OnlineDoctorSlotScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Select Date', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'Poppins', color: AppColors.black)),
+                     Text('select_date'.tr(), style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'Poppins', color: AppColors.black)),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: () async {
@@ -157,9 +158,9 @@ class _OnlineDoctorSlotScreenState extends State<OnlineDoctorSlotScreen> {
                 ),
               ),
               // Slots section
-              const Padding(
+               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Align(alignment: Alignment.centerLeft, child: Text('Available Time Slots',
+                child: Align(alignment: Alignment.centerLeft, child: Text('available_time_slots'.tr(),
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'Poppins', color: AppColors.black))),
               ),
               Expanded(
@@ -222,7 +223,7 @@ class _OnlineDoctorSlotScreenState extends State<OnlineDoctorSlotScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     onPressed: _selectedSlot == null ? null : _handleContinue,
-                    child: const Text('Continue', style: TextStyle(color: AppColors.whiteColor, fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                    child:  Text('continue_text'.tr(), style: TextStyle(color: AppColors.whiteColor, fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
                   ),
                 ),
               ),

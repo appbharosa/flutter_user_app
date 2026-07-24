@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:user/core/utils/translations.dart';
 import '../../../../core/di/injection.dart' as di;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/add_family_member_request.dart';
@@ -125,8 +126,8 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
         bottom: true,
         child: Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Add Family Member',
+            title:  Text(
+              'add_family_member'.tr(),
               style: TextStyle(
                 color: AppColors.whiteColor,
                 fontSize: 17,
@@ -156,17 +157,17 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      _buildTextField(_nameController, 'Name', Icons.person),
-                      _buildTextField(_emailController, 'Email', Icons.email),
-                      _buildTextField(_mobileController, 'Mobile', Icons.phone, keyboardType: TextInputType.phone),
+                      _buildTextField(_nameController, 'name'.tr(), Icons.person),
+                      _buildTextField(_emailController, 'email'.tr(), Icons.email),
+                      _buildTextField(_mobileController, 'mobile'.tr(), Icons.phone, keyboardType: TextInputType.phone),
                       _buildDateField(),
-                      _buildDropdown('Gender', _selectedGender, ['male', 'female'],
+                      _buildDropdown('gender'.tr(), _selectedGender, ['male', 'female'],
                               (value) => setState(() => _selectedGender = value!)),
-                      _buildDropdown('Blood Group', _selectedBloodGroup,
+                      _buildDropdown('blood_group'.tr(), _selectedBloodGroup,
                           ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'],
                               (value) => setState(() => _selectedBloodGroup = value!)),
                       _buildCoverageDropdown(),
-                      _buildDropdown('Relationship', _selectedRelationship, _relationshipOptions,
+                      _buildDropdown('relationship'.tr(), _selectedRelationship, _relationshipOptions,
                               (value) => setState(() => _selectedRelationship = value!)),
                       const SizedBox(height: 30),
                       ElevatedButton(
@@ -175,7 +176,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                           backgroundColor: AppColors.blue,
                           minimumSize: const Size(double.infinity, 50),
                         ),
-                        child: const Text('Add Member',
+                        child:  Text('add_member'.tr(),
                             style: TextStyle(color: Colors.white, fontSize: 16)),
                       ),
                     ],
@@ -279,7 +280,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
               value: _selectedCoverageId,
               style: const TextStyle(fontSize: 14, fontFamily: 'Poppins', color: AppColors.black),
               decoration: InputDecoration(
-                labelText: 'Coverage Category',
+                labelText: 'coverage_category'.tr(),
                 labelStyle: const TextStyle(fontSize: 14),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
